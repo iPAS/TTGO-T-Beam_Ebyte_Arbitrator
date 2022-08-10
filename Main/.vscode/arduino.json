@@ -4,5 +4,5 @@
     "port": "/dev/ttyUSB0",
     "output": "tmp",
     "sketch": "Main.ino",
-    "intelliSenseGen": "global"
+    "intelliSenseGen": "enable"
 }
