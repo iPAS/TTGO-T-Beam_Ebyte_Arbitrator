@@ -22,7 +22,7 @@ void oled_setup() {
 void oled_update_display() {
     display.clear();
 
-    // display.drawString(0, 0, rssi + ", " + snr);
+    display.drawString(0, 0, "hello");
     // display.drawString(0, 15, "Recv: " + packSize + " bytes");
     // display.drawStringMaxWidth(0, 26, 128, packet);
 

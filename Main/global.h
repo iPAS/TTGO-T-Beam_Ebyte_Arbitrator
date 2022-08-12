@@ -11,13 +11,16 @@
 extern void oled_setup();
 
 extern bool axp_setup();
-extern void axp_logging_process();  // Report energy usage on the node.
+extern void axp_logging_process();      // Report energy usage on the node.
 
 extern void led_setup(bool do_axp_exist);
-extern void led_blinking_process();  // LED blinking
+extern void led_blinking_process();     // LED blinking
 
 extern void gps_setup(bool do_axp_exist);
-extern void gps_decoding_process();  // Process GPS data
+extern void gps_decoding_process();     // Process GPS data
+
+extern void ebyte_setup();
+extern void ebyte_process();            // Store & forward data between
 
 
 #endif  // __GLOBAL_H__
