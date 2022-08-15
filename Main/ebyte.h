@@ -2,7 +2,7 @@
 #define __EBYTE_H__
 
 
-#include <EByte_LoRa_E32_library.h>
+#include "ebyte_e34.h"
 
 
 extern void ebyte_setup();

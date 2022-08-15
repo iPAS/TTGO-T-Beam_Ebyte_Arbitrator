@@ -4,8 +4,9 @@
 
 #define SIZE_DEBUG_BUF 255
 
-#define term_print(arg)   { Serial.print(arg); }
-#define term_println(arg) { Serial.println(arg); }
+#define term_print(...)   { Serial.print(__VA_ARGS__); }
+#define term_println(...) { Serial.println(__VA_ARGS__); }
+
 extern void term_printf(const char *format, ...);
 
 #define debug(args...) term_printf("[X] " args)

@@ -10,6 +10,8 @@ static bool do_axp_exist;  // T-Beam v0.7, early version, does't has AXP192 buil
 
 // ---------- Setup ----------
 void setup() {
+    vTaskDelay(3);  // Wait debugging console
+
     do_axp_exist = axp_setup();  // Init axp20x and return T-Beam Version
     led_setup(do_axp_exist);    // LED
     cli_setup();
