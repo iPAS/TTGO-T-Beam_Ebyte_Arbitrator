@@ -40,60 +40,15 @@
  * @brief Construct a new Ebyte_E34::Ebyte_E34 object
  *
  */
-Ebyte_E34::Ebyte_E34(HardwareSerial * serial, UART_BPS_RATE bpsRate) {
+Ebyte_E34::Ebyte_E34(HardwareSerial * serial, byte auxPin, byte m0Pin, byte m1Pin, byte rxPin, byte txPin) {
     this->hs = serial;
-    this->bpsRate = bpsRate;
-}
 
-Ebyte_E34::Ebyte_E34(HardwareSerial * serial, byte auxPin, UART_BPS_RATE bpsRate) {
-    this->hs = serial;
-    this->auxPin = auxPin;
-    this->bpsRate = bpsRate;
-}
-
-Ebyte_E34::Ebyte_E34(HardwareSerial * serial, byte auxPin, byte m0Pin, byte m1Pin, UART_BPS_RATE bpsRate) {
-    this->hs = serial;
     this->auxPin = auxPin;
     this->m0Pin = m0Pin;
     this->m1Pin = m1Pin;
-    this->bpsRate = bpsRate;
-}
 
-Ebyte_E34::Ebyte_E34(byte txE32pin, byte rxE32pin,
-                     HardwareSerial * serial,
-                     UART_BPS_RATE bpsRate, uint32_t serialConfig) {
-    this->txE32pin = txE32pin;
-    this->rxE32pin = rxE32pin;
-
-    this->hs = serial;
-    this->bpsRate = bpsRate;
-    this->serialConfig = serialConfig;
-}
-
-Ebyte_E34::Ebyte_E34(byte txE32pin, byte rxE32pin,
-                     HardwareSerial * serial, byte auxPin,
-                     UART_BPS_RATE bpsRate, uint32_t serialConfig) {
-    this->txE32pin = txE32pin;
-    this->rxE32pin = rxE32pin;
-
-    this->hs = serial;
-    this->auxPin = auxPin;
-    this->bpsRate = bpsRate;
-    this->serialConfig = serialConfig;
-}
-
-Ebyte_E34::Ebyte_E34(byte txE32pin, byte rxE32pin,
-                     HardwareSerial * serial, byte auxPin, byte m0Pin, byte m1Pin,
-                     UART_BPS_RATE bpsRate, uint32_t serialConfig) {
-    this->txE32pin = txE32pin;
-    this->rxE32pin = rxE32pin;
-
-    this->hs = serial;
-    this->auxPin = auxPin;
-    this->m0Pin = m0Pin;
-    this->m1Pin = m1Pin;
-    this->bpsRate = bpsRate;
-    this->serialConfig = serialConfig;
+    this->rxPin = rxPin;
+    this->txPin = txPin;
 }
 
 
@@ -103,9 +58,9 @@ Ebyte_E34::Ebyte_E34(byte txE32pin, byte rxE32pin,
  */
 bool Ebyte_E34::begin() {
     DEBUG_PRINT("RX MIC ---> ");
-    DEBUG_PRINTLN(this->txE32pin);
+    DEBUG_PRINTLN(this->txPin);
     DEBUG_PRINT("TX MIC ---> ");
-    DEBUG_PRINTLN(this->rxE32pin);
+    DEBUG_PRINTLN(this->rxPin);
     DEBUG_PRINT("AUX ---> ");
     DEBUG_PRINTLN(this->auxPin);
     DEBUG_PRINT("M0 ---> ");
@@ -128,12 +83,15 @@ bool Ebyte_E34::begin() {
         digitalWrite(this->m1Pin, HIGH);
     }
 
-    DEBUG_PRINTLN("Begin ex");
+    DEBUG_PRINTLN("Begin Ebyte");
     if (this->hs) {
         DEBUG_PRINTLN("Begin Hardware Serial");
 
-        if (this->txE32pin != -1 && this->rxE32pin != -1) {
-            this->serialDef.begin(*this->hs, this->bpsRate, this->serialConfig, this->txE32pin, this->rxE32pin);
+        if (this->txPin != -1 && this->rxPin != -1) {
+            this->serialDef.begin(*this->hs, this->bpsRate, this->serialConfig,
+                                  this->txPin,  // To RX of uC
+                                  this->rxPin   // To TX of uC
+                                  );
         }
         else {
             this->serialDef.begin(*this->hs, this->bpsRate, this->serialConfig);
@@ -146,7 +104,7 @@ bool Ebyte_E34::begin() {
 
     this->serialDef.stream->setTimeout(1000);  // Timeout data in the buffer, then send.
     Status status = setMode(MODE_0_FIXED);
-    return status == E32_SUCCESS;
+    return status == E34_SUCCESS;
 }
 
 
@@ -155,7 +113,7 @@ bool Ebyte_E34::begin() {
  * The timeout is provided to avoid an infinite loop
  */
 Status Ebyte_E34::waitCompleteResponse(unsigned long timeout, unsigned int waitNoAux) {
-    Status result = E32_SUCCESS;
+    Status result = E34_SUCCESS;
     unsigned long t_prev = millis();
 
     // if AUX pin was supplied and look for HIGH state
@@ -168,7 +126,7 @@ Status Ebyte_E34::waitCompleteResponse(unsigned long timeout, unsigned int waitN
                 ) ||
                 ((t < t_prev)  && (((unsigned long)(0-1) - (t_prev-t) + 1) > timeout)  // Overflow
                 )) {
-                result = ERR_E32_TIMEOUT;
+                result = ERR_E34_TIMEOUT;
                 DEBUG_PRINTLN("Timeout error!");
                 return result;
             }
@@ -228,127 +186,45 @@ void Ebyte_E34::cleanUARTBuffer() {
 }
 
 
-/*
-
-Method to send a chunk of data provided data is in a struct--my personal favorite as you
-need not parse or worry about sprintf() inability to handle floats
-
-TTP: put your structure definition into a .h file and include in both the sender and reciever
-sketches
-
-NOTE: of your sender and receiver MCU's are different (Teensy and Arduino) caution on the data
-types each handle ints floats differently
-
-*/
-
-Status Ebyte_E34::sendStruct(void * structureManaged, uint16_t size_) {
-    if (size_ > MAX_SIZE_TX_PACKET + 2) {
-        return ERR_E32_PACKET_TOO_BIG;
-    }
-
-    Status result = E32_SUCCESS;
-
-    uint8_t len = this->serialDef.stream->write((uint8_t *)structureManaged, size_);
-    if (len != size_) {
-        DEBUG_PRINT(F("Send... len:"))
-        DEBUG_PRINT(len);
-        DEBUG_PRINT(F(" size:"))
-        DEBUG_PRINT(size_);
-        if (len == 0) {
-            result = ERR_E32_NO_RESPONSE_FROM_DEVICE;
-        }
-        else {
-            result = ERR_E32_DATA_SIZE_NOT_MATCH;
-        }
-    }
-    if (result != E32_SUCCESS) return result;
-
-    result = this->waitCompleteResponse(1000);
-    if (result != E32_SUCCESS) return result;
-    DEBUG_PRINT(F("Clear buffer..."))
-    this->cleanUARTBuffer();
-
-    DEBUG_PRINTLN(F("ok!"))
-
-    return result;
-}
-
-/**
- * Method to get a chunk of data provided data is in a struct--my personal favorite as you
- * need not parse or worry about sprintf() inability to handle floats
- *
- * TTP: put your structure definition into a .h file and include in both the sender and reciever
- * sketches
- *
- * NOTE: of your sender and receiver MCU's are different (Teensy and Arduino) caution on the data
- * types each handle ints floats differently
- */
-
-Status Ebyte_E34::receiveStruct(void * structureManaged, uint16_t size_) {
-    Status result = E32_SUCCESS;
-
-    uint8_t len = this->serialDef.stream->readBytes((uint8_t *)structureManaged, size_);
-
-    DEBUG_PRINT("Available buffer: ");
-    DEBUG_PRINT(len);
-    DEBUG_PRINT(" structure size: ");
-    DEBUG_PRINTLN(size_);
-
-    if (len != size_) {
-        if (len == 0) {
-            result = ERR_E32_NO_RESPONSE_FROM_DEVICE;
-        }
-        else {
-            result = ERR_E32_DATA_SIZE_NOT_MATCH;
-        }
-    }
-    if (result != E32_SUCCESS) return result;
-
-    result = this->waitCompleteResponse(1000);
-    if (result != E32_SUCCESS) return result;
-
-    return result;
-}
-
 /**
  * Method to set the mode (program, normal, etc.)
  */
-
 Status Ebyte_E34::setMode(MODE_TYPE mode) {
+    // Datasheet claims module needs some extra time after mode setting (2ms).
+    // However, most of my projects uses 10 ms, but 40ms is safer.
 
-    // data sheet claims module needs some extra time after mode setting (2ms)
-    // most of my projects uses 10 ms, but 40ms is safer
-
-    this->managedDelay(40);
+    this->managedDelay(2);
 
     if (this->m0Pin == -1 && this->m1Pin == -1) {
-        DEBUG_PRINTLN(F("The M0 and M1 pins is not set, this mean that you are connect directly the pins as you need!"))
+        DEBUG_PRINTLN(F(
+            "The M0 and M1 pins is not set,"
+            " this mean that you are connect directly the pins as you need!"));
     }
     else {
         switch (mode) {
-        case MODE_0_FIXED:
-            // Mode 0 | normal operation
-            digitalWrite(this->m0Pin, LOW);
-            digitalWrite(this->m1Pin, LOW);
-            DEBUG_PRINTLN("MODE FIXED FREQ!");
-            break;
-        case MODE_1_HOPPING:
-            digitalWrite(this->m0Pin, HIGH);
-            digitalWrite(this->m1Pin, LOW);
-            DEBUG_PRINTLN("MODE WAKE UP!");
-            break;
-        case MODE_2_POWER_SAVING:
-            digitalWrite(this->m0Pin, LOW);
-            digitalWrite(this->m1Pin, HIGH);
-            DEBUG_PRINTLN("MODE POWER SAVING!");
-            break;
-        case MODE_3_SLEEP:
-            // Mode 3 | Setting operation
-            digitalWrite(this->m0Pin, HIGH);
-            digitalWrite(this->m1Pin, HIGH);
-            DEBUG_PRINTLN("MODE PROGRAM/SLEEP!");
-            break;
-        default: return ERR_E32_INVALID_PARAM;
+            case MODE_0_FIXED:
+                // Mode 0 | normal operation
+                digitalWrite(this->m0Pin, LOW);
+                digitalWrite(this->m1Pin, LOW);
+                DEBUG_PRINTLN("MODE FIXED FREQ!");
+                break;
+            case MODE_1_HOPPING:
+                digitalWrite(this->m0Pin, HIGH);
+                digitalWrite(this->m1Pin, LOW);
+                DEBUG_PRINTLN("MODE HOPPING FREQ!");
+                break;
+            case MODE_2_RESERVED:
+                digitalWrite(this->m0Pin, LOW);
+                digitalWrite(this->m1Pin, HIGH);
+                DEBUG_PRINTLN("MODE RESERVATION!");
+                break;
+            case MODE_3_SLEEP:
+                // Mode 3 | Setting operation
+                digitalWrite(this->m0Pin, HIGH);
+                digitalWrite(this->m1Pin, HIGH);
+                DEBUG_PRINTLN("MODE PROGRAM/SLEEP!");
+                break;
+            default: return ERR_E34_INVALID_PARAM;
         }
     }
     // data sheet says 2ms later control is returned, let's give just a bit more time
@@ -358,14 +234,16 @@ Status Ebyte_E34::setMode(MODE_TYPE mode) {
     // wait until aux pin goes back low
     Status res = this->waitCompleteResponse(1000);
 
-    if (res == E32_SUCCESS) {
+    if (res == E34_SUCCESS) {
         this->mode = mode;
     }
 
     return res;
 }
 
-MODE_TYPE Ebyte_E34::getMode() { return this->mode; }
+MODE_TYPE Ebyte_E34::getMode() {
+    return this->mode;
+}
 
 void Ebyte_E34::writeProgramCommand(PROGRAM_COMMAND cmd) {
     uint8_t CMD[3] = {cmd, cmd, cmd};
@@ -378,23 +256,23 @@ ResponseStructContainer Ebyte_E34::getConfiguration() {
     ResponseStructContainer rc;
 
     rc.status.code = checkUARTConfiguration(MODE_3_PROGRAM);
-    if (rc.status.code != E32_SUCCESS) return rc;
+    if (rc.status.code != E34_SUCCESS) return rc;
 
     MODE_TYPE prevMode = this->mode;
 
     rc.status.code = this->setMode(MODE_3_PROGRAM);
-    if (rc.status.code != E32_SUCCESS) return rc;
+    if (rc.status.code != E34_SUCCESS) return rc;
 
     this->writeProgramCommand(READ_CONFIGURATION);
 
     rc.data        = malloc(sizeof(Configuration));
     rc.status.code = this->receiveStruct((uint8_t *)rc.data, sizeof(Configuration));
 
-#ifdef EBYTE_DEBUG
+    #ifdef EBYTE_DEBUG
     this->printParameters((Configuration *)rc.data);
-#endif
+    #endif
 
-    if (rc.status.code != E32_SUCCESS) {
+    if (rc.status.code != E34_SUCCESS) {
         this->setMode(prevMode);
         return rc;
     }
@@ -409,42 +287,39 @@ ResponseStructContainer Ebyte_E34::getConfiguration() {
     DEBUG_PRINTLN("----------------------------------------");
 
     rc.status.code = this->setMode(prevMode);
-    if (rc.status.code != E32_SUCCESS) return rc;
-
-    //	this->printParameters(*configuration);
+    if (rc.status.code != E34_SUCCESS) return rc;
 
     if (0xC0 != ((Configuration *)rc.data)->HEAD && 0xC2 != ((Configuration *)rc.data)->HEAD) {
-        rc.status.code = ERR_E32_HEAD_NOT_RECOGNIZED;
+        rc.status.code = ERR_E34_HEAD_NOT_RECOGNIZED;
     }
 
-    //	rc.data = configuration;
     return rc;
 }
 
 RESPONSE_STATUS Ebyte_E34::checkUARTConfiguration(MODE_TYPE mode) {
-    if (mode == MODE_3_PROGRAM && this->bpsRate != UART_BPS_RATE_9600) {
-        return ERR_E32_WRONG_UART_CONFIG;
+    if (mode == MODE_3_PROGRAM && this->bpsRate != 9600) {
+        return ERR_E34_WRONG_UART_CONFIG;
     }
-    return E32_SUCCESS;
+    return E34_SUCCESS;
 }
 
 ResponseStatus Ebyte_E34::setConfiguration(Configuration configuration, PROGRAM_COMMAND saveType) {
     ResponseStatus rc;
 
     rc.code = checkUARTConfiguration(MODE_3_PROGRAM);
-    if (rc.code != E32_SUCCESS) return rc;
+    if (rc.code != E34_SUCCESS) return rc;
 
     MODE_TYPE prevMode = this->mode;
 
     rc.code = this->setMode(MODE_3_PROGRAM);
-    if (rc.code != E32_SUCCESS) return rc;
+    if (rc.code != E34_SUCCESS) return rc;
 
     this->writeProgramCommand(READ_CONFIGURATION);
 
     configuration.HEAD = saveType;
 
     rc.code = this->sendStruct((uint8_t *)&configuration, sizeof(Configuration));
-    if (rc.code != E32_SUCCESS) {
+    if (rc.code != E34_SUCCESS) {
         this->setMode(prevMode);
         return rc;
     }
@@ -459,12 +334,10 @@ ResponseStatus Ebyte_E34::setConfiguration(Configuration configuration, PROGRAM_
     DEBUG_PRINTLN("----------------------------------------");
 
     rc.code = this->setMode(prevMode);
-    if (rc.code != E32_SUCCESS) return rc;
-
-    //	this->printParameters(*configuration);
+    if (rc.code != E34_SUCCESS) return rc;
 
     if (0xC0 != configuration.HEAD && 0xC2 != configuration.HEAD) {
-        rc.code = ERR_E32_HEAD_NOT_RECOGNIZED;
+        rc.code = ERR_E34_HEAD_NOT_RECOGNIZED;
     }
 
     return rc;
@@ -474,29 +347,29 @@ ResponseStructContainer Ebyte_E34::getModuleInformation() {
     ResponseStructContainer rc;
 
     rc.status.code = checkUARTConfiguration(MODE_3_PROGRAM);
-    if (rc.status.code != E32_SUCCESS) return rc;
+    if (rc.status.code != E34_SUCCESS) return rc;
 
     MODE_TYPE prevMode = this->mode;
 
     rc.status.code = this->setMode(MODE_3_PROGRAM);
-    if (rc.status.code != E32_SUCCESS) return rc;
+    if (rc.status.code != E34_SUCCESS) return rc;
 
     this->writeProgramCommand(READ_MODULE_VERSION);
 
     struct ModuleInformation * moduleInformation = (ModuleInformation *)malloc(sizeof(ModuleInformation));
     rc.status.code = this->receiveStruct((uint8_t *)moduleInformation, sizeof(ModuleInformation));
-    if (rc.status.code != E32_SUCCESS) {
+    if (rc.status.code != E34_SUCCESS) {
         this->setMode(prevMode);
         return rc;
     }
 
     rc.status.code = this->setMode(prevMode);
-    if (rc.status.code != E32_SUCCESS) return rc;
+    if (rc.status.code != E34_SUCCESS) return rc;
 
     //	this->printParameters(*configuration);
 
     if (0xC3 != moduleInformation->HEAD) {
-        rc.status.code = ERR_E32_HEAD_NOT_RECOGNIZED;
+        rc.status.code = ERR_E34_HEAD_NOT_RECOGNIZED;
     }
 
     DEBUG_PRINTLN("----------------------------------------");
@@ -524,33 +397,39 @@ ResponseStatus Ebyte_E34::resetModule() {
     ResponseStatus status;
 
     status.code = checkUARTConfiguration(MODE_3_PROGRAM);
-    if (status.code != E32_SUCCESS) return status;
+    if (status.code != E34_SUCCESS) return status;
 
     MODE_TYPE prevMode = this->mode;
 
     status.code = this->setMode(MODE_3_PROGRAM);
-    if (status.code != E32_SUCCESS) return status;
+    if (status.code != E34_SUCCESS) return status;
 
     this->writeProgramCommand(WRITE_RESET_MODULE);
 
     status.code = this->waitCompleteResponse(1000);
-    if (status.code != E32_SUCCESS) {
+    if (status.code != E34_SUCCESS) {
         this->setMode(prevMode);
         return status;
     }
 
     status.code = this->setMode(prevMode);
-    if (status.code != E32_SUCCESS) return status;
+    if (status.code != E34_SUCCESS) return status;
 
     return status;
 }
 
+
+/**
+ * @brief Receiving
+ * 
+ */
+
 ResponseContainer Ebyte_E34::receiveMessage() {
     ResponseContainer rc;
-    rc.status.code = E32_SUCCESS;
+    rc.status.code = E34_SUCCESS;
     rc.data        = this->serialDef.stream->readString();
     this->cleanUARTBuffer();
-    if (rc.status.code != E32_SUCCESS) {
+    if (rc.status.code != E34_SUCCESS) {
         return rc;
     }
 
@@ -561,10 +440,10 @@ ResponseContainer Ebyte_E34::receiveMessage() {
 
 ResponseContainer Ebyte_E34::receiveMessageUntil(char delimiter) {
     ResponseContainer rc;
-    rc.status.code = E32_SUCCESS;
+    rc.status.code = E34_SUCCESS;
     rc.data        = this->serialDef.stream->readStringUntil(delimiter);
     //	this->cleanUARTBuffer();
-    if (rc.status.code != E32_SUCCESS) {
+    if (rc.status.code != E34_SUCCESS) {
         return rc;
     }
 
@@ -579,17 +458,42 @@ ResponseStructContainer Ebyte_E34::receiveMessage(const uint8_t size) {
     rc.data        = malloc(size);
     rc.status.code = this->receiveStruct((uint8_t *)rc.data, size);
     this->cleanUARTBuffer();
-    if (rc.status.code != E32_SUCCESS) {
+    if (rc.status.code != E34_SUCCESS) {
         return rc;
     }
 
     return rc;
 }
 
+ResponseContainer Ebyte_E34::receiveInitialMessage(uint8_t size) {
+    ResponseContainer rc;
+    rc.status.code = E34_SUCCESS;
+    char    buff[size];
+    uint8_t len = this->serialDef.stream->readBytes(buff, size);
+    if (len != size) {
+        if (len == 0) {
+            rc.status.code = ERR_E34_NO_RESPONSE_FROM_DEVICE;
+        }
+        else {
+            rc.status.code = ERR_E34_DATA_SIZE_NOT_MATCH;
+        }
+        return rc;
+    }
+
+    rc.data = buff;
+
+    return rc;
+}
+
+
+/**
+ * @brief Sending
+ */
+
 ResponseStatus Ebyte_E34::sendMessage(const void * message, const uint8_t size) {
     ResponseStatus status;
     status.code = this->sendStruct((uint8_t *)message, size);
-    if (status.code != E32_SUCCESS) return status;
+    if (status.code != E34_SUCCESS) return status;
 
     return status;
 }
@@ -605,7 +509,7 @@ ResponseStatus Ebyte_E34::sendMessage(const String message) {
 
     ResponseStatus status;
     status.code = this->sendStruct((uint8_t *)&messageFixed, size);
-    if (status.code != E32_SUCCESS) return status;
+    if (status.code != E34_SUCCESS) return status;
 
     return status;
 }
@@ -622,9 +526,9 @@ ResponseStatus Ebyte_E34::sendBroadcastFixedMessage(byte CHAN, const String mess
 }
 
 typedef struct fixedStransmission {
-    byte          ADDH = 0;
-    byte          ADDL = 0;
-    byte          CHAN = 0;
+    byte ADDH = 0;
+    byte ADDL = 0;
+    byte CHAN = 0;
     unsigned char message[];
 } FixedStransmission;
 
@@ -647,7 +551,7 @@ ResponseStatus Ebyte_E34::sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, cons
 
     free(fixedStransmission);
 
-    if (status.code != E32_SUCCESS) return status;
+    if (status.code != E34_SUCCESS) return status;
 
     return status;
 }
@@ -656,25 +560,81 @@ ResponseStatus Ebyte_E34::sendBroadcastFixedMessage(byte CHAN, const void * mess
     return this->sendFixedMessage(0xFF, 0xFF, CHAN, message, size);
 }
 
-ResponseContainer Ebyte_E34::receiveInitialMessage(uint8_t size) {
-    ResponseContainer rc;
-    rc.status.code = E32_SUCCESS;
-    char    buff[size];
-    uint8_t len = this->serialDef.stream->readBytes(buff, size);
-    if (len != size) {
-        if (len == 0) {
-            rc.status.code = ERR_E32_NO_RESPONSE_FROM_DEVICE;
-        }
-        else {
-            rc.status.code = ERR_E32_DATA_SIZE_NOT_MATCH;
-        }
-        return rc;
+
+/**
+ * Method to send a chunk of data provided data is in a struct--my personal favorite as you
+ * need not parse or worry about sprintf() inability to handle floats
+ *
+ * TTP: put your structure definition into a .h file and include in both the sender and reciever
+ * sketches
+ *
+ * NOTE: of your sender and receiver MCU's are different (Teensy and Arduino) caution on the data
+ * types each handle ints floats differently
+ *
+ */
+Status Ebyte_E34::sendStruct(void * structureManaged, uint16_t size_) {
+    if (size_ > MAX_SIZE_TX_PACKET + 2) {
+        return ERR_E34_PACKET_TOO_BIG;
     }
 
-    rc.data = buff;
+    Status result = E34_SUCCESS;
 
-    return rc;
+    uint8_t len = this->serialDef.stream->write((uint8_t *)structureManaged, size_);
+    if (len != size_) {
+        DEBUG_PRINT(F("Send... len:"))
+        DEBUG_PRINT(len);
+        DEBUG_PRINT(F(" size:"))
+        DEBUG_PRINT(size_);
+        if (len == 0) {
+            result = ERR_E34_NO_RESPONSE_FROM_DEVICE;
+        }
+        else {
+            result = ERR_E34_DATA_SIZE_NOT_MATCH;
+        }
+    }
+    if (result != E34_SUCCESS) return result;
+
+    result = this->waitCompleteResponse(1000);
+    if (result != E34_SUCCESS) return result;
+    DEBUG_PRINT(F("Clear buffer..."))
+    this->cleanUARTBuffer();
+
+    DEBUG_PRINTLN(F("ok!"))
+
+    return result;
 }
+
+Status Ebyte_E34::receiveStruct(void * structureManaged, uint16_t size_) {
+    Status result = E34_SUCCESS;
+
+    uint8_t len = this->serialDef.stream->readBytes((uint8_t *)structureManaged, size_);
+
+    DEBUG_PRINT("Available buffer: ");
+    DEBUG_PRINT(len);
+    DEBUG_PRINT(" structure size: ");
+    DEBUG_PRINTLN(size_);
+
+    if (len != size_) {
+        if (len == 0) {
+            result = ERR_E34_NO_RESPONSE_FROM_DEVICE;
+        }
+        else {
+            result = ERR_E34_DATA_SIZE_NOT_MATCH;
+        }
+    }
+    if (result != E34_SUCCESS) return result;
+
+    result = this->waitCompleteResponse(1000);
+    if (result != E34_SUCCESS) return result;
+
+    return result;
+}
+
+
+/**
+ * @brief Print debug
+ *
+ */
 
 #ifdef EBYTE_DEBUG
 void Ebyte_E34::printParameters(struct Configuration * configuration) {
@@ -693,42 +653,42 @@ void Ebyte_E34::printParameters(struct Configuration * configuration) {
     DEBUG_PRINTLN(configuration->ADDL, DEC);
     DEBUG_PRINT(F("Chan : "));
     DEBUG_PRINT(configuration->CHAN, DEC);
-    DEBUG_PRINT(" -> ");
-    DEBUG_PRINTLN(configuration->getChannelDescription());
+    // DEBUG_PRINT(" -> ");
+    // DEBUG_PRINTLN(configuration->desc());
     DEBUG_PRINTLN(F(" "));
     DEBUG_PRINT(F("SpeedParityBit     : "));
     DEBUG_PRINT(configuration->SPED.uartParity, BIN);
     DEBUG_PRINT(" -> ");
-    DEBUG_PRINTLN(configuration->SPED.getUARTParityDescription());
+    DEBUG_PRINTLN(configuration->SPED.parity_desc());
     DEBUG_PRINT(F("SpeedUARTDatte  : "));
     DEBUG_PRINT(configuration->SPED.uartBaudRate, BIN);
     DEBUG_PRINT(" -> ");
-    DEBUG_PRINTLN(configuration->SPED.getUARTBaudRate());
+    DEBUG_PRINTLN(configuration->SPED.baudrate_desc());
     DEBUG_PRINT(F("SpeedAirDataRate   : "));
     DEBUG_PRINT(configuration->SPED.airDataRate, BIN);
     DEBUG_PRINT(" -> ");
-    DEBUG_PRINTLN(configuration->SPED.getAirDataRate());
+    DEBUG_PRINTLN(configuration->SPED.airrate_desc());
 
     DEBUG_PRINT(F("OptionTrans        : "));
     DEBUG_PRINT(configuration->OPTION.fixedTransmission, BIN);
     DEBUG_PRINT(" -> ");
-    DEBUG_PRINTLN(configuration->OPTION.getFixedTransmissionDescription());
+    DEBUG_PRINTLN(configuration->OPTION.fixed_tx_desc());
     DEBUG_PRINT(F("OptionPullup       : "));
     DEBUG_PRINT(configuration->OPTION.ioDriveMode, BIN);
     DEBUG_PRINT(" -> ");
-    DEBUG_PRINTLN(configuration->OPTION.getIODroveModeDescription());
+    DEBUG_PRINTLN(configuration->OPTION.io_drv_desc());
     DEBUG_PRINT(F("OptionWakeup       : "));
     DEBUG_PRINT(configuration->OPTION.wirelessWakeupTime, BIN);
     DEBUG_PRINT(" -> ");
-    DEBUG_PRINTLN(configuration->OPTION.getWirelessWakeUPTimeDescription());
+    DEBUG_PRINTLN(configuration->OPTION.wl_wake_desc());
     DEBUG_PRINT(F("OptionFEC          : "));
     DEBUG_PRINT(configuration->OPTION.fec, BIN);
     DEBUG_PRINT(" -> ");
-    DEBUG_PRINTLN(configuration->OPTION.getFECDescription());
+    DEBUG_PRINTLN(configuration->OPTION.fec_desc());
     DEBUG_PRINT(F("OptionPower        : "));
     DEBUG_PRINT(configuration->OPTION.transmissionPower, BIN);
     DEBUG_PRINT(" -> ");
-    DEBUG_PRINTLN(configuration->OPTION.getTransmissionPowerDescription());
+    DEBUG_PRINTLN(configuration->OPTION.txpower_desc());
 
     DEBUG_PRINTLN("----------------------------------------");
 }
