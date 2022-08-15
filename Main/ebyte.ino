@@ -11,11 +11,10 @@
 #define EBYTE_UART_BUFFER_SIZE 512
 #define EBYTE_UART_BUFFER_TMO 1000
 
-static LoRa_E32 ebyte(&EBYTE_SERIAL, EBYTE_PIN_AUX, EBYTE_PIN_M0, EBYTE_PIN_M1, EBYTE_BAUD);
+static Ebyte_E34 ebyte(&EBYTE_SERIAL, EBYTE_PIN_AUX, EBYTE_PIN_M0, EBYTE_PIN_M1, EBYTE_BAUD);
 
 #define EBYTE_PERIOD    600000
 static uint32_t ebyte_period_millis = 0;
-
 
 // ----------------------------------------------------------------------------
 void ebyte_setup() {
@@ -45,36 +44,3 @@ void ebyte_process() {
         term_println("\n ++++++++++++++++++++++++++++++++++++++++++++ \n");
     }
 }
-
-// void printParameters(struct Configuration configuration) {
-// 	term_println("----------------------------------------");
-
-// 	term_print(F("HEAD BIN: "));  term_print(configuration.HEAD, BIN);term_print(" ");term_print(configuration.HEAD, DEC);term_print(" ");term_println(configuration.HEAD, HEX);
-// 	term_println(F(" "));
-// 	term_print(F("AddH BIN: "));  term_println(configuration.ADDH, BIN);
-// 	term_print(F("AddL BIN: "));  term_println(configuration.ADDL, BIN);
-// 	term_print(F("Chan BIN: "));  term_print(configuration.CHAN, DEC); term_print(" -> "); term_println(configuration.getChannelDescription());
-// 	term_println(F(" "));
-// 	term_print(F("SpeedParityBit BIN    : "));  term_print(configuration.SPED.uartParity, BIN);term_print(" -> "); term_println(configuration.SPED.getUARTParityDescription());
-// 	term_print(F("SpeedUARTDataRate BIN : "));  term_print(configuration.SPED.uartBaudRate, BIN);term_print(" -> "); term_println(configuration.SPED.getUARTBaudRate());
-// 	term_print(F("SpeedAirDataRate BIN  : "));  term_print(configuration.SPED.airDataRate, BIN);term_print(" -> "); term_println(configuration.SPED.getAirDataRate());
-
-// 	term_print(F("OptionTrans BIN       : "));  term_print(configuration.OPTION.fixedTransmission, BIN);term_print(" -> "); term_println(configuration.OPTION.getFixedTransmissionDescription());
-// 	term_print(F("OptionPullup BIN      : "));  term_print(configuration.OPTION.ioDriveMode, BIN);term_print(" -> "); term_println(configuration.OPTION.getIODroveModeDescription());
-// 	term_print(F("OptionWakeup BIN      : "));  term_print(configuration.OPTION.wirelessWakeupTime, BIN);term_print(" -> "); term_println(configuration.OPTION.getWirelessWakeUPTimeDescription());
-// 	term_print(F("OptionFEC BIN         : "));  term_print(configuration.OPTION.fec, BIN);term_print(" -> "); term_println(configuration.OPTION.getFECDescription());
-// 	term_print(F("OptionPower BIN       : "));  term_print(configuration.OPTION.transmissionPower, BIN);term_print(" -> "); term_println(configuration.OPTION.getTransmissionPowerDescription());
-
-// 	term_println("----------------------------------------");
-
-// }
-
-// void printModuleInformation(struct ModuleInformation moduleInformation) {
-// 	term_println("----------------------------------------");
-// 	term_print(F("HEAD BIN: "));  term_print(moduleInformation.HEAD, BIN);term_print(" ");term_print(moduleInformation.HEAD, DEC);term_print(" ");term_println(moduleInformation.HEAD, HEX);
-
-// 	term_print(F("Freq.: "));  term_println(moduleInformation.frequency, HEX);
-// 	term_print(F("Version  : "));  term_println(moduleInformation.version, HEX);
-// 	term_print(F("Features : "));  term_println(moduleInformation.features, HEX);
-// 	term_println("----------------------------------------");
-// }
