@@ -1,5 +1,4 @@
 #include "global.h"
-#include <axp20x.h>
 
 
 #define AXP_LOG_PERIOD 60000 * 1

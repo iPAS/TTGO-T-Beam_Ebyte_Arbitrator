@@ -10,12 +10,10 @@ static bool do_axp_exist;  // T-Beam v0.7, early version, does't has AXP192 buil
 
 // ---------- Setup ----------
 void setup() {
-    oled_setup();   // OLED
-
     do_axp_exist = axp_setup();  // Init axp20x and return T-Beam Version
-
     led_setup(do_axp_exist);    // LED
-    gps_setup(do_axp_exist);    // GPS
+    cli_setup();
+
     ebyte_setup();  // Ebyte
 
     term_printf("[MAIN] System initial success @ version: %s", __GIT_SHA1_ID__);
@@ -23,10 +21,10 @@ void setup() {
 
 // ---------- Main ----------
 void loop() {
-    led_blinking_process();  // LED blinking
-    gps_decoding_process();  // Process GPS data
-    ebyte_process();  // Store & passing data between uC & Ebyte module
-
     if (do_axp_exist)
         axp_logging_process();  // Report energy usage on the node.
+    led_blinking_process();  // LED blinking
+    cli_interpretation_process();  // Interpret command-line
+
+    ebyte_process();  // Store & passing data between uC & Ebyte module
 }

@@ -2,9 +2,6 @@
 #define __HELPER_H__
 
 
-#include "global.h"
-
-
 #define SIZE_DEBUG_BUF 255
 
 #define term_print(arg)   { Serial.print(arg); }
