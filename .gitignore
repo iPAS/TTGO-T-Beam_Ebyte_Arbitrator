@@ -1,3 +1,4 @@
 Main/tmp
+Main/.tmp
 Main/.vscode/*
 !Main/.vscode/arduino.json
