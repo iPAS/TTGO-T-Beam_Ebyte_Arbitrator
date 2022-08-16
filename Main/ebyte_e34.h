@@ -61,6 +61,8 @@
 
 #define BROADCAST_ADDRESS 0xFF
 #define MAX_SIZE_TX_PACKET 29
+#define EBYTE_EXTRA_WAIT 40
+
 
 /**
  * @brief Class Ebyte E34 Interfacing
@@ -96,7 +98,7 @@ class Ebyte_E34 {
 
     ResponseContainer       receiveInitialMessage(const uint8_t size);
 
-    Status sendStruct(void * structureManaged, uint16_t size_);
+    Status sendStruct(const void * structureManaged, uint16_t size_);
     Status receiveStruct(void * structureManaged, uint16_t size_);
 
     int available();

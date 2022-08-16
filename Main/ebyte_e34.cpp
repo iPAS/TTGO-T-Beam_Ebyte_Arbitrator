@@ -36,9 +36,6 @@
 #include "ebyte_e34.h"
 
 
-#define EBYTE_EXTRA_WAIT 40
-
-
 /**
  * @brief Construct a new Ebyte_E34::Ebyte_E34 object
  */
@@ -258,8 +255,8 @@ void Ebyte_E34::cleanUARTBuffer() {
 
 /**
  * @brief Write command
- * 
- * @param cmd 
+ *
+ * @param cmd
  */
 void Ebyte_E34::writeProgramCommand(PROGRAM_COMMAND cmd) {
     uint8_t CMD[3] = {cmd, cmd, cmd};
@@ -271,8 +268,8 @@ void Ebyte_E34::writeProgramCommand(PROGRAM_COMMAND cmd) {
 
 /**
  * @brief Get configuration
- * 
- * @return ResponseStructContainer 
+ *
+ * @return ResponseStructContainer
  */
 ResponseStructContainer Ebyte_E34::getConfiguration() {
     ResponseStructContainer rc;
@@ -303,7 +300,7 @@ ResponseStructContainer Ebyte_E34::getConfiguration() {
     if (rc.status.code != E34_SUCCESS) return rc;
 
     if ((0xC0 != ((Configuration *)rc.data)->HEAD
-        ) && 
+        ) &&
         (0xC2 != ((Configuration *)rc.data)->HEAD
         )) {
         rc.status.code = ERR_E34_HEAD_NOT_RECOGNIZED;
@@ -385,7 +382,6 @@ ResponseStructContainer Ebyte_E34::getModuleInformation() {
     DEBUG_PRINTLN(moduleInformation->features, HEX);
 
     rc.data = moduleInformation;  // malloc(sizeof (moduleInformation));
-
     return rc;
 }
 
@@ -409,23 +405,72 @@ ResponseStatus Ebyte_E34::resetModule() {
     }
 
     status.code = this->setMode(prevMode);
-    if (status.code != E34_SUCCESS) return status;
-
     return status;
 }
 
 
 /**
  * @brief Check UART configuration for mode
- * 
- * @param mode 
- * @return RESPONSE_STATUS 
+ *
+ * @param mode
+ * @return RESPONSE_STATUS
  */
 RESPONSE_STATUS Ebyte_E34::checkUARTConfiguration(MODE_TYPE mode) {
     if (mode == MODE_3_PROGRAM && this->bpsRate != 9600) {
         return ERR_E34_WRONG_UART_CONFIG;
     }
     return E34_SUCCESS;
+}
+
+
+/**
+ * Method to send or receive a chunk of data provided in the struct.
+ * They are my personal favorites.
+ * You need not parse or worry about sprintf() inability to handle floats.
+ *
+ * Put your structure definition into a .h file and include in both the sender and reciever sketches.
+ */
+Status Ebyte_E34::sendStruct(const void * structureManaged, uint16_t size_of_st) {
+    if (size_of_st > MAX_SIZE_TX_PACKET + 2) {
+        return ERR_E34_PACKET_TOO_BIG;
+    }
+
+    Status result = E34_SUCCESS;
+    uint8_t len = this->serialDef.stream->write((uint8_t *)structureManaged, size_of_st);
+
+    DEBUG_PRINT(F("Send struct len:"));
+    DEBUG_PRINT(len);
+    DEBUG_PRINT(F(" size:"))
+    DEBUG_PRINTLN(size_of_st);
+
+    if (len != size_of_st) {
+        return (len == 0)? ERR_E34_NO_RESPONSE_FROM_DEVICE : ERR_E34_DATA_SIZE_NOT_MATCH;
+    }
+    result = this->waitCompleteResponse(1000);
+    if (result != E34_SUCCESS) return result;
+
+    DEBUG_PRINTLN(F("Clear Tx buf..."))
+    this->cleanUARTBuffer();
+
+    return result;
+}
+
+Status Ebyte_E34::receiveStruct(void * structureManaged, uint16_t size_of_st) {
+    Status result = E34_SUCCESS;
+    uint8_t len = this->serialDef.stream->readBytes((uint8_t *)structureManaged, size_of_st);
+
+    DEBUG_PRINT(F("Recv struct len:"));
+    DEBUG_PRINT(len);
+    DEBUG_PRINT(F(" size:"));
+    DEBUG_PRINTLN(size_of_st);
+
+    if (len != size_of_st) {
+        return (len == 0)? ERR_E34_NO_RESPONSE_FROM_DEVICE : ERR_E34_DATA_SIZE_NOT_MATCH;
+    }
+    result = this->waitCompleteResponse(1000);
+    if (result != E34_SUCCESS) return result;
+
+    return result;
 }
 
 
@@ -443,8 +488,6 @@ ResponseContainer Ebyte_E34::receiveMessage() {
         return rc;
     }
 
-    //	rc.data = message; // malloc(sizeof (moduleInformation));
-
     return rc;
 }
 
@@ -457,14 +500,11 @@ ResponseContainer Ebyte_E34::receiveMessageUntil(char delimiter) {
         return rc;
     }
 
-    //	rc.data = message; // malloc(sizeof (moduleInformation));
-
     return rc;
 }
 
 ResponseStructContainer Ebyte_E34::receiveMessage(const uint8_t size) {
     ResponseStructContainer rc;
-
     rc.data        = malloc(size);
     rc.status.code = this->receiveStruct((uint8_t *)rc.data, size);
     this->cleanUARTBuffer();
@@ -500,144 +540,44 @@ ResponseContainer Ebyte_E34::receiveInitialMessage(uint8_t size) {
  * @brief Sending
  */
 
-ResponseStatus Ebyte_E34::sendMessage(const void * message, const uint8_t size) {
-    ResponseStatus status;
-    status.code = this->sendStruct((uint8_t *)message, size);
-    if (status.code != E34_SUCCESS) return status;
-
-    return status;
-}
-
 ResponseStatus Ebyte_E34::sendMessage(const String message) {
-    DEBUG_PRINT(F("Send message: "));
-    DEBUG_PRINT(message);
-    byte size = message.length();  // sizeof(message.c_str())+1;
-    DEBUG_PRINT(F(" size: "));
-    DEBUG_PRINTLN(size);
-    char messageFixed[size];
-    memcpy(messageFixed, message.c_str(), size);
-
-    ResponseStatus status;
-    status.code = this->sendStruct((uint8_t *)&messageFixed, size);
-    if (status.code != E34_SUCCESS) return status;
-
-    return status;
+    return this->sendMessage(message.c_str(), message.length());
 }
 
 ResponseStatus Ebyte_E34::sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, const String message) {
-    byte size = message.length();
-    char messageFixed[size];
-    memcpy(messageFixed, message.c_str(), size);
-    return this->sendFixedMessage(ADDH, ADDL, CHAN, (uint8_t *)messageFixed, size);
+    return this->sendFixedMessage(ADDH, ADDL, CHAN, message.c_str(), message.length());
 }
 
 ResponseStatus Ebyte_E34::sendBroadcastFixedMessage(byte CHAN, const String message) {
     return this->sendFixedMessage(BROADCAST_ADDRESS, BROADCAST_ADDRESS, CHAN, message);
 }
 
-typedef struct fixedStransmission {
-    byte ADDH = 0;
-    byte ADDL = 0;
-    byte CHAN = 0;
-    unsigned char message[];
-} FixedStransmission;
 
-FixedStransmission * init_stack(int m) {
-    FixedStransmission * st = (FixedStransmission *)malloc(sizeof(FixedStransmission) + m * sizeof(int));
-    return st;
+ResponseStatus Ebyte_E34::sendMessage(const void * message, uint8_t size) {
+    ResponseStatus status;
+    status.code = this->sendStruct(message, size);
+    return status;
 }
 
 ResponseStatus Ebyte_E34::sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, const void * message, const uint8_t size) {
-    FixedStransmission * fixedStransmission = init_stack(size);
+    uint8_t message_size = sizeof(* FixedStransmission::message) * size;
+    uint8_t packet_size = sizeof(FixedStransmission) + message_size;  // sizeof(FixedStransmission) neglect ::message !
+    FixedStransmission * fixedPacket = (FixedStransmission *)malloc(packet_size);
 
-    fixedStransmission->ADDH = ADDH;
-    fixedStransmission->ADDL = ADDL;
-    fixedStransmission->CHAN = CHAN;
-
-    memcpy(fixedStransmission->message, (unsigned char *)message, size);
+    fixedPacket->ADDH = ADDH;
+    fixedPacket->ADDL = ADDL;
+    fixedPacket->CHAN = CHAN;
+    memcpy(fixedPacket->message, message, message_size);
 
     ResponseStatus status;
-    status.code = this->sendStruct((uint8_t *)fixedStransmission, size + 3);
-
-    free(fixedStransmission);
-
-    if (status.code != E34_SUCCESS) return status;
+    status.code = this->sendStruct(fixedPacket, packet_size);
+    free(fixedPacket);
 
     return status;
 }
 
 ResponseStatus Ebyte_E34::sendBroadcastFixedMessage(byte CHAN, const void * message, const uint8_t size) {
-    return this->sendFixedMessage(0xFF, 0xFF, CHAN, message, size);
-}
-
-
-/**
- * Method to send a chunk of data provided data is in a struct--my personal favorite as you
- * need not parse or worry about sprintf() inability to handle floats
- *
- * TTP: put your structure definition into a .h file and include in both the sender and reciever
- * sketches
- *
- * NOTE: of your sender and receiver MCU's are different (Teensy and Arduino) caution on the data
- * types each handle ints floats differently
- *
- */
-Status Ebyte_E34::sendStruct(void * structureManaged, uint16_t size_) {
-    if (size_ > MAX_SIZE_TX_PACKET + 2) {
-        return ERR_E34_PACKET_TOO_BIG;
-    }
-
-    Status result = E34_SUCCESS;
-
-    uint8_t len = this->serialDef.stream->write((uint8_t *)structureManaged, size_);
-    if (len != size_) {
-        DEBUG_PRINT(F("Send... len:"))
-        DEBUG_PRINT(len);
-        DEBUG_PRINT(F(" size:"))
-        DEBUG_PRINT(size_);
-        if (len == 0) {
-            result = ERR_E34_NO_RESPONSE_FROM_DEVICE;
-        }
-        else {
-            result = ERR_E34_DATA_SIZE_NOT_MATCH;
-        }
-    }
-    if (result != E34_SUCCESS) return result;
-
-    result = this->waitCompleteResponse(1000);
-    if (result != E34_SUCCESS) return result;
-    DEBUG_PRINT(F("Clear buffer..."))
-    this->cleanUARTBuffer();
-
-    DEBUG_PRINTLN(F("ok!"))
-
-    return result;
-}
-
-Status Ebyte_E34::receiveStruct(void * structureManaged, uint16_t size_) {
-    Status result = E34_SUCCESS;
-
-    uint8_t len = this->serialDef.stream->readBytes((uint8_t *)structureManaged, size_);
-
-    DEBUG_PRINT("Available buffer: ");
-    DEBUG_PRINT(len);
-    DEBUG_PRINT(" structure size: ");
-    DEBUG_PRINTLN(size_);
-
-    if (len != size_) {
-        if (len == 0) {
-            result = ERR_E34_NO_RESPONSE_FROM_DEVICE;
-        }
-        else {
-            result = ERR_E34_DATA_SIZE_NOT_MATCH;
-        }
-    }
-    if (result != E34_SUCCESS) return result;
-
-    result = this->waitCompleteResponse(1000);
-    if (result != E34_SUCCESS) return result;
-
-    return result;
+    return this->sendFixedMessage(BROADCAST_ADDRESS, BROADCAST_ADDRESS, CHAN, message, size);
 }
 
 

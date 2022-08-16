@@ -189,6 +189,13 @@ struct ResponseContainer {
     ResponseStatus status;
 };
 
+typedef struct {
+    byte ADDH = 0;
+    byte ADDL = 0;
+    byte CHAN = 0;
+    unsigned char message[];
+} FixedStransmission;
+
 #pragma pack(pop)
 
 
