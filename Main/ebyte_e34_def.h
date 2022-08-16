@@ -76,8 +76,8 @@ enum AIR_DATA_RATE {
 };
 
 enum TRANSMISSION_MODE {
-    TRANSPARENT_TRANSMISSION = 0b0,
-    FIXED_TRANSMISSION = 0b1
+    TXMODE_TRANS = 0b0,
+    TXMODE_FIXED = 0b1
 };
 
 enum IO_DRIVE_MODE {
@@ -102,10 +102,10 @@ enum IO_DRIVE_MODE {
 // };
 
 enum TRANSMISSION_POWER {
-    POWER_20    = 0b00,
-    POWER_14    = 0b01,
-    POWER_8     = 0b10,
-    POWER_2     = 0b11
+    TXPOWER_20    = 0b00,
+    TXPOWER_14    = 0b01,
+    TXPOWER_8     = 0b10,
+    TXPOWER_2     = 0b11
 };
 
 

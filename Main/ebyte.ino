@@ -23,16 +23,24 @@ void ebyte_setup() {
 
         ResponseStructContainer c;
         c = ebyte.getConfiguration();  // Get c.data from here
-        Configuration cfg = *((Configuration *)c.data);
-            // It's important get configuration pointer before all other operation.
-            // This is a memory transfer, NOT by-reference.
+        Configuration cfg = *((Configuration *)c.data); // This is a memory transfer, NOT by-reference.
+                                                        // It's important get configuration pointer before all other operation.
         c.close();  // Clean c.data that was allocated in ::getConfiguration()
 
         if (c.status.code == E34_SUCCESS){
             ebyte.printParameters(&cfg);
 
             // Setup the desired mode
-
+            cfg.ADDH = 0;
+            cfg.ADDL = 1;
+            cfg.CHAN = 1;
+            cfg.OPTION.transmissionPower = TXPOWER_20;
+            cfg.OPTION.ioDriveMode = IO_PUSH_PULL;
+            cfg.OPTION.fixedTransmission = TXMODE_TRANS;
+            cfg.SPED.airDataRate = AIR_DATA_RATE_2M;
+            cfg.SPED.uartBaudRate = UART_BPS_115200;
+            cfg.SPED.uartParity = UART_PARITY_8N1;
+            ebyte.setConfiguration(cfg);
         }
         else {
             term_println(c.status.desc());  // Description of code
