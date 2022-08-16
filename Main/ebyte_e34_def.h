@@ -168,8 +168,8 @@ struct Option {
     byte   ioDriveMode : 1;         // bit 6
     String io_drv_desc() { 
         switch (this->ioDriveMode) {
-            case 0:     return F("AUX=Open-Coll");
-            case 1:     return F("AUX=Push-Pull");
+            case 0:     return F("AUX Open-Collector");
+            case 1:     return F("AUX Push-Pull");
             default:    return F("N/A");
         }
     }

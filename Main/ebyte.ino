@@ -1,10 +1,20 @@
 #include "global.h"
 
 
+// As a flow-controller, config
+#define computer        EBYTE_FC_SERIAL
+#define EBYTE_FC_SERIAL Serial1
+#define EBYTE_FC_BAUD   115200
+#define EBYTE_FC_PIN_RX 15
+#define EBYTE_FC_PIN_TX 12
+#define EBYTE_FC_RX_BUFFER_SIZE 512
+#define EBYTE_FC_UART_TMO 1000
+
+// Ebyte config
 #define EBYTE_SERIAL    Serial2
 #define EBYTE_BAUD      115200
-#define EBYTE_PIN_E34_RX    2   // uC TX
-#define EBYTE_PIN_E34_TX    13  // uC RX
+#define EBYTE_PIN_E34_RX 2   // uC TX
+#define EBYTE_PIN_E34_TX 13  // uC RX
 #define EBYTE_PIN_AUX   34
 #define EBYTE_PIN_M0    25
 #define EBYTE_PIN_M1    14
@@ -13,11 +23,17 @@
 
 static Ebyte_E34 ebyte(&EBYTE_SERIAL, EBYTE_PIN_AUX, EBYTE_PIN_M0, EBYTE_PIN_M1, EBYTE_PIN_E34_RX, EBYTE_PIN_E34_TX);
 
-#define EBYTE_PERIOD 600000
-static uint32_t ebyte_period_millis = 0;
-
 // ----------------------------------------------------------------------------
 void ebyte_setup() {
+    // Setup as a modem
+    EBYTE_FC_SERIAL.begin(EBYTE_FC_BAUD, SERIAL_8N1, EBYTE_FC_PIN_RX, EBYTE_FC_PIN_TX);
+    EBYTE_FC_SERIAL.setRxBufferSize(EBYTE_FC_RX_BUFFER_SIZE);
+    EBYTE_FC_SERIAL.setTimeout(EBYTE_FC_UART_TMO);
+    while (!EBYTE_FC_SERIAL) taskYIELD();  // Yield
+    while (EBYTE_FC_SERIAL.available())
+        EBYTE_FC_SERIAL.read();  // Clear buffer
+
+    // Ebyte setup
     if (ebyte.begin()) {  // Start communication with Ebyte module: config & etc.
         term_println("\n[EBYTE] initialized successfully");
 
@@ -41,6 +57,7 @@ void ebyte_setup() {
             cfg.SPED.uartBaudRate = UART_BPS_115200;
             cfg.SPED.uartParity = UART_PARITY_8N1;
             ebyte.setConfiguration(cfg);
+            // ebyte.setConfiguration(cfg, WRITE_CFG_PWR_DWN_SAVE);  // XXX: Save either
         }
         else {
             term_println(c.status.desc());  // Description of code
@@ -53,9 +70,11 @@ void ebyte_setup() {
 
 // ----------------------------------------------------------------------------
 void ebyte_process() {
-    if (millis() > ebyte_period_millis) {
-        term_println("\n[EBYTE] >>>");
+    if (computer.available()) {
+        
+    }
 
-        ebyte_period_millis = millis() + EBYTE_PERIOD;  // Reset timeout
+    if (ebyte.available()) {
+
     }
 }

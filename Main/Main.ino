@@ -28,4 +28,6 @@ void loop() {
     cli_interpretation_process();  // Interpret command-line
 
     ebyte_process();  // Store & passing data between uC & Ebyte module
+
+    taskYIELD();
 }

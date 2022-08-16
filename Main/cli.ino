@@ -2,6 +2,9 @@
 
 
 #define CLI_CONSOLE Serial
+#define CLI_BAUD    115200
+#define CLI_PIN_RX  3
+#define CLI_PIN_TX  1
 
 SimpleCLI cli;
 Command cmd_help;
@@ -30,9 +33,10 @@ void on_cmd_help(cmd *c) {
 
 // ----------------------------------------------------------------------------
 void cli_setup() {
-    CLI_CONSOLE.begin(115200);
-    while (!Serial)
-        vTaskDelay(1);  // Yield
+    CLI_CONSOLE.begin(CLI_BAUD, SERIAL_8N1, CLI_PIN_RX, CLI_PIN_TX);
+    while (!CLI_CONSOLE) taskYIELD();  // Yield
+    while (CLI_CONSOLE.available())
+        CLI_CONSOLE.read();  // Clear buffer
 
     cli.setOnError(&on_error_callback); // Set error Callback
 
