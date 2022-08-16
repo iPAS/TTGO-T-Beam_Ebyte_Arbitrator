@@ -2,7 +2,7 @@
 
 
 #define EBYTE_SERIAL    Serial2
-#define EBYTE_BAUD      SERIAL_9600
+#define EBYTE_BAUD      115200
 #define EBYTE_PIN_E34_RX    2   // uC TX
 #define EBYTE_PIN_E34_TX    13  // uC RX
 #define EBYTE_PIN_AUX   34
@@ -25,21 +25,24 @@ void ebyte_setup() {
     //     vTaskDelay(1);  // Yield
     // while (EBYTE_SERIAL.available())
     //     EBYTE_SERIAL.read();  // Clear buffer
-    ebyte.begin();  // Start communication with Ebyte module: config & etc.
+    if (!ebyte.begin()) {  // Start communication with Ebyte module: config & etc.
+        term_printf("[EBYTE] Init failed!");
+    }
 }
 
 // ----------------------------------------------------------------------------
 void ebyte_process() {
     if (millis() > ebyte_period_millis) {
+        term_println("\n[EBYTE] >>>");
         ResponseStructContainer c;
         c = ebyte.getConfiguration();
         Configuration configuration = *((Configuration *)c.data);  // It's important get configuration pointer before all other operation
+
         term_println(c.status.desc());  // Description of code
         term_println(c.status.code);  // 1 if Success
         // printParameters(configuration);
 
         c.close();
         ebyte_period_millis = millis() + EBYTE_PERIOD;  // Reset timeout
-        term_println("\n ++++++++++++++++++++++++++++++++++++++++++++ \n");
     }
 }

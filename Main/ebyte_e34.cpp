@@ -36,9 +36,11 @@
 #include "ebyte_e34.h"
 
 
+#define EBYTE_EXTRA_WAIT 40
+
+
 /**
  * @brief Construct a new Ebyte_E34::Ebyte_E34 object
- *
  */
 Ebyte_E34::Ebyte_E34(HardwareSerial * serial, byte auxPin, byte m0Pin, byte m1Pin, byte rxPin, byte txPin) {
     this->hs = serial;
@@ -54,19 +56,15 @@ Ebyte_E34::Ebyte_E34(HardwareSerial * serial, byte auxPin, byte m0Pin, byte m1Pi
 
 /**
  * @brief Begin the operation. Should be in the setup().
- *
  */
 bool Ebyte_E34::begin() {
-    DEBUG_PRINT("RX MIC ---> ");
-    DEBUG_PRINTLN(this->txPin);
-    DEBUG_PRINT("TX MIC ---> ");
-    DEBUG_PRINTLN(this->rxPin);
-    DEBUG_PRINT("AUX ---> ");
-    DEBUG_PRINTLN(this->auxPin);
-    DEBUG_PRINT("M0 ---> ");
-    DEBUG_PRINTLN(this->m0Pin);
-    DEBUG_PRINT("M1 ---> ");
-    DEBUG_PRINTLN(this->m1Pin);
+    DEBUG_PRINTLN("[EBYTE] begin");
+
+    DEBUG_PRINT("uC RX to TX ---> "); DEBUG_PRINTLN(this->txPin);
+    DEBUG_PRINT("uC TX to RX ---> "); DEBUG_PRINTLN(this->rxPin);
+    DEBUG_PRINT("AUX ---> ");         DEBUG_PRINTLN(this->auxPin);
+    DEBUG_PRINT("M0 ---> ");          DEBUG_PRINTLN(this->m0Pin);
+    DEBUG_PRINT("M1 ---> ");          DEBUG_PRINTLN(this->m1Pin);
 
     if (this->auxPin != -1) {
         pinMode(this->auxPin, INPUT);
@@ -74,19 +72,16 @@ bool Ebyte_E34::begin() {
     }
     if (this->m0Pin != -1) {
         pinMode(this->m0Pin, OUTPUT);
-        DEBUG_PRINTLN("Init M0 pin!");
         digitalWrite(this->m0Pin, HIGH);
+        DEBUG_PRINTLN("Init M0 pin!");
     }
     if (this->m1Pin != -1) {
         pinMode(this->m1Pin, OUTPUT);
-        DEBUG_PRINTLN("Init M1 pin!");
         digitalWrite(this->m1Pin, HIGH);
+        DEBUG_PRINTLN("Init M1 pin!");
     }
 
-    DEBUG_PRINTLN("Begin Ebyte");
     if (this->hs) {
-        DEBUG_PRINTLN("Begin Hardware Serial");
-
         if (this->txPin != -1 && this->rxPin != -1) {
             this->serialDef.begin(*this->hs, this->bpsRate, this->serialConfig,
                                   this->txPin,  // To RX of uC
@@ -109,91 +104,25 @@ bool Ebyte_E34::begin() {
 
 
 /**
- * Utility method to wait until module does not transmit.
- * The timeout is provided to avoid an infinite loop
+ * @brief Get MODE
+ *
+ * @return MODE_TYPE
  */
-Status Ebyte_E34::waitCompleteResponse(unsigned long timeout, unsigned int waitNoAux) {
-    Status result = E34_SUCCESS;
-    unsigned long t_prev = millis();
-
-    // if AUX pin was supplied and look for HIGH state
-    // note you can omit using AUX if no pins are available, but you will have to use delay() to let module finish
-    if (this->auxPin != -1) {
-        while (digitalRead(this->auxPin) == LOW) {
-            unsigned long t = millis();  // It will be overflow about every 50 days.
-
-            if (((t >= t_prev) && ((t - t_prev) > timeout)  // Normal count up
-                ) ||
-                ((t < t_prev)  && (((unsigned long)(0-1) - (t_prev-t) + 1) > timeout)  // Overflow
-                )) {
-                result = ERR_E34_TIMEOUT;
-                DEBUG_PRINTLN("Timeout error!");
-                return result;
-            }
-        }
-        DEBUG_PRINTLN("AUX HIGH!");
-    }
-    else {
-        // If you can't use aux pin, use 4K7 pullup with Arduino.
-        // You may need to adjust this value if transmissions fail.
-        this->managedDelay(waitNoAux);
-        DEBUG_PRINTLN(F("Wait no AUX pin!"));
-    }
-
-    // As per data sheet, control after aux goes high is 2ms; so delay for at least that long
-    this->managedDelay(2);
-    DEBUG_PRINTLN(F("Complete!"));
-    return result;
+MODE_TYPE Ebyte_E34::getMode() {
+    return this->mode;
 }
 
 
 /**
- * Delay() in a library is not a good idea as it can stop interrupts.
- * Just poll internal time until timeout is reached.
- */
-void Ebyte_E34::managedDelay(unsigned long timeout) {
-    unsigned long t_prev = millis();  // It will be overflow about every 50 days.
-    unsigned long t = t_prev;
-
-    while (1) {
-        if (((t >= t_prev) && ((t - t_prev) > timeout)  // Normal count up
-            ) ||
-            ((t < t_prev)  && (((unsigned long)(0-1) - (t_prev-t) + 1) > timeout)  // Overflow
-            )) {
-            break;
-        }
-
-        taskYIELD();
-    }
-}
-
-
-/**
- * Method to indicate availability & to clear the buffer
- */
-int Ebyte_E34::available() {
-    return this->serialDef.stream->available();
-}
-
-void Ebyte_E34::flush() {
-    this->serialDef.stream->flush();
-}
-
-void Ebyte_E34::cleanUARTBuffer() {
-    while (this->available()) {
-        this->serialDef.stream->read();
-    }
-}
-
-
-/**
- * Method to set the mode (program, normal, etc.)
+ * @brief Set MODE
+ *
+ * @param mode
+ * @return Status
  */
 Status Ebyte_E34::setMode(MODE_TYPE mode) {
     // Datasheet claims module needs some extra time after mode setting (2ms).
     // However, most of my projects uses 10 ms, but 40ms is safer.
-
-    this->managedDelay(2);
+    this->managedDelay(EBYTE_EXTRA_WAIT);
 
     if (this->m0Pin == -1 && this->m1Pin == -1) {
         DEBUG_PRINTLN(F(
@@ -227,11 +156,12 @@ Status Ebyte_E34::setMode(MODE_TYPE mode) {
             default: return ERR_E34_INVALID_PARAM;
         }
     }
-    // data sheet says 2ms later control is returned, let's give just a bit more time
-    // these modules can take time to activate pins
-    this->managedDelay(40);
 
-    // wait until aux pin goes back low
+    // The datasheet says after 2ms later, control is returned.
+    // Let's give just a bit more time for this module to be active.
+    this->managedDelay(EBYTE_EXTRA_WAIT);
+
+    // Wait until AUX pin goes back to low.
     Status res = this->waitCompleteResponse(1000);
 
     if (res == E34_SUCCESS) {
@@ -241,17 +171,109 @@ Status Ebyte_E34::setMode(MODE_TYPE mode) {
     return res;
 }
 
-MODE_TYPE Ebyte_E34::getMode() {
-    return this->mode;
+
+/**
+ * @brief Check whether timeout or not
+ */
+static bool is_timeout(unsigned long t, unsigned long t_prev, unsigned long timeout) {
+    return (((t >= t_prev) && ((t - t_prev) >= timeout)  // Normal count up
+            ) ||
+            ((t < t_prev)  && (((unsigned long)(0-1) - (t_prev-t) + 1) >= timeout)  // Overflow
+            ))? true : false;
 }
 
+
+/**
+ * Delay() in a library is not a good idea as it can stop interrupts.
+ * Just poll internal time until timeout is reached.
+ */
+void Ebyte_E34::managedDelay(unsigned long timeout) {
+    unsigned long t_prev = millis();  // It will be overflow about every 50 days.
+
+    while (1) {
+        unsigned long t = millis();
+
+        if (is_timeout(t, t_prev, timeout)) {
+            break;
+        }
+
+        taskYIELD();
+    }
+}
+
+
+/**
+ * Utility method to wait until module does not transmit.
+ * The timeout is provided to avoid an infinite loop
+ */
+Status Ebyte_E34::waitCompleteResponse(unsigned long timeout, unsigned int waitNoAux) {
+    Status result = E34_SUCCESS;
+    unsigned long t_prev = millis();
+
+    // If AUX pin was supplied, and look for HIGH state.
+    // XXX: you can omit using AUX if no pins are available, but you will have to use delay() to let module finish
+    if (this->auxPin != -1) {
+        while (digitalRead(this->auxPin) == LOW) {
+            unsigned long t = millis();  // It will be overflow about every 50 days.
+
+            if (is_timeout(t, t_prev, timeout)) {
+                result = ERR_E34_TIMEOUT;
+                DEBUG_PRINTLN("Wait response: timeout error!");
+                return result;
+            }
+        }
+        DEBUG_PRINTLN("AUX HIGH!");
+    }
+    else {
+        // If you can't use aux pin, use 4K7 pullup with Arduino.
+        // You may need to adjust this value if transmissions fail.
+        this->managedDelay(waitNoAux);
+        DEBUG_PRINTLN(F("Wait response: no AUX pin -- just wait.."));
+    }
+
+    // As per data sheet, control after aux goes high is 2ms; so delay for at least that long
+    this->managedDelay(EBYTE_EXTRA_WAIT);
+    DEBUG_PRINTLN(F("Wait response: complete!"));
+    return result;
+}
+
+
+/**
+ * Method to indicate availability & to clear the buffer
+ */
+int Ebyte_E34::available() {
+    return this->serialDef.stream->available();
+}
+
+void Ebyte_E34::flush() {
+    this->serialDef.stream->flush();
+}
+
+void Ebyte_E34::cleanUARTBuffer() {
+    while (this->available()) {
+        this->serialDef.stream->read();
+    }
+}
+
+
+/**
+ * @brief Write command
+ * 
+ * @param cmd 
+ */
 void Ebyte_E34::writeProgramCommand(PROGRAM_COMMAND cmd) {
     uint8_t CMD[3] = {cmd, cmd, cmd};
     // uint8_t size =
     this->serialDef.stream->write(CMD, 3);
-    this->managedDelay(50);  // need ti check
+    this->managedDelay(EBYTE_EXTRA_WAIT);
 }
 
+
+/**
+ * @brief Get configuration
+ * 
+ * @return ResponseStructContainer 
+ */
 ResponseStructContainer Ebyte_E34::getConfiguration() {
     ResponseStructContainer rc;
 
@@ -268,39 +290,26 @@ ResponseStructContainer Ebyte_E34::getConfiguration() {
     rc.data        = malloc(sizeof(Configuration));
     rc.status.code = this->receiveStruct((uint8_t *)rc.data, sizeof(Configuration));
 
-    #ifdef EBYTE_DEBUG
-    this->printParameters((Configuration *)rc.data);
-    #endif
-
     if (rc.status.code != E34_SUCCESS) {
         this->setMode(prevMode);
         return rc;
     }
 
-    DEBUG_PRINTLN("----------------------------------------");
-    DEBUG_PRINT(F("HEAD BIN INSIDE: "));
-    DEBUG_PRINT(((Configuration *)rc.data)->HEAD, BIN);
-    DEBUG_PRINT(" ");
-    DEBUG_PRINT(((Configuration *)rc.data)->HEAD, DEC);
-    DEBUG_PRINT(" ");
-    DEBUG_PRINTLN(((Configuration *)rc.data)->HEAD, HEX);
-    DEBUG_PRINTLN("----------------------------------------");
+    #ifdef EBYTE_DEBUG
+    this->printHead(((Configuration *)rc.data)->HEAD);
+    #endif
 
     rc.status.code = this->setMode(prevMode);
     if (rc.status.code != E34_SUCCESS) return rc;
 
-    if (0xC0 != ((Configuration *)rc.data)->HEAD && 0xC2 != ((Configuration *)rc.data)->HEAD) {
+    if ((0xC0 != ((Configuration *)rc.data)->HEAD
+        ) && 
+        (0xC2 != ((Configuration *)rc.data)->HEAD
+        )) {
         rc.status.code = ERR_E34_HEAD_NOT_RECOGNIZED;
     }
 
     return rc;
-}
-
-RESPONSE_STATUS Ebyte_E34::checkUARTConfiguration(MODE_TYPE mode) {
-    if (mode == MODE_3_PROGRAM && this->bpsRate != 9600) {
-        return ERR_E34_WRONG_UART_CONFIG;
-    }
-    return E34_SUCCESS;
 }
 
 ResponseStatus Ebyte_E34::setConfiguration(Configuration configuration, PROGRAM_COMMAND saveType) {
@@ -324,19 +333,14 @@ ResponseStatus Ebyte_E34::setConfiguration(Configuration configuration, PROGRAM_
         return rc;
     }
 
-    DEBUG_PRINTLN("----------------------------------------");
-    DEBUG_PRINT(F("HEAD BIN INSIDE: "));
-    DEBUG_PRINT(configuration.HEAD, BIN);
-    DEBUG_PRINT(" ");
-    DEBUG_PRINT(configuration.HEAD, DEC);
-    DEBUG_PRINT(" ");
-    DEBUG_PRINTLN(configuration.HEAD, HEX);
-    DEBUG_PRINTLN("----------------------------------------");
+    #ifdef EBYTE_DEBUG
+    this->printHead(configuration.HEAD);
+    #endif
 
     rc.code = this->setMode(prevMode);
     if (rc.code != E34_SUCCESS) return rc;
 
-    if (0xC0 != configuration.HEAD && 0xC2 != configuration.HEAD) {
+    if ((0xC0 != configuration.HEAD) && (0xC2 != configuration.HEAD)) {
         rc.code = ERR_E34_HEAD_NOT_RECOGNIZED;
     }
 
@@ -366,27 +370,19 @@ ResponseStructContainer Ebyte_E34::getModuleInformation() {
     rc.status.code = this->setMode(prevMode);
     if (rc.status.code != E34_SUCCESS) return rc;
 
-    //	this->printParameters(*configuration);
-
     if (0xC3 != moduleInformation->HEAD) {
         rc.status.code = ERR_E34_HEAD_NOT_RECOGNIZED;
     }
 
-    DEBUG_PRINTLN("----------------------------------------");
-    DEBUG_PRINT(F("HEAD BIN INSIDE: "));
-    DEBUG_PRINT(moduleInformation->HEAD, BIN);
-    DEBUG_PRINT(" ");
-    DEBUG_PRINT(moduleInformation->HEAD, DEC);
-    DEBUG_PRINT(" ");
-    DEBUG_PRINTLN(moduleInformation->HEAD, HEX);
-
+    #ifdef EBYTE_DEBUG
+    this->printHead(moduleInformation->HEAD);
+    #endif
     DEBUG_PRINT(F("Freq.: "));
     DEBUG_PRINTLN(moduleInformation->frequency, HEX);
     DEBUG_PRINT(F("Version  : "));
     DEBUG_PRINTLN(moduleInformation->version, HEX);
     DEBUG_PRINT(F("Features : "));
     DEBUG_PRINTLN(moduleInformation->features, HEX);
-    DEBUG_PRINTLN("----------------------------------------");
 
     rc.data = moduleInformation;  // malloc(sizeof (moduleInformation));
 
@@ -420,8 +416,22 @@ ResponseStatus Ebyte_E34::resetModule() {
 
 
 /**
- * @brief Receiving
+ * @brief Check UART configuration for mode
  * 
+ * @param mode 
+ * @return RESPONSE_STATUS 
+ */
+RESPONSE_STATUS Ebyte_E34::checkUARTConfiguration(MODE_TYPE mode) {
+    if (mode == MODE_3_PROGRAM && this->bpsRate != 9600) {
+        return ERR_E34_WRONG_UART_CONFIG;
+    }
+    return E34_SUCCESS;
+}
+
+
+/**
+ * @brief Receiving
+ *
  */
 
 ResponseContainer Ebyte_E34::receiveMessage() {
@@ -637,15 +647,26 @@ Status Ebyte_E34::receiveStruct(void * structureManaged, uint16_t size_) {
  */
 
 #ifdef EBYTE_DEBUG
-void Ebyte_E34::printParameters(struct Configuration * configuration) {
-    DEBUG_PRINTLN("----------------------------------------");
-
+void Ebyte_E34::printHead(byte HEAD) {
     DEBUG_PRINT(F("HEAD : "));
-    DEBUG_PRINT(configuration->HEAD, BIN);
+    DEBUG_PRINT(HEAD, BIN);
     DEBUG_PRINT(" ");
-    DEBUG_PRINT(configuration->HEAD, DEC);
+    DEBUG_PRINT(HEAD, DEC);
     DEBUG_PRINT(" ");
-    DEBUG_PRINTLN(configuration->HEAD, HEX);
+    DEBUG_PRINTLN(HEAD, HEX);
+}
+
+
+void Ebyte_E34::printParameters(struct Configuration * configuration) {
+    DEBUG_PRINTLN("\n--- Configuration ---");
+
+    this->printHead(configuration->HEAD);
+    // DEBUG_PRINT(F("HEAD : "));
+    // DEBUG_PRINT(configuration->HEAD, BIN);
+    // DEBUG_PRINT(" ");
+    // DEBUG_PRINT(configuration->HEAD, DEC);
+    // DEBUG_PRINT(" ");
+    // DEBUG_PRINTLN(configuration->HEAD, HEX);
     DEBUG_PRINTLN(F(" "));
     DEBUG_PRINT(F("AddH : "));
     DEBUG_PRINTLN(configuration->ADDH, DEC);
