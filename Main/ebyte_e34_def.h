@@ -113,30 +113,75 @@ enum TRANSMISSION_POWER {
 
 struct Speed {
     uint8_t airDataRate : 3;    // bit 0-2
-    String airrate_desc() { return F("N/A!"); }
+    String airrate_desc() { 
+        switch (this->airDataRate) {
+            case 0:     return F("250kbps");
+            case 1:     return F("1Mbps");
+            case 2:     return F("2Mbps");
+            case 3:     return F("2Mbps");
+            default:    return F("N/A");
+        }
+    }
 
     uint8_t uartBaudRate : 3;   // bit 3-5
-    String baudrate_desc() { return F("N/A!"); }
+    String baudrate_desc() { 
+        switch (this->uartBaudRate) {
+            case 0:     return F("1200bps");
+            case 1:     return F("2400bps");
+            case 2:     return F("4800bps");
+            case 3:     return F("9600bps");
+            case 4:     return F("19200bps");
+            case 5:     return F("38400bps");
+            case 6:     return F("57600bps");
+            case 7:     return F("115200bps");
+            default:    return F("N/A");
+        }
+    }
 
     uint8_t uartParity : 2;     // bit 6-7
-    String parity_desc() { return F("N/A!"); }
+    String parity_desc() { 
+        switch (this->uartParity) {
+            case 0:     return F("8N1");
+            case 1:     return F("8O1");
+            case 2:     return F("8E1");
+            case 3:     return F("8N1");
+            default:    return F("N/A");
+        }
+    }
 };
 
 struct Option {
     byte   transmissionPower : 2;   // bit 0-1
-    String txpower_desc() { return F("N/A!"); }
+    String txpower_desc() { 
+        switch (this->transmissionPower) {
+            case 0:     return F("20dBm");
+            case 1:     return F("14dBm");
+            case 2:     return F("8dBm");
+            case 3:     return F("2dBm");
+            default:    return F("N/A");
+        }
+    }
 
-    byte   fec : 1;                 // bit 2
-    String fec_desc() { return F("N/A!"); }
-
-    byte   wirelessWakeupTime : 3;  // bit 3-5
-    String wl_wake_desc() { return F("N/A!"); }
+    byte   fec : 1;                 // bit 2 -- Reserevd in E34
+    byte   wirelessWakeupTime : 3;  // bit 3-5 -- Reserved in E34
 
     byte   ioDriveMode : 1;         // bit 6
-    String io_drv_desc() { return F("N/A!"); }
+    String io_drv_desc() { 
+        switch (this->ioDriveMode) {
+            case 0:     return F("AUX=Open-Coll");
+            case 1:     return F("AUX=Push-Pull");
+            default:    return F("N/A");
+        }
+    }
 
     byte   fixedTransmission : 1;   // bit 7
-    String fixed_tx_desc() { return F("N/A!"); }
+    String fixed_tx_desc() { 
+        switch (this->fixedTransmission) {
+            case 0:     return F("Trans");
+            case 1:     return F("Fixed");
+            default:    return F("N/A");
+        }
+    }
 };
 
 struct Configuration {
@@ -159,20 +204,20 @@ struct ResponseStatus {
     Status code;
     String desc() {
         switch (this->code) {
-            case E34_SUCCESS: return F("Success"); break;
-            case ERR_E34_UNKNOWN: return F("Unknown"); break;
-            case ERR_E34_NOT_SUPPORT: return F("Not support!"); break;
-            case ERR_E34_NOT_IMPLEMENT: return F("Not implement"); break;
-            case ERR_E34_NOT_INITIAL: return F("Not initial!"); break;
-            case ERR_E34_INVALID_PARAM: return F("Invalid param!"); break;
-            case ERR_E34_DATA_SIZE_NOT_MATCH: return F("Data size not match!"); break;
-            case ERR_E34_BUF_TOO_SMALL: return F("Buff too small!"); break;
-            case ERR_E34_TIMEOUT: return F("Timeout!!"); break;
-            case ERR_E34_HARDWARE: return F("Hardware error!"); break;
-            case ERR_E34_HEAD_NOT_RECOGNIZED: return F("Save mode returned not recognized!"); break;
-            case ERR_E34_NO_RESPONSE_FROM_DEVICE: return F("No response from device! (Check wiring)"); break;
-            case ERR_E34_WRONG_UART_CONFIG: return F("Wrong UART configuration! (BPS must be 9600 for configuration)"); break;
-            case ERR_E34_PACKET_TOO_BIG: return F("The device support only 58byte of data transmission!"); break;
+            case E34_SUCCESS:           return F("Success");
+            case ERR_E34_UNKNOWN:       return F("Unknown");
+            case ERR_E34_NOT_SUPPORT:   return F("Not support!");
+            case ERR_E34_NOT_IMPLEMENT: return F("Not implement");
+            case ERR_E34_NOT_INITIAL:   return F("Not initial!");
+            case ERR_E34_INVALID_PARAM: return F("Invalid param!");
+            case ERR_E34_DATA_SIZE_NOT_MATCH: return F("Data size not match!");
+            case ERR_E34_BUF_TOO_SMALL: return F("Buff too small!");
+            case ERR_E34_TIMEOUT:       return F("Timeout!!");
+            case ERR_E34_HARDWARE:      return F("Hardware error!");
+            case ERR_E34_HEAD_NOT_RECOGNIZED:   return F("Save mode returned not recognized!");
+            case ERR_E34_NO_RESPONSE_FROM_DEVICE: return F("No response from device! (Check wiring)");
+            case ERR_E34_WRONG_UART_CONFIG:     return F("Wrong UART configuration! (BPS must be 9600 for configuration)");
+            case ERR_E34_PACKET_TOO_BIG:        return F("The device support only 58byte of data transmission!");
             default: return F("Invalid status!");
         }
     }

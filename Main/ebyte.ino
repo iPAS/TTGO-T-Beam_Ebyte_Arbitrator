@@ -26,15 +26,17 @@ void ebyte_setup() {
         Configuration cfg = *((Configuration *)c.data);
             // It's important get configuration pointer before all other operation.
             // This is a memory transfer, NOT by-reference.
+        c.close();  // Clean c.data that was allocated in ::getConfiguration()
 
         if (c.status.code == E34_SUCCESS){
             ebyte.printParameters(&cfg);
+
+            // Setup the desired mode
+
         }
         else {
             term_println(c.status.desc());  // Description of code
         }
-
-        c.close();  // Clean c.data that was allocated in ::getConfiguration()
     }
     else {
         term_printf("[EBYTE] Initialized fail!");
