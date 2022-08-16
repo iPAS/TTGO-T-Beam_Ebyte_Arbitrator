@@ -1,6 +1,8 @@
 #include "global.h"
 
 
+#define CLI_CONSOLE Serial
+
 SimpleCLI cli;
 Command cmd_help;
 
@@ -28,7 +30,7 @@ void on_cmd_help(cmd *c) {
 
 // ----------------------------------------------------------------------------
 void cli_setup() {
-    Serial.begin(115200);
+    CLI_CONSOLE.begin(115200);
     while (!Serial)
         vTaskDelay(1);  // Yield
 
@@ -41,9 +43,9 @@ void cli_setup() {
 void cli_interpretation_process() {
     static String line = "";
 
-    while (Serial.available()) {
-        if (Serial.peek() == '\n'  ||  Serial.peek() == '\r') {
-            Serial.read();  // Just ignore
+    while (CLI_CONSOLE.available()) {
+        if (CLI_CONSOLE.peek() == '\n'  ||  CLI_CONSOLE.peek() == '\r') {
+            CLI_CONSOLE.read();  // Just ignore
             if (line.length() > 0) {
                 cli.parse(line);  // Parse the user input into the CLI
                 line = "";
@@ -51,7 +53,7 @@ void cli_interpretation_process() {
             }
         }
         else {
-            line += (char)Serial.read();
+            line += (char)CLI_CONSOLE.read();
         }
     }
 }
