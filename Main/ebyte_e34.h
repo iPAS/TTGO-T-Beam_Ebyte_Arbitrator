@@ -93,10 +93,9 @@ class Ebyte_E34 {
     ResponseStatus          sendBroadcastFixedMessage(byte CHAN, const String message);
 
     ResponseContainer       receiveMessageUntil(char delimiter = '\0');
-    ResponseStructContainer receiveMessage(const uint8_t size);
     ResponseContainer       receiveMessage();
-
-    ResponseContainer       receiveInitialMessage(const uint8_t size);
+    ResponseContainer       receiveMessageString(uint8_t size);
+    ResponseStructContainer receiveMessage(uint8_t size);
 
     Status sendStruct(const void * structureManaged, uint16_t size_);
     Status receiveStruct(void * structureManaged, uint16_t size_);

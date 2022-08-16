@@ -449,7 +449,7 @@ Status Ebyte_E34::sendStruct(const void * structureManaged, uint16_t size_of_st)
     result = this->waitCompleteResponse(1000);
     if (result != E34_SUCCESS) return result;
 
-    DEBUG_PRINTLN(F("Clear Tx buf..."))
+    DEBUG_PRINTLN(F("Clear Rx buf after Tx..."))
     this->cleanUARTBuffer();
 
     return result;
@@ -484,10 +484,6 @@ ResponseContainer Ebyte_E34::receiveMessage() {
     rc.status.code = E34_SUCCESS;
     rc.data        = this->serialDef.stream->readString();
     this->cleanUARTBuffer();
-    if (rc.status.code != E34_SUCCESS) {
-        return rc;
-    }
-
     return rc;
 }
 
@@ -495,43 +491,29 @@ ResponseContainer Ebyte_E34::receiveMessageUntil(char delimiter) {
     ResponseContainer rc;
     rc.status.code = E34_SUCCESS;
     rc.data        = this->serialDef.stream->readStringUntil(delimiter);
-    //	this->cleanUARTBuffer();
-    if (rc.status.code != E34_SUCCESS) {
-        return rc;
-    }
-
+    // this->cleanUARTBuffer();  <-- no flush, keep for next time
     return rc;
 }
 
-ResponseStructContainer Ebyte_E34::receiveMessage(const uint8_t size) {
-    ResponseStructContainer rc;
-    rc.data        = malloc(size);
-    rc.status.code = this->receiveStruct((uint8_t *)rc.data, size);
-    this->cleanUARTBuffer();
-    if (rc.status.code != E34_SUCCESS) {
-        return rc;
-    }
-
-    return rc;
-}
-
-ResponseContainer Ebyte_E34::receiveInitialMessage(uint8_t size) {
+ResponseContainer Ebyte_E34::receiveMessageString(uint8_t size) {
     ResponseContainer rc;
     rc.status.code = E34_SUCCESS;
-    char    buff[size];
+    char buff[size+1];
+    buff[size] = '\0';  // To be sure as a null terminated string.
     uint8_t len = this->serialDef.stream->readBytes(buff, size);
-    if (len != size) {
-        if (len == 0) {
-            rc.status.code = ERR_E34_NO_RESPONSE_FROM_DEVICE;
-        }
-        else {
-            rc.status.code = ERR_E34_DATA_SIZE_NOT_MATCH;
-        }
-        return rc;
-    }
-
     rc.data = buff;
 
+    if (len != size) {
+        rc.status.code = (len == 0)? ERR_E34_NO_RESPONSE_FROM_DEVICE : ERR_E34_DATA_SIZE_NOT_MATCH;
+    }
+    return rc;
+}
+
+ResponseStructContainer Ebyte_E34::receiveMessage(uint8_t size) {
+    ResponseStructContainer rc;
+    rc.data        = malloc(size);
+    rc.status.code = this->receiveStruct(rc.data, size);
+    this->cleanUARTBuffer();
     return rc;
 }
 
