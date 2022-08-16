@@ -578,61 +578,25 @@ void Ebyte_E34::printHead(byte HEAD) {
     DEBUG_PRINTLN(HEAD, HEX);
 }
 
+void Ebyte_E34::printParameters(struct Configuration * cfg) {
+    DEBUG_PRINTLN("\n[EBYTE] Configuration");
 
-void Ebyte_E34::printParameters(struct Configuration * configuration) {
-    DEBUG_PRINTLN("\n--- Configuration ---");
+    this->printHead(cfg->HEAD);
 
-    this->printHead(configuration->HEAD);
-    // DEBUG_PRINT(F("HEAD : "));
-    // DEBUG_PRINT(configuration->HEAD, BIN);
-    // DEBUG_PRINT(" ");
-    // DEBUG_PRINT(configuration->HEAD, DEC);
-    // DEBUG_PRINT(" ");
-    // DEBUG_PRINTLN(configuration->HEAD, HEX);
-    DEBUG_PRINTLN(F(" "));
-    DEBUG_PRINT(F("AddH : "));
-    DEBUG_PRINTLN(configuration->ADDH, DEC);
-    DEBUG_PRINT(F("AddL : "));
-    DEBUG_PRINTLN(configuration->ADDL, DEC);
-    DEBUG_PRINT(F("Chan : "));
-    DEBUG_PRINT(configuration->CHAN, DEC);
-    // DEBUG_PRINT(" -> ");
-    // DEBUG_PRINTLN(configuration->desc());
-    DEBUG_PRINTLN(F(" "));
-    DEBUG_PRINT(F("SpeedParityBit     : "));
-    DEBUG_PRINT(configuration->SPED.uartParity, BIN);
-    DEBUG_PRINT(" -> ");
-    DEBUG_PRINTLN(configuration->SPED.parity_desc());
-    DEBUG_PRINT(F("SpeedUARTDatte  : "));
-    DEBUG_PRINT(configuration->SPED.uartBaudRate, BIN);
-    DEBUG_PRINT(" -> ");
-    DEBUG_PRINTLN(configuration->SPED.baudrate_desc());
-    DEBUG_PRINT(F("SpeedAirDataRate   : "));
-    DEBUG_PRINT(configuration->SPED.airDataRate, BIN);
-    DEBUG_PRINT(" -> ");
-    DEBUG_PRINTLN(configuration->SPED.airrate_desc());
+    DEBUG_PRINT(F("AddH   : ")); DEBUG_PRINTLN(cfg->ADDH, DEC);
+    DEBUG_PRINT(F("AddL   : ")); DEBUG_PRINTLN(cfg->ADDL, DEC);
+    DEBUG_PRINT(F("Chan   : ")); DEBUG_PRINTLN(cfg->CHAN, DEC);
 
-    DEBUG_PRINT(F("OptionTrans        : "));
-    DEBUG_PRINT(configuration->OPTION.fixedTransmission, BIN);
-    DEBUG_PRINT(" -> ");
-    DEBUG_PRINTLN(configuration->OPTION.fixed_tx_desc());
-    DEBUG_PRINT(F("OptionPullup       : "));
-    DEBUG_PRINT(configuration->OPTION.ioDriveMode, BIN);
-    DEBUG_PRINT(" -> ");
-    DEBUG_PRINTLN(configuration->OPTION.io_drv_desc());
-    DEBUG_PRINT(F("OptionWakeup       : "));
-    DEBUG_PRINT(configuration->OPTION.wirelessWakeupTime, BIN);
-    DEBUG_PRINT(" -> ");
-    DEBUG_PRINTLN(configuration->OPTION.wl_wake_desc());
-    DEBUG_PRINT(F("OptionFEC          : "));
-    DEBUG_PRINT(configuration->OPTION.fec, BIN);
-    DEBUG_PRINT(" -> ");
-    DEBUG_PRINTLN(configuration->OPTION.fec_desc());
-    DEBUG_PRINT(F("OptionPower        : "));
-    DEBUG_PRINT(configuration->OPTION.transmissionPower, BIN);
-    DEBUG_PRINT(" -> ");
-    DEBUG_PRINTLN(configuration->OPTION.txpower_desc());
+    DEBUG_PRINT(F("Parity : ")); DEBUG_PRINT(cfg->SPED.uartParity, BIN);   DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->SPED.parity_desc());
+    DEBUG_PRINT(F("Baud   : ")); DEBUG_PRINT(cfg->SPED.uartBaudRate, BIN); DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->SPED.baudrate_desc());
+    DEBUG_PRINT(F("AirRate: ")); DEBUG_PRINT(cfg->SPED.airDataRate, BIN);  DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->SPED.airrate_desc());
 
-    DEBUG_PRINTLN("----------------------------------------");
+    DEBUG_PRINT(F("OptTx  : ")); DEBUG_PRINT(cfg->OPTION.fixedTransmission, BIN);  DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->OPTION.fixed_tx_desc());
+    DEBUG_PRINT(F("OptPlup: ")); DEBUG_PRINT(cfg->OPTION.ioDriveMode, BIN);        DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->OPTION.io_drv_desc());
+    // DEBUG_PRINT(F("OptWkUp: ")); DEBUG_PRINT(cfg->OPTION.wirelessWakeupTime, BIN); DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->OPTION.wl_wake_desc());
+    // DEBUG_PRINT(F("OptFEC : ")); DEBUG_PRINT(cfg->OPTION.fec, BIN);                DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->OPTION.fec_desc());
+    DEBUG_PRINT(F("OptPow : ")); DEBUG_PRINT(cfg->OPTION.transmissionPower, BIN);  DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->OPTION.txpower_desc());
+
+    DEBUG_PRINTLN();
 }
 #endif

@@ -113,30 +113,30 @@ enum TRANSMISSION_POWER {
 
 struct Speed {
     uint8_t airDataRate : 3;    // bit 0-2
-    String airrate_desc() { return F("Not yet implemented!"); }
+    String airrate_desc() { return F("N/A!"); }
 
     uint8_t uartBaudRate : 3;   // bit 3-5
-    String baudrate_desc() { return F("Not yet implemented!"); }
+    String baudrate_desc() { return F("N/A!"); }
 
     uint8_t uartParity : 2;     // bit 6-7
-    String parity_desc() { return F("Not yet implemented!"); }
+    String parity_desc() { return F("N/A!"); }
 };
 
 struct Option {
     byte   transmissionPower : 2;   // bit 0-1
-    String txpower_desc() { return F("Not yet implemented!"); }
+    String txpower_desc() { return F("N/A!"); }
 
     byte   fec : 1;                 // bit 2
-    String fec_desc() { return F("Not yet implemented!"); }
+    String fec_desc() { return F("N/A!"); }
 
     byte   wirelessWakeupTime : 3;  // bit 3-5
-    String wl_wake_desc() { return F("Not yet implemented!"); }
+    String wl_wake_desc() { return F("N/A!"); }
 
     byte   ioDriveMode : 1;         // bit 6
-    String io_drv_desc() { return F("Not yet implemented!"); }
+    String io_drv_desc() { return F("N/A!"); }
 
     byte   fixedTransmission : 1;   // bit 7
-    String fixed_tx_desc() { return F("Not yet implemented!"); }
+    String fixed_tx_desc() { return F("N/A!"); }
 };
 
 struct Configuration {

@@ -102,6 +102,11 @@ class Ebyte_E34 {
 
     int available();
 
+    #ifdef EBYTE_DEBUG
+    void printHead(byte HEAD);
+    void printParameters(struct Configuration * cfg);
+    #endif
+
   private:
     HardwareSerial * hs;
     uint32_t bpsRate = 9600;
@@ -152,11 +157,6 @@ class Ebyte_E34 {
     void writeProgramCommand(PROGRAM_COMMAND cmd);
 
     RESPONSE_STATUS checkUARTConfiguration(MODE_TYPE mode);
-
-    #ifdef EBYTE_DEBUG
-    void printHead(byte HEAD);
-    void printParameters(struct Configuration * configuration);
-    #endif
 };
 
 

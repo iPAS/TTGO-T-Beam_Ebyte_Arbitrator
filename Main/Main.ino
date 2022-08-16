@@ -17,7 +17,7 @@ void setup() {
     cli_setup();
     ebyte_setup();  // Ebyte
 
-    term_printf("[MAIN] System initial success @ version: %s", __GIT_SHA1_ID__);
+    term_printf("\n[MAIN] System initialized successfully @ version: %s", __GIT_SHA1_ID__);
 }
 
 // ---------- Main ----------
