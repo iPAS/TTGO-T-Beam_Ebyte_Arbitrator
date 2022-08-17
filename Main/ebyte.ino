@@ -49,7 +49,7 @@ void ebyte_setup() {
             // Setup the desired mode
             cfg.ADDH = EBYTE_BROADCAST_ADDR;// & 0x0F;  // No re-sending
             cfg.ADDL = EBYTE_BROADCAST_ADDR;
-            cfg.CHAN = 1;
+            cfg.CHAN = 6;  // XXX: 2.508 GHz -- out of WiFi channels
             cfg.OPTION.transmissionPower = TXPOWER_20;
             cfg.OPTION.ioDriveMode      = IO_PUSH_PULL;
             cfg.OPTION.fixedTransmission = TXMODE_TRANS;  // XXX:
@@ -57,7 +57,9 @@ void ebyte_setup() {
             cfg.SPED.uartBaudRate       = UART_BPS_115200;
             cfg.SPED.uartParity         = UART_PARITY_8N1;
             ebyte.setConfiguration(cfg);
-            // ebyte.setConfiguration(cfg, WRITE_CFG_PWR_DWN_SAVE);  // XXX: Save either
+            // ebyte.setConfiguration(cfg, WRITE_CFG_PWR_DWN_SAVE);  // XXX: Save
+
+            
         }
         else {
             term_println(c.status.desc());  // Description of code
