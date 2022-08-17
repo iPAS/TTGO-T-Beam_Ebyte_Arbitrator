@@ -35,7 +35,7 @@ void ebyte_setup() {
 
     // Ebyte setup
     if (ebyte.begin()) {  // Start communication with Ebyte module: config & etc.
-        term_println("\n[EBYTE] initialized successfully");
+        term_println("\n[EBYTE] Initialized successfully");
 
         ResponseStructContainer c;
         c = ebyte.getConfiguration();  // Get c.data from here
@@ -47,15 +47,15 @@ void ebyte_setup() {
             ebyte.printParameters(&cfg);
 
             // Setup the desired mode
-            cfg.ADDH = 0;
-            cfg.ADDL = 1;
+            cfg.ADDH = EBYTE_BROADCAST_ADDR;// & 0x0F;  // No re-sending
+            cfg.ADDL = EBYTE_BROADCAST_ADDR;
             cfg.CHAN = 1;
             cfg.OPTION.transmissionPower = TXPOWER_20;
-            cfg.OPTION.ioDriveMode = IO_PUSH_PULL;
-            cfg.OPTION.fixedTransmission = TXMODE_TRANS;
-            cfg.SPED.airDataRate = AIR_DATA_RATE_2M;
-            cfg.SPED.uartBaudRate = UART_BPS_115200;
-            cfg.SPED.uartParity = UART_PARITY_8N1;
+            cfg.OPTION.ioDriveMode      = IO_PUSH_PULL;
+            cfg.OPTION.fixedTransmission = TXMODE_TRANS;  // XXX:
+            cfg.SPED.airDataRate        = AIR_DATA_RATE_2M;
+            cfg.SPED.uartBaudRate       = UART_BPS_115200;
+            cfg.SPED.uartParity         = UART_PARITY_8N1;
             ebyte.setConfiguration(cfg);
             // ebyte.setConfiguration(cfg, WRITE_CFG_PWR_DWN_SAVE);  // XXX: Save either
         }
@@ -71,10 +71,32 @@ void ebyte_setup() {
 // ----------------------------------------------------------------------------
 void ebyte_process() {
     if (computer.available()) {
-        
+        byte buf[EBYTE_E34_MAX_LEN];
+        uint8_t len = (computer.available() < EBYTE_E34_MAX_LEN)? computer.available() : EBYTE_E34_MAX_LEN;
+        computer.readBytes(buf, len);
+
+        ResponseStatus status = ebyte.sendMessage(buf, len);
+        if (status.code != E34_SUCCESS) {
+            term_print("[EBYTE] C2E error, E34:");
+            term_println(status.desc());
+        }
+        else {
+            term_printf("[EBYTE] send to E34: %d bytes\n", len);
+        }
     }
 
     if (ebyte.available()) {
-
+        ResponseContainer rc = ebyte.receiveMessage();
+        if (rc.status.code != E34_SUCCESS) {
+            term_print("[EBYTE] E2C error, E34: ");
+            term_println(rc.status.desc());
+        }
+        else
+        if (Serial.write(rc.data.c_str(), rc.data.length()) != rc.data.length()) {
+            term_println("[EBYTE] E2C error. Cannot write all");
+        }
+        else {
+            term_printf("[EBYTE] recv from E34: %d bytes\n", rc.data.length());
+        }
     }
 }

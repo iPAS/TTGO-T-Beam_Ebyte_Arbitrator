@@ -55,7 +55,7 @@ Ebyte_E34::Ebyte_E34(HardwareSerial * serial, byte auxPin, byte m0Pin, byte m1Pi
  * @brief Begin the operation. Should be in the setup().
  */
 bool Ebyte_E34::begin() {
-    DEBUG_PRINTLN("[EBYTE] begin");
+    DEBUG_PRINTLN("[E34] begin");
 
     DEBUG_PRINT("uC RX to TX ---> "); DEBUG_PRINTLN(this->txPin);
     DEBUG_PRINT("uC TX to RX ---> "); DEBUG_PRINTLN(this->rxPin);
@@ -208,7 +208,7 @@ Status Ebyte_E34::waitCompleteResponse(unsigned long timeout, unsigned int waitN
     unsigned long t_prev = millis();
 
     // If AUX pin was supplied, and look for HIGH state.
-    // XXX: you can omit using AUX if no pins are available, but you will have to use delay() to let module finish
+    // XXX: You can omit using AUX if no pins are available, but you will have to use delay() to let module finish
     if (this->auxPin != -1) {
         while (digitalRead(this->auxPin) == LOW) {
             unsigned long t = millis();  // It will be overflow about every 50 days.
@@ -431,7 +431,7 @@ RESPONSE_STATUS Ebyte_E34::checkUARTConfiguration(MODE_TYPE mode) {
  * Put your structure definition into a .h file and include in both the sender and reciever sketches.
  */
 Status Ebyte_E34::sendStruct(const void * structureManaged, uint16_t size_of_st) {
-    if (size_of_st > MAX_SIZE_TX_PACKET + 2) {
+    if (size_of_st > EBYTE_E34_MAX_LEN + 2) {
         return ERR_E34_PACKET_TOO_BIG;
     }
 
@@ -483,7 +483,15 @@ ResponseContainer Ebyte_E34::receiveMessage() {
     ResponseContainer rc;
     rc.status.code = E34_SUCCESS;
     rc.data        = this->serialDef.stream->readString();
-    this->cleanUARTBuffer();
+    // this->cleanUARTBuffer();
+    return rc;
+}
+
+ResponseStructContainer Ebyte_E34::receiveMessageFixedSize(uint8_t size) {
+    ResponseStructContainer rc;
+    rc.data        = malloc(size);
+    rc.status.code = this->receiveStruct(rc.data, size);
+    // this->cleanUARTBuffer();
     return rc;
 }
 
@@ -509,14 +517,6 @@ ResponseContainer Ebyte_E34::receiveMessageString(uint8_t size) {
     return rc;
 }
 
-ResponseStructContainer Ebyte_E34::receiveMessage(uint8_t size) {
-    ResponseStructContainer rc;
-    rc.data        = malloc(size);
-    rc.status.code = this->receiveStruct(rc.data, size);
-    this->cleanUARTBuffer();
-    return rc;
-}
-
 
 /**
  * @brief Sending
@@ -526,19 +526,22 @@ ResponseStatus Ebyte_E34::sendMessage(const String message) {
     return this->sendMessage(message.c_str(), message.length());
 }
 
-ResponseStatus Ebyte_E34::sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, const String message) {
-    return this->sendFixedMessage(ADDH, ADDL, CHAN, message.c_str(), message.length());
-}
-
-ResponseStatus Ebyte_E34::sendBroadcastFixedMessage(byte CHAN, const String message) {
-    return this->sendFixedMessage(BROADCAST_ADDRESS, BROADCAST_ADDRESS, CHAN, message);
-}
-
-
 ResponseStatus Ebyte_E34::sendMessage(const void * message, uint8_t size) {
     ResponseStatus status;
     status.code = this->sendStruct(message, size);
     return status;
+}
+
+ResponseStatus Ebyte_E34::sendBroadcastFixedMessage(byte CHAN, const String message) {
+    return this->sendFixedMessage(EBYTE_BROADCAST_ADDR, EBYTE_BROADCAST_ADDR, CHAN, message);
+}
+
+ResponseStatus Ebyte_E34::sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, const String message) {
+    return this->sendFixedMessage(ADDH, ADDL, CHAN, message.c_str(), message.length());
+}
+
+ResponseStatus Ebyte_E34::sendBroadcastFixedMessage(byte CHAN, const void * message, const uint8_t size) {
+    return this->sendFixedMessage(EBYTE_BROADCAST_ADDR, EBYTE_BROADCAST_ADDR, CHAN, message, size);
 }
 
 ResponseStatus Ebyte_E34::sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, const void * message, const uint8_t size) {
@@ -558,10 +561,6 @@ ResponseStatus Ebyte_E34::sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, cons
     return status;
 }
 
-ResponseStatus Ebyte_E34::sendBroadcastFixedMessage(byte CHAN, const void * message, const uint8_t size) {
-    return this->sendFixedMessage(BROADCAST_ADDRESS, BROADCAST_ADDRESS, CHAN, message, size);
-}
-
 
 /**
  * @brief Print debug
@@ -579,7 +578,7 @@ void Ebyte_E34::printHead(byte HEAD) {
 }
 
 void Ebyte_E34::printParameters(struct Configuration * cfg) {
-    DEBUG_PRINTLN("\n[EBYTE] Configuration");
+    DEBUG_PRINTLN("\n[E34] Configuration");
 
     this->printHead(cfg->HEAD);
 

@@ -204,16 +204,16 @@ struct ResponseStatus {
     Status code;
     String desc() {
         switch (this->code) {
-            case E34_SUCCESS:           return F("Success");
-            case ERR_E34_UNKNOWN:       return F("Unknown");
-            case ERR_E34_NOT_SUPPORT:   return F("Not support!");
-            case ERR_E34_NOT_IMPLEMENT: return F("Not implement");
-            case ERR_E34_NOT_INITIAL:   return F("Not initial!");
-            case ERR_E34_INVALID_PARAM: return F("Invalid param!");
-            case ERR_E34_DATA_SIZE_NOT_MATCH: return F("Data size not match!");
-            case ERR_E34_BUF_TOO_SMALL: return F("Buff too small!");
-            case ERR_E34_TIMEOUT:       return F("Timeout!!");
-            case ERR_E34_HARDWARE:      return F("Hardware error!");
+            case E34_SUCCESS:                   return F("Success");
+            case ERR_E34_UNKNOWN:               return F("Unknown");
+            case ERR_E34_NOT_SUPPORT:           return F("Not support!");
+            case ERR_E34_NOT_IMPLEMENT:         return F("Not implement");
+            case ERR_E34_NOT_INITIAL:           return F("Not initial!");
+            case ERR_E34_INVALID_PARAM:         return F("Invalid param!");
+            case ERR_E34_DATA_SIZE_NOT_MATCH:   return F("Data size not match!");
+            case ERR_E34_BUF_TOO_SMALL:         return F("Buff too small!");
+            case ERR_E34_TIMEOUT:               return F("Timeout!!");
+            case ERR_E34_HARDWARE:              return F("Hardware error!");
             case ERR_E34_HEAD_NOT_RECOGNIZED:   return F("Save mode returned not recognized!");
             case ERR_E34_NO_RESPONSE_FROM_DEVICE: return F("No response from device! (Check wiring)");
             case ERR_E34_WRONG_UART_CONFIG:     return F("Wrong UART configuration! (BPS must be 9600 for configuration)");

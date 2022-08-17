@@ -59,8 +59,8 @@
     {}
 #endif
 
-#define BROADCAST_ADDRESS 0xFF
-#define MAX_SIZE_TX_PACKET 29
+#define EBYTE_BROADCAST_ADDR 0xFF
+#define EBYTE_E34_MAX_LEN 29
 #define EBYTE_EXTRA_WAIT 40
 
 
@@ -92,10 +92,10 @@ class Ebyte_E34 {
     ResponseStatus          sendBroadcastFixedMessage(byte CHAN, const void * message, const uint8_t size);
     ResponseStatus          sendBroadcastFixedMessage(byte CHAN, const String message);
 
-    ResponseContainer       receiveMessageUntil(char delimiter = '\0');
     ResponseContainer       receiveMessage();
+    ResponseStructContainer receiveMessageFixedSize(uint8_t size);
+    ResponseContainer       receiveMessageUntil(char delimiter = '\0');
     ResponseContainer       receiveMessageString(uint8_t size);
-    ResponseStructContainer receiveMessage(uint8_t size);
 
     Status sendStruct(const void * structureManaged, uint16_t size_);
     Status receiveStruct(void * structureManaged, uint16_t size_);
