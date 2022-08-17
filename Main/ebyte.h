@@ -8,5 +8,7 @@
 extern void ebyte_setup();
 extern void ebyte_process();  // Store & forward data between
 
+extern Ebyte_E34 ebyte;
+
 
 #endif  // __EBYTE_H__

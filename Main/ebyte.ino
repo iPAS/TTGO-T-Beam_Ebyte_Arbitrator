@@ -21,7 +21,7 @@
 #define EBYTE_UART_BUFFER_SIZE 512
 #define EBYTE_UART_BUFFER_TMO 1000
 
-static Ebyte_E34 ebyte(&EBYTE_SERIAL, EBYTE_PIN_AUX, EBYTE_PIN_M0, EBYTE_PIN_M1, EBYTE_PIN_E34_RX, EBYTE_PIN_E34_TX);
+Ebyte_E34 ebyte(&EBYTE_SERIAL, EBYTE_PIN_AUX, EBYTE_PIN_M0, EBYTE_PIN_M1, EBYTE_PIN_E34_RX, EBYTE_PIN_E34_TX);
 
 // ----------------------------------------------------------------------------
 void ebyte_setup() {

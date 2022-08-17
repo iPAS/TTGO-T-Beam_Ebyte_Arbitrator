@@ -8,6 +8,12 @@
 
 SimpleCLI cli;
 Command cmd_help;
+Command cmd_ebyte_send;
+
+const static char *help_description[] = {
+    "\thelp",
+    "\tsend [message] -- send  [default \"hello\"]",
+};
 
 // ----------------------------------------------------------------------------
 void on_error_callback(cmd_error *e) {
@@ -15,19 +21,6 @@ void on_error_callback(cmd_error *e) {
     term_println("[CLI] " + cmdError.toString());
     if (cmdError.hasCommand()) {
         term_printf("[CLI] Did you mean '%s' ?", cmdError.getCommand().toString().c_str());
-    }
-}
-
-// ----------------------------------------------------------------------------
-void on_cmd_help(cmd *c) {
-    const char *desc[] = {
-        "\thelp",
-    };
-    uint8_t i;
-    Command cmd(c);
-    term_println("[CLI] help:");
-    for (i = 0; i < sizeof(desc)/sizeof(desc[0]); i++) {
-        term_println(desc[i]);
     }
 }
 
@@ -41,6 +34,8 @@ void cli_setup() {
     cli.setOnError(&on_error_callback); // Set error Callback
 
     cmd_help = cli.addCommand("help", on_cmd_help);
+    cmd_ebyte_send = cli.addCommand("send", on_cmd_ebyte_send);
+    cmd_ebyte_send.addPositionalArgument("message", "hello");
 }
 
 // ----------------------------------------------------------------------------
@@ -59,5 +54,33 @@ void cli_interpretation_process() {
         else {
             line += (char)CLI_CONSOLE.read();
         }
+    }
+}
+
+// ----------------------------------------------------------------------------
+void on_cmd_help(cmd *c) {
+    uint8_t i;
+    Command cmd(c);
+    term_println("[CLI] help:");
+    for (i = 0; i < sizeof(help_description)/sizeof(help_description[0]); i++) {
+        term_println(help_description[i]);
+    }
+}
+
+// ----------------------------------------------------------------------------
+void on_cmd_ebyte_send(cmd *c) {
+    Command cmd(c);
+    Argument arg = cmd.getArgument("message");
+    String msg = arg.getValue();
+    term_printf("[CLI] Ebyte send: \"%s\"\n", msg.c_str());
+
+    uint8_t len = msg.length();
+    ResponseStatus status = ebyte.sendMessage(msg.c_str(), len);
+    if (status.code != E34_SUCCESS) {
+        term_print("[CLI] Ebyte send error, E34:");
+        term_println(status.desc());
+    }
+    else {
+        term_printf("[CLI] Ebyte send: %d bytes\n", len);
     }
 }
