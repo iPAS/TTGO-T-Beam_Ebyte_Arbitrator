@@ -59,14 +59,14 @@ void ebyte_setup() {
             ebyte.setConfiguration(cfg);
             // ebyte.setConfiguration(cfg, WRITE_CFG_PWR_DWN_SAVE);  // XXX: Save
 
-            
+            ebyte.changeBpsRate(115200);
         }
         else {
             term_println(c.status.desc());  // Description of code
         }
     }
     else {
-        term_printf("[EBYTE] Initialized fail!");
+        term_printf("[EBYTE] Initialized fail!\n");
     }
 }
 
@@ -89,16 +89,22 @@ void ebyte_process() {
 
     if (ebyte.available()) {
         ResponseContainer rc = ebyte.receiveMessage();
+        const char * p = rc.data.c_str();
+        uint16_t len = rc.data.length();
         if (rc.status.code != E34_SUCCESS) {
             term_print("[EBYTE] E2C error, E34: ");
             term_println(rc.status.desc());
         }
         else
-        if (Serial.write(rc.data.c_str(), rc.data.length()) != rc.data.length()) {
+        if (Serial.write(p, len) != len) {
             term_println("[EBYTE] E2C error. Cannot write all");
         }
         else {
-            term_printf("[EBYTE] recv from E34: %d bytes\n", rc.data.length());
+            term_printf("[EBYTE] recv from E34: %d bytes\n", len);
+            while (len--) {
+                term_printf(" %2X", *p++);
+            }
+            term_println();
         }
     }
 }

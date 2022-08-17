@@ -10,9 +10,11 @@ SimpleCLI cli;
 Command cmd_help;
 Command cmd_ebyte_send;
 
+#define SEND_DEFAULT_MESSAGE "0123456789"
+
 const static char *help_description[] = {
     "\thelp",
-    "\tsend [message] -- send  [default \"hello\"]",
+    "\tsend [message] -- send  [default \""SEND_DEFAULT_MESSAGE"\"]",
 };
 
 // ----------------------------------------------------------------------------
@@ -20,7 +22,7 @@ void on_error_callback(cmd_error *e) {
     CommandError cmdError(e); // Create wrapper object
     term_println("[CLI] " + cmdError.toString());
     if (cmdError.hasCommand()) {
-        term_printf("[CLI] Did you mean '%s' ?", cmdError.getCommand().toString().c_str());
+        term_printf("[CLI] Did you mean '%s' ?\n", cmdError.getCommand().toString().c_str());
     }
 }
 
@@ -35,7 +37,7 @@ void cli_setup() {
 
     cmd_help = cli.addCommand("help", on_cmd_help);
     cmd_ebyte_send = cli.addCommand("send", on_cmd_ebyte_send);
-    cmd_ebyte_send.addPositionalArgument("message", "hello");
+    cmd_ebyte_send.addPositionalArgument("message", SEND_DEFAULT_MESSAGE);
 }
 
 // ----------------------------------------------------------------------------

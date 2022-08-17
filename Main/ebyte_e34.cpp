@@ -78,23 +78,8 @@ bool Ebyte_E34::begin() {
         DEBUG_PRINTLN("Init M1 pin!");
     }
 
-    if (this->hs) {
-        if (this->txPin != -1 && this->rxPin != -1) {
-            this->serialDef.begin(*this->hs, this->bpsRate, this->serialConfig,
-                                  this->txPin,  // To RX of uC
-                                  this->rxPin   // To TX of uC
-                                  );
-        }
-        else {
-            this->serialDef.begin(*this->hs, this->bpsRate, this->serialConfig);
-        }
+    this->changeBpsRate(this->bpsRate);
 
-        while (!this->hs) {
-            vTaskDelay(1);  // wait for serial port to connect. Needed for native USB
-        }
-    }
-
-    this->serialDef.stream->setTimeout(1000);  // Timeout data in the buffer, then send.
     Status status = setMode(MODE_0_FIXED);
     return status == E34_SUCCESS;
 }
@@ -250,6 +235,27 @@ void Ebyte_E34::cleanUARTBuffer() {
     while (this->available()) {
         this->serialDef.stream->read();
     }
+}
+
+void Ebyte_E34::changeBpsRate(uint32_t new_bps) {
+    this->hs->end();
+    this->bpsRate = new_bps;
+
+    if (this->hs) {
+        if (this->txPin != -1 && this->rxPin != -1) {
+            this->serialDef.begin(*this->hs, this->bpsRate, this->serialConfig,
+                                  this->txPin,  // To RX of uC
+                                  this->rxPin   // To TX of uC
+                                  );
+        }
+        else {
+            this->serialDef.begin(*this->hs, this->bpsRate, this->serialConfig);
+        }
+
+        while (!this->hs) vTaskDelay(1);  // wait for serial port to connect. Needed for native USB
+    }
+
+    this->serialDef.stream->setTimeout(1000);  // Timeout data in the buffer, then send.
 }
 
 

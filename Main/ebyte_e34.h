@@ -102,6 +102,8 @@ class Ebyte_E34 {
 
     int available();
 
+    void changeBpsRate(uint32_t new_bps);
+
     #ifdef EBYTE_DEBUG
     void printHead(byte HEAD);
     void printParameters(struct Configuration * cfg);
@@ -120,13 +122,6 @@ class Ebyte_E34 {
 
     struct NeedsStream {
         Stream * stream;
-
-        // template <typename T> void begin(T & t, uint32_t baud) {
-        //     DEBUG_PRINTLN("Begin Hardware Serial");
-        //     t.setTimeout(500);
-        //     t.begin(baud);
-        //     stream = &t;
-        // }
 
         template <typename T> void begin(T & t, uint32_t baud, uint32_t config) {
             DEBUG_PRINT("Init Serial: "); DEBUG_PRINTLN(baud);
