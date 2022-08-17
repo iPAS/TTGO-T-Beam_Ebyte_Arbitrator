@@ -51,6 +51,14 @@ for p in ${ports}; do
     dev=/dev/ttyUSB${p}
     echo "--------- Flash ${dev} ---------"
     if [ -c "${dev}" ]; then
+        if [ $(ps ax | grep "${dev}" -c) -ne 0 ]; then
+            echo ">>> Occupy ${dev}"
+            pid=$(pgrep "screen ${dev}" -f)
+            kill $pid
+            pid=$(pgrep "SCREEN ${dev}" -f)
+            kill $pid
+        fi
+
         flash "${dev}" 
     else
         echo "${dev} does not exist!"
