@@ -22,7 +22,7 @@ void on_error_callback(cmd_error *e) {
     CommandError cmdError(e); // Create wrapper object
     term_println("[CLI] " + cmdError.toString());
     if (cmdError.hasCommand()) {
-        term_printf("[CLI] Did you mean '%s' ?\n", cmdError.getCommand().toString().c_str());
+        term_printf("[CLI] Did you mean '%s' ?"ENDL, cmdError.getCommand().toString().c_str());
     }
 }
 
@@ -48,13 +48,16 @@ void cli_interpretation_process() {
         if (CLI_CONSOLE.peek() == '\n'  ||  CLI_CONSOLE.peek() == '\r') {
             CLI_CONSOLE.read();  // Just ignore
             if (line.length() > 0) {
+                CLI_CONSOLE.println();
                 cli.parse(line);  // Parse the user input into the CLI
                 line = "";
                 break;
             }
         }
         else {
-            line += (char)CLI_CONSOLE.read();
+            char c = (char)CLI_CONSOLE.read();
+            CLI_CONSOLE.print(c);
+            line += c;
         }
     }
 }
@@ -74,7 +77,6 @@ void on_cmd_ebyte_send(cmd *c) {
     Command cmd(c);
     Argument arg = cmd.getArgument("message");
     String msg = arg.getValue();
-    term_printf("[CLI] Ebyte send: \"%s\"\n", msg.c_str());
 
     uint8_t len = msg.length();
     ResponseStatus status = ebyte.sendMessage(msg.c_str(), len);
@@ -83,6 +85,6 @@ void on_cmd_ebyte_send(cmd *c) {
         term_println(status.desc());
     }
     else {
-        term_printf("[CLI] Ebyte send: %d bytes\n", len);
+        term_printf("[CLI] Ebyte send %d bytes: \"%s\""ENDL, len, msg.c_str());
     }
 }

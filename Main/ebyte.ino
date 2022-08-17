@@ -35,7 +35,7 @@ void ebyte_setup() {
 
     // Ebyte setup
     if (ebyte.begin()) {  // Start communication with Ebyte module: config & etc.
-        term_println("\n[EBYTE] Initialized successfully");
+        term_println(ENDL"[EBYTE] Initialized successfully");
 
         ResponseStructContainer c;
         c = ebyte.getConfiguration();  // Get c.data from here
@@ -66,7 +66,7 @@ void ebyte_setup() {
         }
     }
     else {
-        term_printf("[EBYTE] Initialized fail!\n");
+        term_printf("[EBYTE] Initialized fail!"ENDL);
     }
 }
 
@@ -83,7 +83,7 @@ void ebyte_process() {
             term_println(status.desc());
         }
         else {
-            term_printf("[EBYTE] send to E34: %d bytes\n", len);
+            term_printf("[EBYTE] send to E34: %d bytes"ENDL, len);
         }
     }
 
@@ -96,11 +96,11 @@ void ebyte_process() {
             term_println(rc.status.desc());
         }
         else
-        if (Serial.write(p, len) != len) {
+        if (computer.write(p, len) != len) {
             term_println("[EBYTE] E2C error. Cannot write all");
         }
         else {
-            term_printf("[EBYTE] recv from E34: %d bytes\n", len);
+            term_printf("[EBYTE] recv from E34: %d bytes"ENDL, len);
             while (len--) {
                 term_printf(" %2X", *p++);
             }

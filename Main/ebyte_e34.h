@@ -45,24 +45,6 @@
 
 #include "ebyte_e34_def.h"
 
-// Uncomment to enable printing out nice debug messages.
-#define EBYTE_DEBUG
-
-// Setup debug printing macros.
-#ifdef EBYTE_DEBUG
-#define DEBUG_PRINT(...) { Serial.print(__VA_ARGS__); }
-#define DEBUG_PRINTLN(...) { Serial.println(__VA_ARGS__); }
-#else
-#define DEBUG_PRINT(...) \
-    {}
-#define DEBUG_PRINTLN(...) \
-    {}
-#endif
-
-#define EBYTE_BROADCAST_ADDR 0xFF
-#define EBYTE_E34_MAX_LEN 29
-#define EBYTE_EXTRA_WAIT 40
-
 
 /**
  * @brief Class Ebyte E34 Interfacing

@@ -150,6 +150,9 @@ Status Ebyte_E34::setMode(MODE_TYPE mode) {
         this->mode = mode;
     }
 
+    DEBUG_PRINTLN(F("Clear Rx buf after mode change"));
+    this->cleanUARTBuffer();
+
     return res;
 }
 
@@ -200,7 +203,7 @@ Status Ebyte_E34::waitCompleteResponse(unsigned long timeout, unsigned int waitN
 
             if (is_timeout(t, t_prev, timeout)) {
                 result = ERR_E34_TIMEOUT;
-                DEBUG_PRINTLN("Wait response: timeout error!");
+                DEBUG_PRINTLN("Wait response: timeout error! AUX still LOW");
                 return result;
             }
         }
@@ -441,7 +444,6 @@ Status Ebyte_E34::sendStruct(const void * structureManaged, uint16_t size_of_st)
         return ERR_E34_PACKET_TOO_BIG;
     }
 
-    Status result = E34_SUCCESS;
     uint8_t len = this->serialDef.stream->write((uint8_t *)structureManaged, size_of_st);
 
     DEBUG_PRINT(F("Send struct len:"));
@@ -452,17 +454,10 @@ Status Ebyte_E34::sendStruct(const void * structureManaged, uint16_t size_of_st)
     if (len != size_of_st) {
         return (len == 0)? ERR_E34_NO_RESPONSE_FROM_DEVICE : ERR_E34_DATA_SIZE_NOT_MATCH;
     }
-    result = this->waitCompleteResponse(1000);
-    if (result != E34_SUCCESS) return result;
-
-    DEBUG_PRINTLN(F("Clear Rx buf after Tx..."))
-    this->cleanUARTBuffer();
-
-    return result;
+    return this->waitCompleteResponse(1000);
 }
 
 Status Ebyte_E34::receiveStruct(void * structureManaged, uint16_t size_of_st) {
-    Status result = E34_SUCCESS;
     uint8_t len = this->serialDef.stream->readBytes((uint8_t *)structureManaged, size_of_st);
 
     DEBUG_PRINT(F("Recv struct len:"));
@@ -473,10 +468,7 @@ Status Ebyte_E34::receiveStruct(void * structureManaged, uint16_t size_of_st) {
     if (len != size_of_st) {
         return (len == 0)? ERR_E34_NO_RESPONSE_FROM_DEVICE : ERR_E34_DATA_SIZE_NOT_MATCH;
     }
-    result = this->waitCompleteResponse(1000);
-    if (result != E34_SUCCESS) return result;
-
-    return result;
+    return this->waitCompleteResponse(1000);
 }
 
 
@@ -584,7 +576,7 @@ void Ebyte_E34::printHead(byte HEAD) {
 }
 
 void Ebyte_E34::printParameters(struct Configuration * cfg) {
-    DEBUG_PRINTLN("\n[E34] Configuration");
+    DEBUG_PRINTLN(ENDL"[E34] Configuration");
 
     this->printHead(cfg->HEAD);
 
