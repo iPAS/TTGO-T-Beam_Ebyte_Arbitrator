@@ -12,7 +12,7 @@ void term_printf(const char *format, ...)
     va_start(ap, format);
     vsnprintf(p, sizeof(buf), format, ap);
 
-    term_println(buf);
+    term_print(buf);
 
     va_end(ap);
 }

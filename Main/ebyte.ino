@@ -1,45 +1,110 @@
 #include "global.h"
 
 
+// As a flow-controller, config
+#define computer        EBYTE_FC_SERIAL
+#define EBYTE_FC_SERIAL Serial1
+#define EBYTE_FC_BAUD   115200
+#define EBYTE_FC_PIN_RX 15
+#define EBYTE_FC_PIN_TX 12
+#define EBYTE_FC_RX_BUFFER_SIZE 512
+#define EBYTE_FC_UART_TMO 1000
+
+// Ebyte config
 #define EBYTE_SERIAL    Serial2
-#define EBYTE_BAUD      UART_BPS_RATE_115200
-#define EBYTE_PIN_TX    2
-#define EBYTE_PIN_RX    13
-#define EBYTE_PIN_AUX   14
-#define EBYTE_PIN_M0    36
-#define EBYTE_PIN_M1    39
+#define EBYTE_BAUD      115200
+#define EBYTE_PIN_E34_RX 2   // uC TX
+#define EBYTE_PIN_E34_TX 13  // uC RX
+#define EBYTE_PIN_AUX   34
+#define EBYTE_PIN_M0    25
+#define EBYTE_PIN_M1    14
 #define EBYTE_UART_BUFFER_SIZE 512
 #define EBYTE_UART_BUFFER_TMO 1000
 
-static LoRa_E32 ebyte(&EBYTE_SERIAL, EBYTE_PIN_AUX, EBYTE_PIN_M0, EBYTE_PIN_M1, EBYTE_BAUD);
-
-#define EBYTE_PERIOD    5000
-static uint32_t ebyte_period_millis = 0;
-
+Ebyte_E34 ebyte(&EBYTE_SERIAL, EBYTE_PIN_AUX, EBYTE_PIN_M0, EBYTE_PIN_M1, EBYTE_PIN_E34_RX, EBYTE_PIN_E34_TX);
 
 // ----------------------------------------------------------------------------
 void ebyte_setup() {
-    EBYTE_SERIAL.begin(EBYTE_BAUD, SERIAL_8N1, EBYTE_PIN_RX, EBYTE_PIN_TX);
-    EBYTE_SERIAL.setRxBufferSize(EBYTE_UART_BUFFER_SIZE);
-    EBYTE_SERIAL.setTimeout(EBYTE_UART_BUFFER_TMO);
-    while (!EBYTE_SERIAL)
-        vTaskDelay(1);  // Yield
-    while (EBYTE_SERIAL.available())
-        EBYTE_SERIAL.read();  // Clear buffer
+    // Setup as a modem
+    EBYTE_FC_SERIAL.begin(EBYTE_FC_BAUD, SERIAL_8N1, EBYTE_FC_PIN_RX, EBYTE_FC_PIN_TX);
+    EBYTE_FC_SERIAL.setRxBufferSize(EBYTE_FC_RX_BUFFER_SIZE);
+    EBYTE_FC_SERIAL.setTimeout(EBYTE_FC_UART_TMO);
+    while (!EBYTE_FC_SERIAL) taskYIELD();  // Yield
+    while (EBYTE_FC_SERIAL.available())
+        EBYTE_FC_SERIAL.read();  // Clear buffer
 
-    ebyte.begin();  // Start communication with Ebyte module: config & etc.
+    // Ebyte setup
+    if (ebyte.begin()) {  // Start communication with Ebyte module: config & etc.
+        term_println(ENDL"[EBYTE] Initialized successfully");
+
+        ResponseStructContainer c;
+        c = ebyte.getConfiguration();  // Get c.data from here
+        Configuration cfg = *((Configuration *)c.data); // This is a memory transfer, NOT by-reference.
+                                                        // It's important get configuration pointer before all other operation.
+        c.close();  // Clean c.data that was allocated in ::getConfiguration()
+
+        if (c.status.code == E34_SUCCESS){
+            ebyte.printParameters(&cfg);
+
+            // Setup the desired mode
+            cfg.ADDH = EBYTE_BROADCAST_ADDR;// & 0x0F;  // No re-sending
+            cfg.ADDL = EBYTE_BROADCAST_ADDR;
+            cfg.CHAN = 6;  // XXX: 2.508 GHz -- out of WiFi channels
+            cfg.OPTION.transmissionPower = TXPOWER_20;
+            cfg.OPTION.ioDriveMode      = IO_PUSH_PULL;
+            cfg.OPTION.fixedTransmission = TXMODE_TRANS;  // XXX:
+            cfg.SPED.airDataRate        = AIR_DATA_RATE_2M;
+            cfg.SPED.uartBaudRate       = UART_BPS_115200;
+            cfg.SPED.uartParity         = UART_PARITY_8N1;
+            ebyte.setConfiguration(cfg);
+            // ebyte.setConfiguration(cfg, WRITE_CFG_PWR_DWN_SAVE);  // XXX: Save
+
+            ebyte.changeBpsRate(115200);
+        }
+        else {
+            term_println(c.status.desc());  // Description of code
+        }
+    }
+    else {
+        term_printf("[EBYTE] Initialized fail!"ENDL);
+    }
 }
 
 // ----------------------------------------------------------------------------
 void ebyte_process() {
-    if (millis() > ebyte_period_millis) {
-        ResponseStructContainer c;
-        c = ebyte.getConfiguration();
-        // It's important get configuration pointer before all other operation
-        Configuration configuration = *((Configuration *)c.data);
-        term_println(c.status.getResponseDescription()); // Description of code
-        term_println(c.status.code); // 1 if Success
+    if (computer.available()) {
+        byte buf[EBYTE_E34_MAX_LEN];
+        uint8_t len = (computer.available() < EBYTE_E34_MAX_LEN)? computer.available() : EBYTE_E34_MAX_LEN;
+        computer.readBytes(buf, len);
 
-        ebyte_period_millis = millis() + EBYTE_PERIOD;  // Reset timeout
+        ResponseStatus status = ebyte.sendMessage(buf, len);
+        if (status.code != E34_SUCCESS) {
+            term_print("[EBYTE] C2E error, E34:");
+            term_println(status.desc());
+        }
+        else {
+            term_printf("[EBYTE] send to E34: %d bytes"ENDL, len);
+        }
+    }
+
+    if (ebyte.available()) {
+        ResponseContainer rc = ebyte.receiveMessage();
+        const char * p = rc.data.c_str();
+        uint16_t len = rc.data.length();
+        if (rc.status.code != E34_SUCCESS) {
+            term_print("[EBYTE] E2C error, E34: ");
+            term_println(rc.status.desc());
+        }
+        else
+        if (computer.write(p, len) != len) {
+            term_println("[EBYTE] E2C error. Cannot write all");
+        }
+        else {
+            term_printf("[EBYTE] recv from E34: %d bytes"ENDL, len);
+            while (len--) {
+                term_printf(" %2X", *p++);
+            }
+            term_println();
+        }
     }
 }

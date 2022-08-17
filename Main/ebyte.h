@@ -2,11 +2,13 @@
 #define __EBYTE_H__
 
 
-#include <EByte_LoRa_E32_library.h>
+#include "ebyte_e34.h"
 
 
 extern void ebyte_setup();
 extern void ebyte_process();  // Store & forward data between
+
+extern Ebyte_E34 ebyte;
 
 
 #endif  // __EBYTE_H__
