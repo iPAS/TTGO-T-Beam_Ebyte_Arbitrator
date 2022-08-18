@@ -42,17 +42,17 @@ void cli_setup() {
 
     cli.setOnError(&on_error_callback); // Set error Callback
 
-    cmd_help = cli.addCommand("help", on_cmd_help);
+    cmd_help = cli.addCommand("h/elp", on_cmd_help);
 
-    cmd_ebyte_send = cli.addCommand("send", on_cmd_ebyte_send);
+    cmd_ebyte_send = cli.addCommand("s/end", on_cmd_ebyte_send);
     cmd_ebyte_send.addPositionalArgument("message", DEFAULT_SEND_MESSAGE);
 
-    cmd_ebyte_get_config = cli.addCommand("config", on_cmd_ebyte_get_config);
+    cmd_ebyte_get_config = cli.addCommand("c/onfig", on_cmd_ebyte_get_config);
 
-    cmd_ebyte_show_report = cli.addCommand("report", on_cmd_ebyte_show_report);
+    cmd_ebyte_show_report = cli.addCommand("r/eport", on_cmd_ebyte_show_report);
     cmd_ebyte_show_report.addPositionalArgument("count", STR(DEFAULT_REPORT_COUNT));
 
-    cmd_ebyte_loopback = cli.addCommand("loopback", on_cmd_ebyte_loopback);
+    cmd_ebyte_loopback = cli.addCommand("l/oopback", on_cmd_ebyte_loopback);
     cmd_ebyte_loopback.addPositionalArgument("flag", "");
 }
 
