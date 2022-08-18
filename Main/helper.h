@@ -17,4 +17,8 @@ extern void term_printf(const char *format, ...);
 
 #define STR(s) #s
 
+extern boolean is_numeric(String str);
+extern bool extract_int(String str, int *ret);
+
+
 #endif  // __HELPER_H__

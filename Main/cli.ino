@@ -10,13 +10,16 @@ SimpleCLI cli;
 Command cmd_help;
 Command cmd_ebyte_send;
 Command cmd_ebyte_get_config;
+Command cmd_ebyte_show_report;
 
-#define SEND_DEFAULT_MESSAGE "0123456789" ENDL
+#define DEFAULT_SEND_MESSAGE "0123456789" ENDL
+#define DEFAULT_REPORT_COUNT 1
 
 const static char *help_description[] = {
     "\thelp",
-    "\tsend [message] -- send  [default \"" SEND_DEFAULT_MESSAGE "\"]",
-    "\tgetconfig -- get configuration"
+    "\tsend [message] -- send [default \"" DEFAULT_SEND_MESSAGE "\"]",
+    "\tconfig         -- get configuration",
+    "\treport [count] -- show report as count number [default \"" STR(DEFAULT_REPORT_COUNT) "\"]",
 };
 
 // ----------------------------------------------------------------------------
@@ -38,9 +41,14 @@ void cli_setup() {
     cli.setOnError(&on_error_callback); // Set error Callback
 
     cmd_help = cli.addCommand("help", on_cmd_help);
+
     cmd_ebyte_send = cli.addCommand("send", on_cmd_ebyte_send);
-    cmd_ebyte_send.addPositionalArgument("message", SEND_DEFAULT_MESSAGE);
-    cmd_ebyte_get_config = cli.addCommand("getconfig", on_cmd_ebyte_get_config);
+    cmd_ebyte_send.addPositionalArgument("message", DEFAULT_SEND_MESSAGE);
+
+    cmd_ebyte_get_config = cli.addCommand("config", on_cmd_ebyte_get_config);
+
+    cmd_ebyte_show_report = cli.addCommand("report", on_cmd_ebyte_show_report);
+    cmd_ebyte_show_report.addPositionalArgument("count", STR(DEFAULT_REPORT_COUNT));
 }
 
 // ----------------------------------------------------------------------------
@@ -114,4 +122,16 @@ void on_cmd_ebyte_get_config(cmd *c) {
     }
 
     ebyte.changeBpsRate(old_baud);
+}
+
+// ----------------------------------------------------------------------------
+void on_cmd_ebyte_show_report(cmd * c) {
+    Command cmd(c);
+    Argument arg = cmd.getArgument("count");
+
+    int count;
+    if (extract_int(arg.getValue(), &count)) {
+        term_printf("[CLI] Ebyte report count=%d" ENDL, count);
+        show_report_count = count;
+    }
 }

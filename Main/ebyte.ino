@@ -23,6 +23,13 @@
 
 Ebyte_E34 ebyte(&EBYTE_SERIAL, EBYTE_PIN_AUX, EBYTE_PIN_M0, EBYTE_PIN_M1, EBYTE_PIN_E34_RX, EBYTE_PIN_E34_TX);
 
+#define EBYTE_REPORT_PERIOD_MS 10000
+static uint32_t report_millis;
+static uint32_t downlink_byte_sum = 0;
+static uint32_t uplink_byte_sum = 0;
+int show_report_count = 0;  // 0 is 'disable', -1 is 'forever', other +n will be counted down to zero.
+
+
 // ----------------------------------------------------------------------------
 void ebyte_setup() {
     // Setup as a modem connected to computer
@@ -82,6 +89,9 @@ void ebyte_setup() {
     else {
         term_printf("[EBYTE] Initialized fail!" ENDL);
     }
+
+    // Periods setup
+    report_millis = millis() + EBYTE_REPORT_PERIOD_MS;
 }
 
 // ----------------------------------------------------------------------------
@@ -123,5 +133,22 @@ void ebyte_process() {
             }
             term_println(str);
         }
+    }
+
+    uint32_t now = millis();
+    if (now > report_millis) {
+        float period = EBYTE_REPORT_PERIOD_MS + (now - report_millis);
+        float up_rate = (uplink_byte_sum * 1000) / period;
+        float down_rate = (downlink_byte_sum * 1000) / period;  // per second
+
+        if (show_report_count > 0 || show_report_count < 0) {
+
+            term_printf("[CLI] Ebyte report up:%.2f down:%.2f" ENDL, up_rate, down_rate);
+
+            if (show_report_count > 0)
+                show_report_count--;
+        }
+
+        report_millis = now + EBYTE_REPORT_PERIOD_MS;
     }
 }
