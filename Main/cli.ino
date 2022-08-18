@@ -9,12 +9,14 @@
 SimpleCLI cli;
 Command cmd_help;
 Command cmd_ebyte_send;
+Command cmd_ebyte_get_config;
 
-#define SEND_DEFAULT_MESSAGE "0123456789"
+#define SEND_DEFAULT_MESSAGE "0123456789" ENDL
 
 const static char *help_description[] = {
     "\thelp",
-    "\tsend [message] -- send  [default \""SEND_DEFAULT_MESSAGE"\"]",
+    "\tsend [message] -- send  [default \"" SEND_DEFAULT_MESSAGE "\"]",
+    "\tgetconfig -- get configuration"
 };
 
 // ----------------------------------------------------------------------------
@@ -22,7 +24,7 @@ void on_error_callback(cmd_error *e) {
     CommandError cmdError(e); // Create wrapper object
     term_println("[CLI] " + cmdError.toString());
     if (cmdError.hasCommand()) {
-        term_printf("[CLI] Did you mean '%s' ?"ENDL, cmdError.getCommand().toString().c_str());
+        term_printf("[CLI] Did you mean '%s' ?" ENDL, cmdError.getCommand().toString().c_str());
     }
 }
 
@@ -38,6 +40,7 @@ void cli_setup() {
     cmd_help = cli.addCommand("help", on_cmd_help);
     cmd_ebyte_send = cli.addCommand("send", on_cmd_ebyte_send);
     cmd_ebyte_send.addPositionalArgument("message", SEND_DEFAULT_MESSAGE);
+    cmd_ebyte_get_config = cli.addCommand("getconfig", on_cmd_ebyte_get_config);
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +66,7 @@ void cli_interpretation_process() {
 }
 
 // ----------------------------------------------------------------------------
-void on_cmd_help(cmd *c) {
+static void on_cmd_help(cmd *c) {
     uint8_t i;
     Command cmd(c);
     term_println("[CLI] help:");
@@ -73,7 +76,7 @@ void on_cmd_help(cmd *c) {
 }
 
 // ----------------------------------------------------------------------------
-void on_cmd_ebyte_send(cmd *c) {
+static void on_cmd_ebyte_send(cmd *c) {
     Command cmd(c);
     Argument arg = cmd.getArgument("message");
     String msg = arg.getValue();
@@ -85,6 +88,30 @@ void on_cmd_ebyte_send(cmd *c) {
         term_println(status.desc());
     }
     else {
-        term_printf("[CLI] Ebyte send %d bytes: \"%s\""ENDL, len, msg.c_str());
+        term_printf("[CLI] Ebyte send %d bytes: \"%s\"" ENDL, len, msg.c_str());
     }
+}
+
+// ----------------------------------------------------------------------------
+void on_cmd_ebyte_get_config(cmd *c) {
+    Command cmd(c);
+
+    uint32_t old_baud = ebyte.getBpsRate();
+    ebyte.changeBpsRate(EBYTE_CONFIG_BAUD);
+
+    ResponseStructContainer resp;
+    resp = ebyte.getConfiguration();  // Get c.data from here
+    Configuration cfg = *((Configuration *)resp.data); // This is a memory transfer, NOT by-reference.
+                                                    // It's important get configuration pointer before all other operation.
+    resp.close();  // Clean c.data that was allocated in ::getConfiguration()
+
+    if (resp.status.code == E34_SUCCESS){
+        term_println(F("[CLI] Ebyte configuration"));
+        ebyte.printParameters(&cfg);
+    }
+    else {
+        term_println(resp.status.desc());  // Description of code
+    }
+
+    ebyte.changeBpsRate(old_baud);
 }
