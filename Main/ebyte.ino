@@ -13,8 +13,8 @@
 // Ebyte config
 #define EBYTE_SERIAL    Serial2
 #define EBYTE_BAUD      115200
-#define EBYTE_PIN_E34_RX 2   // uC TX
-#define EBYTE_PIN_E34_TX 13  // uC RX
+#define EBYTE_PIN_E34_RX 13 // TX to Ebyte RX
+#define EBYTE_PIN_E34_TX 2  // RX to Ebyte TX
 #define EBYTE_PIN_AUX   34
 #define EBYTE_PIN_M0    25
 #define EBYTE_PIN_M1    14
@@ -35,7 +35,7 @@ void ebyte_setup() {
 
     // Ebyte setup
     if (ebyte.begin()) {  // Start communication with Ebyte module: config & etc.
-        term_println(ENDL"[EBYTE] Initialized successfully");
+        term_println(ENDL "[EBYTE] Initialized successfully");
 
         ResponseStructContainer c;
         c = ebyte.getConfiguration();  // Get c.data from here
@@ -66,7 +66,7 @@ void ebyte_setup() {
         }
     }
     else {
-        term_printf("[EBYTE] Initialized fail!"ENDL);
+        term_printf("[EBYTE] Initialized fail!" ENDL);
     }
 }
 
@@ -83,7 +83,7 @@ void ebyte_process() {
             term_println(status.desc());
         }
         else {
-            term_printf("[EBYTE] send to E34: %d bytes"ENDL, len);
+            term_printf("[EBYTE] send to E34: %d bytes" ENDL, len);
         }
     }
 
@@ -100,7 +100,7 @@ void ebyte_process() {
             term_println("[EBYTE] E2C error. Cannot write all");
         }
         else {
-            term_printf("[EBYTE] recv from E34: %d bytes"ENDL, len);
+            term_printf("[EBYTE] recv from E34: %d bytes" ENDL, len);
             String str = " >> ";
             while (len--) {
                 // term_printf(" %2X", *p++);

@@ -14,7 +14,7 @@ Command cmd_ebyte_send;
 
 const static char *help_description[] = {
     "\thelp",
-    "\tsend [message] -- send  [default \""SEND_DEFAULT_MESSAGE"\"]",
+    "\tsend [message] -- send  [default \"" SEND_DEFAULT_MESSAGE "\"]",
 };
 
 // ----------------------------------------------------------------------------
@@ -22,7 +22,7 @@ void on_error_callback(cmd_error *e) {
     CommandError cmdError(e); // Create wrapper object
     term_println("[CLI] " + cmdError.toString());
     if (cmdError.hasCommand()) {
-        term_printf("[CLI] Did you mean '%s' ?"ENDL, cmdError.getCommand().toString().c_str());
+        term_printf("[CLI] Did you mean '%s' ?" ENDL, cmdError.getCommand().toString().c_str());
     }
 }
 
@@ -85,6 +85,6 @@ void on_cmd_ebyte_send(cmd *c) {
         term_println(status.desc());
     }
     else {
-        term_printf("[CLI] Ebyte send %d bytes: \"%s\""ENDL, len, msg.c_str());
+        term_printf("[CLI] Ebyte send %d bytes: \"%s\"" ENDL, len, msg.c_str());
     }
 }

@@ -57,25 +57,25 @@ Ebyte_E34::Ebyte_E34(HardwareSerial * serial, byte auxPin, byte m0Pin, byte m1Pi
 bool Ebyte_E34::begin() {
     DEBUG_PRINTLN("[E34] begin");
 
-    DEBUG_PRINT("uC RX to TX ---> "); DEBUG_PRINTLN(this->txPin);
-    DEBUG_PRINT("uC TX to RX ---> "); DEBUG_PRINTLN(this->rxPin);
-    DEBUG_PRINT("AUX ---> ");         DEBUG_PRINTLN(this->auxPin);
-    DEBUG_PRINT("M0 ---> ");          DEBUG_PRINTLN(this->m0Pin);
-    DEBUG_PRINT("M1 ---> ");          DEBUG_PRINTLN(this->m1Pin);
+    DEBUG_PRINT(" RX (To Ebyte TX) ---> "); DEBUG_PRINTLN(this->rxPin);
+    DEBUG_PRINT(" TX (To Ebyte RX) ---> "); DEBUG_PRINTLN(this->txPin);
+    DEBUG_PRINT(" AUX ---> "); DEBUG_PRINTLN(this->auxPin);
+    DEBUG_PRINT(" M0 ---> "); DEBUG_PRINTLN(this->m0Pin);
+    DEBUG_PRINT(" M1 ---> "); DEBUG_PRINTLN(this->m1Pin);
 
     if (this->auxPin != -1) {
         pinMode(this->auxPin, INPUT);
-        DEBUG_PRINTLN("Init AUX pin!");
+        DEBUG_PRINTLN(" Init AUX pin!");
     }
     if (this->m0Pin != -1) {
         pinMode(this->m0Pin, OUTPUT);
         digitalWrite(this->m0Pin, HIGH);
-        DEBUG_PRINTLN("Init M0 pin!");
+        DEBUG_PRINTLN(" Init M0 pin!");
     }
     if (this->m1Pin != -1) {
         pinMode(this->m1Pin, OUTPUT);
         digitalWrite(this->m1Pin, HIGH);
-        DEBUG_PRINTLN("Init M1 pin!");
+        DEBUG_PRINTLN(" Init M1 pin!");
     }
 
     this->changeBpsRate(this->bpsRate);
@@ -107,33 +107,33 @@ Status Ebyte_E34::setMode(MODE_TYPE mode) {
     this->managedDelay(EBYTE_EXTRA_WAIT);
 
     if (this->m0Pin == -1 && this->m1Pin == -1) {
-        DEBUG_PRINTLN(F(
-            "The M0 and M1 pins is not set,"
-            " this mean that you are connect directly the pins as you need!"));
+        DEBUG_PRINTLN(F("[E34] Pins: M0 & M1 are not set. Hard-wiring is required!"));
     }
     else {
+        DEBUG_PRINT(F("[E34] Mode: "));
+
         switch (mode) {
             case MODE_0_FIXED:
                 // Mode 0 | normal operation
                 digitalWrite(this->m0Pin, LOW);
                 digitalWrite(this->m1Pin, LOW);
-                DEBUG_PRINTLN("MODE FIXED FREQ!");
+                DEBUG_PRINTLN("FIXED FREQ!");
                 break;
             case MODE_1_HOPPING:
                 digitalWrite(this->m0Pin, HIGH);
                 digitalWrite(this->m1Pin, LOW);
-                DEBUG_PRINTLN("MODE HOPPING FREQ!");
+                DEBUG_PRINTLN("HOPPING FREQ!");
                 break;
             case MODE_2_RESERVED:
                 digitalWrite(this->m0Pin, LOW);
                 digitalWrite(this->m1Pin, HIGH);
-                DEBUG_PRINTLN("MODE RESERVATION!");
+                DEBUG_PRINTLN("RESERVATION!");
                 break;
             case MODE_3_SLEEP:
                 // Mode 3 | Setting operation
                 digitalWrite(this->m0Pin, HIGH);
                 digitalWrite(this->m1Pin, HIGH);
-                DEBUG_PRINTLN("MODE PROGRAM/SLEEP!");
+                DEBUG_PRINTLN("PROGRAM/SLEEP!");
                 break;
             default: return ERR_E34_INVALID_PARAM;
         }
@@ -150,7 +150,7 @@ Status Ebyte_E34::setMode(MODE_TYPE mode) {
         this->mode = mode;
     }
 
-    DEBUG_PRINTLN(F("Clear Rx buf after mode change"));
+    DEBUG_PRINTLN(F("[E34] Clear Rx buf after mode change"));
     this->cleanUARTBuffer();
 
     return res;
@@ -203,22 +203,22 @@ Status Ebyte_E34::waitCompleteResponse(unsigned long timeout, unsigned int waitN
 
             if (is_timeout(t, t_prev, timeout)) {
                 result = ERR_E34_TIMEOUT;
-                DEBUG_PRINTLN("Wait response: timeout error! AUX still LOW");
+                DEBUG_PRINTLN(F("[E34] Wait response: timeout error! AUX still LOW"));
                 return result;
             }
         }
-        DEBUG_PRINTLN("AUX HIGH!");
+        DEBUG_PRINTLN(F("[E34] AUX HIGH!"));
     }
     else {
         // If you can't use aux pin, use 4K7 pullup with Arduino.
         // You may need to adjust this value if transmissions fail.
         this->managedDelay(waitNoAux);
-        DEBUG_PRINTLN(F("Wait response: no AUX pin -- just wait.."));
+        DEBUG_PRINTLN(F("[E34] Wait response: no AUX pin -- just wait.."));
     }
 
     // As per data sheet, control after aux goes high is 2ms; so delay for at least that long
     this->managedDelay(EBYTE_EXTRA_WAIT);
-    DEBUG_PRINTLN(F("Wait response: complete!"));
+    DEBUG_PRINTLN(F("[E34] Wait response: complete!"));
     return result;
 }
 
@@ -247,8 +247,8 @@ void Ebyte_E34::changeBpsRate(uint32_t new_bps) {
     if (this->hs) {
         if (this->txPin != -1 && this->rxPin != -1) {
             this->hs->begin(this->bpsRate, this->serialConfig,
-                            this->txPin,  // To RX of uC
-                            this->rxPin   // To TX of uC
+                            this->rxPin,  // To TX of Ebyte
+                            this->txPin   // To RX of Ebyte
                             );
         }
         else {
@@ -380,15 +380,13 @@ ResponseStructContainer Ebyte_E34::getModuleInformation() {
         rc.status.code = ERR_E34_HEAD_NOT_RECOGNIZED;
     }
 
+    DEBUG_PRINTLN(F("[E34] Module information"));
     #ifdef EBYTE_DEBUG
     this->printHead(moduleInformation->HEAD);
     #endif
-    DEBUG_PRINT(F("Freq.: "));
-    DEBUG_PRINTLN(moduleInformation->frequency, HEX);
-    DEBUG_PRINT(F("Version  : "));
-    DEBUG_PRINTLN(moduleInformation->version, HEX);
-    DEBUG_PRINT(F("Features : "));
-    DEBUG_PRINTLN(moduleInformation->features, HEX);
+    DEBUG_PRINT(F(" Freq. : "));    DEBUG_PRINTLN(moduleInformation->frequency, HEX);
+    DEBUG_PRINT(F(" Ver.  : "));    DEBUG_PRINTLN(moduleInformation->version, HEX);
+    DEBUG_PRINT(F(" Features : ")); DEBUG_PRINTLN(moduleInformation->features, HEX);
 
     rc.data = moduleInformation;  // malloc(sizeof (moduleInformation));
     return rc;
@@ -446,10 +444,7 @@ Status Ebyte_E34::sendStruct(const void * structureManaged, uint16_t size_of_st)
 
     uint8_t len = this->hs->write((uint8_t *)structureManaged, size_of_st);
 
-    DEBUG_PRINT(F("Send struct len:"));
-    DEBUG_PRINT(len);
-    DEBUG_PRINT(F(" size:"))
-    DEBUG_PRINTLN(size_of_st);
+    DEBUG_PRINTF("[E34] Send struct len:%d size:%d" ENDL, len, size_of_st);
 
     if (len != size_of_st) {
         return (len == 0)? ERR_E34_NO_RESPONSE_FROM_DEVICE : ERR_E34_DATA_SIZE_NOT_MATCH;
@@ -460,10 +455,7 @@ Status Ebyte_E34::sendStruct(const void * structureManaged, uint16_t size_of_st)
 Status Ebyte_E34::receiveStruct(void * structureManaged, uint16_t size_of_st) {
     uint8_t len = this->hs->readBytes((uint8_t *)structureManaged, size_of_st);
 
-    DEBUG_PRINT(F("Recv struct len:"));
-    DEBUG_PRINT(len);
-    DEBUG_PRINT(F(" size:"));
-    DEBUG_PRINTLN(size_of_st);
+    DEBUG_PRINTF("[E34] Recv struct len:%d size:%d" ENDL, len, size_of_st);
 
     if (len != size_of_st) {
         return (len == 0)? ERR_E34_NO_RESPONSE_FROM_DEVICE : ERR_E34_DATA_SIZE_NOT_MATCH;
@@ -567,32 +559,30 @@ ResponseStatus Ebyte_E34::sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, cons
 
 #ifdef EBYTE_DEBUG
 void Ebyte_E34::printHead(byte HEAD) {
-    DEBUG_PRINT(F("HEAD : "));
-    DEBUG_PRINT(HEAD, BIN);
-    DEBUG_PRINT(" ");
-    DEBUG_PRINT(HEAD, DEC);
-    DEBUG_PRINT(" ");
+    DEBUG_PRINT(F(" HEAD : "));
+    DEBUG_PRINT(HEAD, BIN); DEBUG_PRINT(" ");
+    DEBUG_PRINT(HEAD, DEC); DEBUG_PRINT(" ");
     DEBUG_PRINTLN(HEAD, HEX);
 }
 
 void Ebyte_E34::printParameters(struct Configuration * cfg) {
-    DEBUG_PRINTLN(ENDL"[E34] Configuration");
+    DEBUG_PRINTLN(ENDL "[E34] Configuration");
 
     this->printHead(cfg->HEAD);
 
-    DEBUG_PRINT(F("AddH   : ")); DEBUG_PRINTLN(cfg->ADDH, DEC);
-    DEBUG_PRINT(F("AddL   : ")); DEBUG_PRINTLN(cfg->ADDL, DEC);
-    DEBUG_PRINT(F("Chan   : ")); DEBUG_PRINTLN(cfg->CHAN, DEC);
+    DEBUG_PRINT(F(" AddH   : ")); DEBUG_PRINTLN(cfg->ADDH, DEC);
+    DEBUG_PRINT(F(" AddL   : ")); DEBUG_PRINTLN(cfg->ADDL, DEC);
+    DEBUG_PRINT(F(" Chan   : ")); DEBUG_PRINTLN(cfg->CHAN, DEC);
 
-    DEBUG_PRINT(F("Parity : ")); DEBUG_PRINT(cfg->SPED.uartParity, BIN);   DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->SPED.parity_desc());
-    DEBUG_PRINT(F("Baud   : ")); DEBUG_PRINT(cfg->SPED.uartBaudRate, BIN); DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->SPED.baudrate_desc());
-    DEBUG_PRINT(F("AirRate: ")); DEBUG_PRINT(cfg->SPED.airDataRate, BIN);  DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->SPED.airrate_desc());
+    DEBUG_PRINT(F(" Parity : ")); DEBUG_PRINT(cfg->SPED.uartParity, BIN);   DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->SPED.parity_desc());
+    DEBUG_PRINT(F(" Baud   : ")); DEBUG_PRINT(cfg->SPED.uartBaudRate, BIN); DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->SPED.baudrate_desc());
+    DEBUG_PRINT(F(" AirRate: ")); DEBUG_PRINT(cfg->SPED.airDataRate, BIN);  DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->SPED.airrate_desc());
 
-    DEBUG_PRINT(F("OptTx  : ")); DEBUG_PRINT(cfg->OPTION.fixedTransmission, BIN);  DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->OPTION.fixed_tx_desc());
-    DEBUG_PRINT(F("OptPlup: ")); DEBUG_PRINT(cfg->OPTION.ioDriveMode, BIN);        DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->OPTION.io_drv_desc());
-    // DEBUG_PRINT(F("OptWkUp: ")); DEBUG_PRINT(cfg->OPTION.wirelessWakeupTime, BIN); DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->OPTION.wl_wake_desc());
-    // DEBUG_PRINT(F("OptFEC : ")); DEBUG_PRINT(cfg->OPTION.fec, BIN);                DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->OPTION.fec_desc());
-    DEBUG_PRINT(F("OptPow : ")); DEBUG_PRINT(cfg->OPTION.transmissionPower, BIN);  DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->OPTION.txpower_desc());
+    DEBUG_PRINT(F(" OptTx  : ")); DEBUG_PRINT(cfg->OPTION.fixedTransmission, BIN);  DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->OPTION.fixed_tx_desc());
+    DEBUG_PRINT(F(" OptPlup: ")); DEBUG_PRINT(cfg->OPTION.ioDriveMode, BIN);        DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->OPTION.io_drv_desc());
+    // DEBUG_PRINT(F(" OptWkUp: ")); DEBUG_PRINT(cfg->OPTION.wirelessWakeupTime, BIN); DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->OPTION.wl_wake_desc());
+    // DEBUG_PRINT(F(" OptFEC : ")); DEBUG_PRINT(cfg->OPTION.fec, BIN);                DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->OPTION.fec_desc());
+    DEBUG_PRINT(F(" OptPow : ")); DEBUG_PRINT(cfg->OPTION.transmissionPower, BIN);  DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->OPTION.txpower_desc());
 
     DEBUG_PRINTLN();
 }

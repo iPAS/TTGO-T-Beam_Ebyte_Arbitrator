@@ -21,11 +21,11 @@
 #ifdef EBYTE_DEBUG
 #define DEBUG_PRINT(...) { term_print(__VA_ARGS__); }
 #define DEBUG_PRINTLN(...) { term_println(__VA_ARGS__); }
+#define DEBUG_PRINTF(...) { term_printf(__VA_ARGS__); }
 #else
-#define DEBUG_PRINT(...) \
-    {}
-#define DEBUG_PRINTLN(...) \
-    {}
+#define DEBUG_PRINT(...)
+#define DEBUG_PRINTLN(...)
+#define DEBUG_PRINTF(...)
 #endif
 
 #define EBYTE_BROADCAST_ADDR 0xFF
@@ -239,7 +239,7 @@ struct ResponseStatus {
             case ERR_E34_HEAD_NOT_RECOGNIZED:   return F("Save mode returned not recognized!");
             case ERR_E34_NO_RESPONSE_FROM_DEVICE: return F("No response from device! (Check wiring)");
             case ERR_E34_WRONG_UART_CONFIG:     return F("Wrong UART configuration! (BPS must be 9600 for configuration)");
-            case ERR_E34_PACKET_TOO_BIG:        return F("Support only "STR(EBYTE_E34_MAX_LEN)" bytes of data transmission!");
+            case ERR_E34_PACKET_TOO_BIG:        return F("Support only " STR(EBYTE_E34_MAX_LEN) " bytes of data transmission!");
             default: return F("Invalid status!");
         }
     }
