@@ -1,12 +1,12 @@
 #include "global.h"
 
 
-// As a flow-controller, config
+// Computer config
 #define computer        EBYTE_FC_SERIAL
 #define EBYTE_FC_SERIAL Serial1
 #define EBYTE_FC_BAUD   115200
-#define EBYTE_FC_PIN_RX 15
-#define EBYTE_FC_PIN_TX 12
+#define EBYTE_FC_PIN_RX 4   // 15
+#define EBYTE_FC_PIN_TX 23  // 12
 #define EBYTE_FC_RX_BUFFER_SIZE 512
 #define EBYTE_FC_UART_TMO 1000
 
@@ -25,13 +25,13 @@ Ebyte_E34 ebyte(&EBYTE_SERIAL, EBYTE_PIN_AUX, EBYTE_PIN_M0, EBYTE_PIN_M1, EBYTE_
 
 // ----------------------------------------------------------------------------
 void ebyte_setup() {
-    // Setup as a modem
-    EBYTE_FC_SERIAL.begin(EBYTE_FC_BAUD, SERIAL_8N1, EBYTE_FC_PIN_RX, EBYTE_FC_PIN_TX);
-    EBYTE_FC_SERIAL.setRxBufferSize(EBYTE_FC_RX_BUFFER_SIZE);
-    EBYTE_FC_SERIAL.setTimeout(EBYTE_FC_UART_TMO);
-    while (!EBYTE_FC_SERIAL) taskYIELD();  // Yield
-    while (EBYTE_FC_SERIAL.available())
-        EBYTE_FC_SERIAL.read();  // Clear buffer
+    // Setup as a modem connected to computer
+    computer.begin(EBYTE_FC_BAUD, SERIAL_8N1, EBYTE_FC_PIN_RX, EBYTE_FC_PIN_TX);
+    computer.setRxBufferSize(EBYTE_FC_RX_BUFFER_SIZE);
+    computer.setTimeout(EBYTE_FC_UART_TMO);
+    while (!computer) taskYIELD();  // Yield
+    while (computer.available())
+        computer.read();  // Clear buffer
 
     // Ebyte setup
     if (ebyte.begin()) {  // Start communication with Ebyte module: config & etc.
@@ -101,10 +101,13 @@ void ebyte_process() {
         }
         else {
             term_printf("[EBYTE] recv from E34: %d bytes"ENDL, len);
+            String str = " >> ";
             while (len--) {
-                term_printf(" %2X", *p++);
+                // term_printf(" %2X", *p++);
+                str += String(*p++, HEX);
+                str += " ";
             }
-            term_println();
+            term_println(str);
         }
     }
 }
