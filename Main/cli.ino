@@ -11,6 +11,7 @@ Command cmd_help;
 Command cmd_ebyte_send;
 Command cmd_ebyte_get_config;
 Command cmd_ebyte_show_report;
+Command cmd_ebyte_loopback;
 
 #define DEFAULT_SEND_MESSAGE "0123456789"
 #define DEFAULT_REPORT_COUNT 1
@@ -19,7 +20,8 @@ const static char *help_description[] = {
     "\thelp",
     "\tsend [message] -- send [default \"" DEFAULT_SEND_MESSAGE "\"]",
     "\tconfig         -- get configuration",
-    "\treport [count] -- show report as count number [default \"" STR(DEFAULT_REPORT_COUNT) "\"]",
+    "\treport [count] -- show report. 0:dis -1:always [default \"" STR(DEFAULT_REPORT_COUNT) "\"]",
+    "\tloopback [1|0] -- show, ena, dis the 'send-back' mode",
 };
 
 // ----------------------------------------------------------------------------
@@ -49,6 +51,9 @@ void cli_setup() {
 
     cmd_ebyte_show_report = cli.addCommand("report", on_cmd_ebyte_show_report);
     cmd_ebyte_show_report.addPositionalArgument("count", STR(DEFAULT_REPORT_COUNT));
+
+    cmd_ebyte_loopback = cli.addCommand("loopback", on_cmd_ebyte_loopback);
+    cmd_ebyte_loopback.addPositionalArgument("flag", "");
 }
 
 // ----------------------------------------------------------------------------
@@ -138,4 +143,13 @@ void on_cmd_ebyte_show_report(cmd * c) {
     else {
         term_print(F("[CLI] What? ..")); term_println(param);
     }
+}
+
+// ----------------------------------------------------------------------------
+void on_cmd_ebyte_loopback(cmd * c) {
+    Command cmd(c);
+    Argument arg = cmd.getArgument("flag");
+    String param = arg.getValue();
+
+    term_printf("[CLI] %s" ENDL, param.c_str());
 }
