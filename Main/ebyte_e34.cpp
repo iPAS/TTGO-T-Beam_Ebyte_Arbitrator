@@ -227,16 +227,19 @@ Status Ebyte_E34::waitCompleteResponse(unsigned long timeout, unsigned int waitN
  * Method to indicate availability & to clear the buffer
  */
 int Ebyte_E34::available() {
-    return this->serialDef.stream->available();
+    // return this->serialDef.stream->available();
+    return this->hs->available();
 }
 
 void Ebyte_E34::flush() {
-    this->serialDef.stream->flush();
+    // this->serialDef.stream->flush();
+    this->hs->flush();
 }
 
 void Ebyte_E34::cleanUARTBuffer() {
     while (this->available()) {
-        this->serialDef.stream->read();
+        // this->serialDef.stream->read();
+        this->hs->read();
     }
 }
 
@@ -246,19 +249,22 @@ void Ebyte_E34::changeBpsRate(uint32_t new_bps) {
 
     if (this->hs) {
         if (this->txPin != -1 && this->rxPin != -1) {
-            this->serialDef.begin(*this->hs, this->bpsRate, this->serialConfig,
+            // this->serialDef.begin(*this->hs, this->bpsRate, this->serialConfig,
+            this->hs->begin(this->bpsRate, this->serialConfig,
                                   this->txPin,  // To RX of uC
                                   this->rxPin   // To TX of uC
                                   );
         }
         else {
-            this->serialDef.begin(*this->hs, this->bpsRate, this->serialConfig);
+            // this->serialDef.begin(*this->hs, this->bpsRate, this->serialConfig);
+            this->hs->begin(this->bpsRate, this->serialConfig);
         }
 
         while (!this->hs) vTaskDelay(1);  // wait for serial port to connect. Needed for native USB
     }
 
-    this->serialDef.stream->setTimeout(1000);  // Timeout data in the buffer, then send.
+    // this->serialDef.stream->setTimeout(1000);  // Timeout data in the buffer, then send.
+    this->hs->setTimeout(1000);  // Timeout data in the buffer, then send.
 }
 
 
@@ -270,7 +276,8 @@ void Ebyte_E34::changeBpsRate(uint32_t new_bps) {
 void Ebyte_E34::writeProgramCommand(PROGRAM_COMMAND cmd) {
     uint8_t CMD[3] = {cmd, cmd, cmd};
     // uint8_t size =
-    this->serialDef.stream->write(CMD, 3);
+    // this->serialDef.stream->write(CMD, 3);
+    this->hs->write(CMD, 3);
     this->managedDelay(EBYTE_EXTRA_WAIT);
 }
 
@@ -444,7 +451,8 @@ Status Ebyte_E34::sendStruct(const void * structureManaged, uint16_t size_of_st)
         return ERR_E34_PACKET_TOO_BIG;
     }
 
-    uint8_t len = this->serialDef.stream->write((uint8_t *)structureManaged, size_of_st);
+    // uint8_t len = this->serialDef.stream->write((uint8_t *)structureManaged, size_of_st);
+    uint8_t len = this->hs->write((uint8_t *)structureManaged, size_of_st);
 
     DEBUG_PRINT(F("Send struct len:"));
     DEBUG_PRINT(len);
@@ -458,7 +466,8 @@ Status Ebyte_E34::sendStruct(const void * structureManaged, uint16_t size_of_st)
 }
 
 Status Ebyte_E34::receiveStruct(void * structureManaged, uint16_t size_of_st) {
-    uint8_t len = this->serialDef.stream->readBytes((uint8_t *)structureManaged, size_of_st);
+    // uint8_t len = this->serialDef.stream->readBytes((uint8_t *)structureManaged, size_of_st);
+    uint8_t len = this->hs->readBytes((uint8_t *)structureManaged, size_of_st);
 
     DEBUG_PRINT(F("Recv struct len:"));
     DEBUG_PRINT(len);
@@ -480,7 +489,8 @@ Status Ebyte_E34::receiveStruct(void * structureManaged, uint16_t size_of_st) {
 ResponseContainer Ebyte_E34::receiveMessage() {
     ResponseContainer rc;
     rc.status.code = E34_SUCCESS;
-    rc.data        = this->serialDef.stream->readString();
+    // rc.data        = this->serialDef.stream->readString();
+    rc.data        = this->hs->readString();
     // this->cleanUARTBuffer();
     return rc;
 }
@@ -496,7 +506,8 @@ ResponseStructContainer Ebyte_E34::receiveMessageFixedSize(uint8_t size) {
 ResponseContainer Ebyte_E34::receiveMessageUntil(char delimiter) {
     ResponseContainer rc;
     rc.status.code = E34_SUCCESS;
-    rc.data        = this->serialDef.stream->readStringUntil(delimiter);
+    // rc.data        = this->serialDef.stream->readStringUntil(delimiter);
+    rc.data        = this->hs->readStringUntil(delimiter);
     // this->cleanUARTBuffer();  <-- no flush, keep for next time
     return rc;
 }
@@ -506,7 +517,8 @@ ResponseContainer Ebyte_E34::receiveMessageString(uint8_t size) {
     rc.status.code = E34_SUCCESS;
     char buff[size+1];
     buff[size] = '\0';  // To be sure as a null terminated string.
-    uint8_t len = this->serialDef.stream->readBytes(buff, size);
+    // uint8_t len = this->serialDef.stream->readBytes(buff, size);
+    uint8_t len = this->hs->readBytes(buff, size);
     rc.data = buff;
 
     if (len != size) {

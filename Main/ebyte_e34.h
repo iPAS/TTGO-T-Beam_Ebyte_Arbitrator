@@ -102,26 +102,26 @@ class Ebyte_E34 {
     int8_t rxPin    = -1;
     int8_t txPin    = -1;
 
-    struct NeedsStream {
-        Stream * stream;
+    // struct NeedsStream {
+    //     Stream * stream;
 
-        template <typename T> void begin(T & t, uint32_t baud, uint32_t config) {
-            DEBUG_PRINT("Init Serial: "); DEBUG_PRINTLN(baud);
-            t.setTimeout(500);
-            t.begin(baud, config);
-            stream = &t;
-        }
+    //     template <typename T> void begin(T & t, uint32_t baud, uint32_t config) {
+    //         DEBUG_PRINT("Init Serial: "); DEBUG_PRINTLN(baud);
+    //         t.setTimeout(500);
+    //         t.begin(baud, config);
+    //         stream = &t;
+    //     }
 
-        template <typename T> void begin(T & t, uint32_t baud, uint32_t config, int8_t rx_pin, int8_t tx_pin) {
-            DEBUG_PRINT("Init Serial: "); DEBUG_PRINTLN(baud);
-            t.setTimeout(500);
-            t.begin(baud, config, rx_pin, tx_pin);  // SerialPort.begin (BaudRate, SerialMode, RX_pin, TX_pin)
-            stream = &t;
-        }
+    //     template <typename T> void begin(T & t, uint32_t baud, uint32_t config, int8_t rx_pin, int8_t tx_pin) {
+    //         DEBUG_PRINT("Init Serial: "); DEBUG_PRINTLN(baud);
+    //         t.setTimeout(500);
+    //         t.begin(baud, config, rx_pin, tx_pin);  // SerialPort.begin (BaudRate, SerialMode, RX_pin, TX_pin)
+    //         stream = &t;
+    //     }
 
-        void listen() {}
-    };
-    NeedsStream serialDef;
+    //     void listen() {}
+    // };
+    // NeedsStream serialDef;
 
     MODE_TYPE mode = MODE_0_FIXED;
 
