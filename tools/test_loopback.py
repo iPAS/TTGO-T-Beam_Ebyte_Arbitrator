@@ -55,7 +55,7 @@ if __name__ == '__main__':
             ser.write(send_str.encode())
             waiting = True
             send_time = time.time()
-            #print_info(send_str)
+            # print_info(send_str)
 
             while (waiting):
                 # read until endline (non blocking)

@@ -18,8 +18,6 @@
 #define EBYTE_PIN_AUX   34
 #define EBYTE_PIN_M0    25
 #define EBYTE_PIN_M1    14
-#define EBYTE_UART_BUFFER_SIZE 512
-#define EBYTE_UART_BUFFER_TMO 1000
 
 Ebyte_E34 ebyte(&EBYTE_SERIAL, EBYTE_PIN_AUX, EBYTE_PIN_M0, EBYTE_PIN_M1, EBYTE_PIN_E34_RX, EBYTE_PIN_E34_TX);
 
@@ -35,8 +33,8 @@ bool ebyte_loopback_flag = false;
 // ----------------------------------------------------------------------------
 void ebyte_setup() {
     // Setup as a modem connected to computer
-    computer.begin(EBYTE_FC_BAUD, SERIAL_8N1, EBYTE_FC_PIN_RX, EBYTE_FC_PIN_TX);
     computer.setRxBufferSize(EBYTE_FC_RX_BUFFER_SIZE);
+    computer.begin(EBYTE_FC_BAUD, SERIAL_8N1, EBYTE_FC_PIN_RX, EBYTE_FC_PIN_TX);
     computer.setTimeout(EBYTE_FC_UART_TMO);
     while (!computer) taskYIELD();  // Yield
     while (computer.available())

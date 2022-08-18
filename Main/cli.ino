@@ -151,5 +151,15 @@ void on_cmd_ebyte_loopback(cmd * c) {
     Argument arg = cmd.getArgument("flag");
     String param = arg.getValue();
 
-    term_printf("[CLI] %s" ENDL, param.c_str());
+    long flag;
+    if (extract_int(param, &flag) == false) {
+        if (param.c_str() != "") {
+            term_print(F("[CLI] What? ..")); term_println(param);
+        }
+    }
+    else {
+        ebyte_loopback_flag = (flag == 0)? false : true;
+    }
+
+    term_printf("[CLI] Ebyte loopback: %s" ENDL, (ebyte_loopback_flag)? "true" : "false");
 }

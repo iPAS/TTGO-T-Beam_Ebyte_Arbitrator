@@ -34,6 +34,9 @@
 #define EBYTE_EXTRA_WAIT 40
 #define EBYTE_CONFIG_BAUD 9600
 
+#define EBYTE_UART_BUFFER_SIZE 512
+#define EBYTE_UART_BUFFER_TMO 1000
+
 typedef enum RESPONSE_STATUS {
     E34_SUCCESS = 1,
     ERR_E34_UNKNOWN, /* something shouldn't happened */
