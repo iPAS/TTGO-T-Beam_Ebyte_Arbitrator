@@ -37,13 +37,13 @@ void ebyte_setup() {
     if (ebyte.begin()) {  // Start communication with Ebyte module: config & etc.
         term_println(ENDL "[EBYTE] Initialized successfully");
 
-        ResponseStructContainer c;
-        c = ebyte.getConfiguration();  // Get c.data from here
-        Configuration cfg = *((Configuration *)c.data); // This is a memory transfer, NOT by-reference.
-                                                        // It's important get configuration pointer before all other operation.
-        c.close();  // Clean c.data that was allocated in ::getConfiguration()
+        ResponseStructContainer resp;
+        resp = ebyte.getConfiguration();  // Get c.data from here
+        Configuration cfg = *((Configuration *)resp.data); // This is a memory transfer, NOT by-reference.
+        resp.close();  // Clean c.data that was allocated in ::getConfiguration()
 
-        if (c.status.code == E34_SUCCESS){
+        if (resp.status.code == E34_SUCCESS){
+            term_println(F("[EBYTE] Old configuration"));
             ebyte.printParameters(&cfg);
 
             // Setup the desired mode
@@ -54,15 +54,29 @@ void ebyte_setup() {
             cfg.OPTION.ioDriveMode      = IO_PUSH_PULL;
             cfg.OPTION.fixedTransmission = TXMODE_TRANS;  // XXX:
             cfg.SPED.airDataRate        = AIR_DATA_RATE_2M;
-            cfg.SPED.uartBaudRate       = UART_BPS_115200;
+            cfg.SPED.uartBaudRate       = UART_BPS_115200;  // XXX: don't forget to ::changeBpsRate( EBYTE_BAUD )
             cfg.SPED.uartParity         = UART_PARITY_8N1;
             ebyte.setConfiguration(cfg);
             // ebyte.setConfiguration(cfg, WRITE_CFG_PWR_DWN_SAVE);  // XXX: Save
 
-            ebyte.changeBpsRate(115200);
+            // Recheck
+            resp = ebyte.getConfiguration();  // Get c.data from here
+            cfg = *((Configuration *)resp.data); // This is a memory transfer, NOT by-reference.
+            resp.close();
+
+            if (resp.status.code == E34_SUCCESS){
+                term_println(F("[EBYTE] New configuration"));
+                ebyte.printParameters(&cfg);
+            }
+            else {
+                term_println(resp.status.desc());  // Description of code
+            }
+
+            // Change the baudrate for data transfer.
+            ebyte.changeBpsRate(EBYTE_BAUD);
         }
         else {
-            term_println(c.status.desc());  // Description of code
+            term_println(resp.status.desc());  // Description of code
         }
     }
     else {

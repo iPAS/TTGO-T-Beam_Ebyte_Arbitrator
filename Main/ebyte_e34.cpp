@@ -240,6 +240,10 @@ void Ebyte_E34::cleanUARTBuffer() {
     }
 }
 
+uint32_t Ebyte_E34::getBpsRate() {
+    return this->bpsRate;
+}
+
 void Ebyte_E34::changeBpsRate(uint32_t new_bps) {
     this->hs->end();
     this->bpsRate = new_bps;
@@ -302,6 +306,7 @@ ResponseStructContainer Ebyte_E34::getConfiguration() {
     }
 
     #ifdef EBYTE_DEBUG
+    DEBUG_PRINTLN(F("[E34] Get configuration"));
     this->printHead(((Configuration *)rc.data)->HEAD);
     #endif
 
@@ -340,6 +345,7 @@ ResponseStatus Ebyte_E34::setConfiguration(Configuration configuration, PROGRAM_
     }
 
     #ifdef EBYTE_DEBUG
+    DEBUG_PRINTLN(F("[E34] Set configuration"));
     this->printHead(configuration.HEAD);
     #endif
 
@@ -380,13 +386,13 @@ ResponseStructContainer Ebyte_E34::getModuleInformation() {
         rc.status.code = ERR_E34_HEAD_NOT_RECOGNIZED;
     }
 
-    DEBUG_PRINTLN(F("[E34] Module information"));
     #ifdef EBYTE_DEBUG
+    DEBUG_PRINTLN(F("[E34] Module information"));
     this->printHead(moduleInformation->HEAD);
-    #endif
     DEBUG_PRINT(F(" Freq. : "));    DEBUG_PRINTLN(moduleInformation->frequency, HEX);
     DEBUG_PRINT(F(" Ver.  : "));    DEBUG_PRINTLN(moduleInformation->version, HEX);
     DEBUG_PRINT(F(" Features : ")); DEBUG_PRINTLN(moduleInformation->features, HEX);
+    #endif
 
     rc.data = moduleInformation;  // malloc(sizeof (moduleInformation));
     return rc;
@@ -423,7 +429,7 @@ ResponseStatus Ebyte_E34::resetModule() {
  * @return RESPONSE_STATUS
  */
 RESPONSE_STATUS Ebyte_E34::checkUARTConfiguration(MODE_TYPE mode) {
-    if (mode == MODE_3_PROGRAM && this->bpsRate != 9600) {
+    if (mode == MODE_3_PROGRAM && this->bpsRate != EBYTE_CONFIG_BAUD) {
         return ERR_E34_WRONG_UART_CONFIG;
     }
     return E34_SUCCESS;
@@ -557,7 +563,6 @@ ResponseStatus Ebyte_E34::sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, cons
  *
  */
 
-#ifdef EBYTE_DEBUG
 void Ebyte_E34::printHead(byte HEAD) {
     DEBUG_PRINT(F(" HEAD : "));
     DEBUG_PRINT(HEAD, BIN); DEBUG_PRINT(" ");
@@ -566,8 +571,6 @@ void Ebyte_E34::printHead(byte HEAD) {
 }
 
 void Ebyte_E34::printParameters(struct Configuration * cfg) {
-    DEBUG_PRINTLN(ENDL "[E34] Configuration");
-
     this->printHead(cfg->HEAD);
 
     DEBUG_PRINT(F(" AddH   : ")); DEBUG_PRINTLN(cfg->ADDH, DEC);
@@ -586,4 +589,3 @@ void Ebyte_E34::printParameters(struct Configuration * cfg) {
 
     DEBUG_PRINTLN();
 }
-#endif

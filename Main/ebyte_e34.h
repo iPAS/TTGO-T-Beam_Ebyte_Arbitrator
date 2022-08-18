@@ -84,23 +84,22 @@ class Ebyte_E34 {
 
     int available();
 
+    uint32_t getBpsRate();
     void changeBpsRate(uint32_t new_bps);
 
-    #ifdef EBYTE_DEBUG
     void printHead(byte HEAD);
     void printParameters(struct Configuration * cfg);
-    #endif
 
   private:
     HardwareSerial * hs;
-    uint32_t bpsRate = 9600;
+    uint32_t bpsRate = EBYTE_CONFIG_BAUD;
     uint32_t serialConfig = SERIAL_8N1;
 
-    int8_t auxPin   = -1;
-    int8_t m0Pin    = -1;
-    int8_t m1Pin    = -1;
-    int8_t rxPin    = -1;
-    int8_t txPin    = -1;
+    int8_t auxPin  = -1;
+    int8_t m0Pin   = -1;
+    int8_t m1Pin   = -1;
+    int8_t rxPin   = -1;
+    int8_t txPin   = -1;
 
     MODE_TYPE mode = MODE_0_FIXED;
 
