@@ -50,16 +50,14 @@ boolean is_numeric(String str) {
 /**
  * @brief Extract number from String with checking
  */
-bool extract_int(String str, int *ret) {
-    long id = str.toInt();
+bool extract_int(String str, long *ret) {
+    long value = str.toInt();
 
-    if (id == 0) {
-        if (is_numeric(str)) {  // Re-check if being zero
-            *ret = id;
-            return true;
-        }
-        return false;
+    if (value == 0) {
+        if (is_numeric(str) == false)  // Re-check if being zero
+            return false;
     }
 
+    *ret = value;
     return true;
 }

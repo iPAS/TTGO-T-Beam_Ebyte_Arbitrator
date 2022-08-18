@@ -15,10 +15,11 @@ extern void term_printf(const char *format, ...);
 #define debug(args...)
 #endif
 
-#define STR(s) #s
+#define STRINGIFY(x) #x
+#define STR(x) STRINGIFY(x)
 
 extern boolean is_numeric(String str);
-extern bool extract_int(String str, int *ret);
+extern bool extract_int(String str, long *ret);
 
 
 #endif  // __HELPER_H__

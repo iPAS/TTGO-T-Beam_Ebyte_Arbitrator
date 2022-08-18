@@ -12,7 +12,7 @@ Command cmd_ebyte_send;
 Command cmd_ebyte_get_config;
 Command cmd_ebyte_show_report;
 
-#define DEFAULT_SEND_MESSAGE "0123456789" ENDL
+#define DEFAULT_SEND_MESSAGE "0123456789"
 #define DEFAULT_REPORT_COUNT 1
 
 const static char *help_description[] = {
@@ -128,10 +128,14 @@ void on_cmd_ebyte_get_config(cmd *c) {
 void on_cmd_ebyte_show_report(cmd * c) {
     Command cmd(c);
     Argument arg = cmd.getArgument("count");
+    String param = arg.getValue();
 
-    int count;
-    if (extract_int(arg.getValue(), &count)) {
+    long count;
+    if (extract_int(param, &count)) {
         term_printf("[CLI] Ebyte report count=%d" ENDL, count);
         show_report_count = count;
+    }
+    else {
+        term_print(F("[CLI] What? ..")); term_println(param);
     }
 }
