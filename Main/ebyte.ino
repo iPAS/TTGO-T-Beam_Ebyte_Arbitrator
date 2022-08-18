@@ -108,6 +108,7 @@ void ebyte_process() {
         }
         else {
             term_printf("[EBYTE] send to E34: %d bytes" ENDL, len);
+            downlink_byte_sum += len;  // Keep stat
         }
     }
 
@@ -125,13 +126,8 @@ void ebyte_process() {
         }
         else {
             term_printf("[EBYTE] recv from E34: %d bytes" ENDL, len);
-            String str = " >> ";
-            while (len--) {
-                // term_printf(" %2X", *p++);
-                str += String(*p++, HEX);
-                str += " ";
-            }
-            term_println(str);
+            term_println(" >> " + hex_stream(p, len));
+            uplink_byte_sum += len;
         }
     }
 
@@ -142,13 +138,15 @@ void ebyte_process() {
         float down_rate = (downlink_byte_sum * 1000) / period;  // per second
 
         if (show_report_count > 0 || show_report_count < 0) {
-
-            term_printf("[CLI] Ebyte report up:%.2f down:%.2f" ENDL, up_rate, down_rate);
+            // term_printf("[CLI] Ebyte report up:%d down:%d" ENDL, uplink_byte_sum, downlink_byte_sum);
+            term_printf("[CLI] Ebyte report up:%.2fB/s down:%.2fB/s period:%.2fms" ENDL, up_rate, down_rate, period);
 
             if (show_report_count > 0)
                 show_report_count--;
         }
 
+        uplink_byte_sum = 0;
+        downlink_byte_sum = 0;
         report_millis = now + EBYTE_REPORT_PERIOD_MS;
     }
 }

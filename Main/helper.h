@@ -18,6 +18,7 @@ extern void term_printf(const char *format, ...);
 #define STRINGIFY(x) #x
 #define STR(x) STRINGIFY(x)
 
+extern String hex_stream(const void * p, uint16_t len);
 extern boolean is_numeric(String str);
 extern bool extract_int(String str, long *ret);
 

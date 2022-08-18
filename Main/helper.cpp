@@ -18,6 +18,19 @@ void term_printf(const char *format, ...)
 }
 
 /**
+ * @brief HEX stream
+ */
+String hex_stream(const void * p, uint16_t len) {
+    String str;
+    while (len--) {
+        // term_printf(" %2X", *p++);
+        str += String(*((char *)p++), HEX);
+        str += " ";
+    }
+    return str;
+}
+
+/**
  * @brief Check whether numeric or not
  */
 boolean is_numeric(String str) {
