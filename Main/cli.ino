@@ -138,7 +138,7 @@ void on_cmd_ebyte_show_report(cmd * c) {
     long count;
     if (extract_int(param, &count)) {
         term_printf("[CLI] Ebyte report count=%d" ENDL, count);
-        show_report_count = count;
+        ebyte_show_report_count = count;
     }
     else {
         term_print(F("[CLI] What? ..")); term_println(param);
