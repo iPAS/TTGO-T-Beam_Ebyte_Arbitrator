@@ -4,6 +4,7 @@
 
 #include <Arduino.h>
 #include <strings.h>
+#include <float.h>
 
 #include "version.h"
 #include "helper.h"

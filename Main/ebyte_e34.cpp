@@ -263,7 +263,7 @@ void Ebyte_E34::changeBpsRate(uint32_t new_bps) {
 
         this->hs->setTimeout(EBYTE_UART_BUFFER_TMO);
 
-        while (!this->hs) vTaskDelay(1);  // wait for serial port to connect. Needed for native USB
+        while (!this->hs) taskYIELD();  // wait for serial port to connect. Needed for native USB
     }
 
     this->hs->setTimeout(1000);  // Timeout data in the buffer, then send.

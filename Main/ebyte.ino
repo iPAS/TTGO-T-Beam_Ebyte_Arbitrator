@@ -25,6 +25,9 @@ Ebyte_E34 ebyte(&EBYTE_SERIAL, EBYTE_PIN_AUX, EBYTE_PIN_M0, EBYTE_PIN_M1, EBYTE_
 static uint32_t report_millis;
 static uint32_t downlink_byte_sum = 0;
 static uint32_t uplink_byte_sum = 0;
+static uint32_t prev_arival_millis = 0;         // Previous time the packet came
+static uint32_t inter_arival_sum_millis = 0;    // Cummulative sum of inter-packet arival time
+static uint32_t inter_arival_count = 0;
 int ebyte_show_report_count = 0;  // 0 is 'disable', -1 is 'forever', other +n will be counted down to zero.
 
 bool ebyte_loopback_flag = false;
@@ -114,6 +117,11 @@ void ebyte_process() {
     }
 
     if (ebyte.available()) {
+        uint32_t arival_millis = millis();  // Arival timestamp
+        inter_arival_sum_millis += arival_millis - prev_arival_millis;
+        inter_arival_count++;
+        prev_arival_millis = arival_millis;
+
         ResponseContainer rc = ebyte.receiveMessage();
         const char * p = rc.data.c_str();
         uint16_t len = rc.data.length();
@@ -149,13 +157,22 @@ void ebyte_process() {
 
     uint32_t now = millis();
     if (now > report_millis) {
-        float period = EBYTE_REPORT_PERIOD_MS + (now - report_millis);
-        float up_rate = (uplink_byte_sum * 1000) / period;
-        float down_rate = (downlink_byte_sum * 1000) / period;  // per second
-
         if (ebyte_show_report_count > 0 || ebyte_show_report_count < 0) {
-            // term_printf("[CLI] Ebyte report up:%d down:%d" ENDL, uplink_byte_sum, downlink_byte_sum);
-            term_printf("[CLI] Ebyte report up:%.2fB/s down:%.2fB/s period:%.2fms" ENDL, up_rate, down_rate, period);
+            float period = (EBYTE_REPORT_PERIOD_MS + (now - report_millis)) / 1000;  // Int. division
+            float up_rate = uplink_byte_sum / period;
+            float down_rate = downlink_byte_sum / period;  // per second
+
+            char inter_arival_str[10];
+            if (inter_arival_count > 0) {
+                snprintf(inter_arival_str, sizeof(inter_arival_str), "%dms", inter_arival_sum_millis / inter_arival_count);
+            } else {
+                snprintf(inter_arival_str, sizeof(inter_arival_str), "--ms");
+            }
+            inter_arival_sum_millis = 0;
+            inter_arival_count = 0;
+
+            term_printf("[CLI] Ebyte report up:%.2fB/s down:%.2fB/s period:%.2fs inter_arival:%s" ENDL,
+                up_rate, down_rate, period, inter_arival_str);
 
             if (ebyte_show_report_count > 0)
                 ebyte_show_report_count--;
