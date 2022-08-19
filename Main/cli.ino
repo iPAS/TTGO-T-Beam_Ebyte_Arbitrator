@@ -49,8 +49,10 @@ void cli_setup() {
 
     cmd_ebyte_get_config = cli.addCommand("c/onfig", on_cmd_ebyte_get_config);
 
-    cmd_ebyte_show_report = cli.addCommand("r/eport", on_cmd_ebyte_show_report);
-    cmd_ebyte_show_report.addPositionalArgument("count", STR(DEFAULT_REPORT_COUNT));
+    // cmd_ebyte_show_report = cli.addCommand("r/eport", on_cmd_ebyte_show_report);
+    // cmd_ebyte_show_report.addPositionalArgument("count", STR(DEFAULT_REPORT_COUNT));
+    // cmd_ebyte_show_report = cli.addBoundlessCommand("r/eport", on_cmd_ebyte_show_report);  // To be able to get -1
+    cmd_ebyte_show_report = cli.addSingleArgumentCommand("r/eport", on_cmd_ebyte_show_report);  // To be able to get -1
 
     cmd_ebyte_loopback = cli.addCommand("l/oopback", on_cmd_ebyte_loopback);
     cmd_ebyte_loopback.addPositionalArgument("flag", "");
@@ -132,8 +134,13 @@ void on_cmd_ebyte_get_config(cmd *c) {
 // ----------------------------------------------------------------------------
 void on_cmd_ebyte_show_report(cmd * c) {
     Command cmd(c);
-    Argument arg = cmd.getArgument("count");
+    // Argument arg = cmd.getArgument("count");
+    Argument arg = cmd.getArgument(0);
     String param = arg.getValue();
+
+    if (param == "") {
+        param = STR(DEFAULT_REPORT_COUNT);
+    }
 
     long count;
     if (extract_int(param, &count)) {
