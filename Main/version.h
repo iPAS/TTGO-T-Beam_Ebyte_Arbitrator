@@ -2,7 +2,7 @@
 #define __VERSION_H__
 
 
-#define __GIT_SHA1_ID__ ", heads/loopback-0-gc48c2b4"
+#define __GIT_SHA1_ID__ ", heads/e34_testing-0-g71580ad"
 
 
 #endif  // __GIT_SHA1_ID__

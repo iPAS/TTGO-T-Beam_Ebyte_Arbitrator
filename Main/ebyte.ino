@@ -108,7 +108,7 @@ void ebyte_process() {
             term_println(status.desc());
         }
         else {
-            term_printf("[EBYTE] send to E34: %d bytes" ENDL, len);
+            term_printf("[EBYTE] send to E34: %3d bytes" ENDL, len);
             downlink_byte_sum += len;  // Keep stat
         }
     }
@@ -127,7 +127,7 @@ void ebyte_process() {
                 term_println("[EBYTE] E2C error. Cannot write all");
             }
             else {
-                term_printf("[EBYTE] recv from E34: %d bytes" ENDL, len);
+                term_printf("[EBYTE] recv fm E34: %3d bytes", len);
                 term_println(" >> " + hex_stream(p, len));
                 uplink_byte_sum += len;  // Kepp stat
             }
@@ -140,7 +140,7 @@ void ebyte_process() {
                     term_println(status.desc());
                 }
                 else {
-                    term_printf("[EBYTE] sendback to E34: %d bytes" ENDL, len);
+                    term_printf("[EBYTE] loop to E34: %3d bytes" ENDL, len);
                     downlink_byte_sum += len;  // Kepp stat
                 }
             }

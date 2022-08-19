@@ -23,6 +23,8 @@ import string
 import random
 
 
+TMO_PERIOD = 3.
+
 # -----------------------------------------------------------------------------
 def print_info(str):
     current_time = datetime.now().strftime("%H:%M:%S")
@@ -72,7 +74,7 @@ if __name__ == '__main__':
 
                 # check timeout
                 elapse_time = time.time() - send_time
-                if (elapse_time > 1.0):
+                if (elapse_time > TMO_PERIOD):
                     waiting = False
                     result_timeout += 1
                     print_info('timeout '+ recv_str)
