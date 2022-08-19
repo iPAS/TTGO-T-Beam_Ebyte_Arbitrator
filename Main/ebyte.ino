@@ -101,6 +101,7 @@ void ebyte_process() {
         uint8_t len = (computer.available() < EBYTE_E34_MAX_LEN)? computer.available() : EBYTE_E34_MAX_LEN;
         computer.readBytes(buf, len);
 
+        // Forward downlink
         ResponseStatus status = ebyte.sendMessage(buf, len);
         if (status.code != E34_SUCCESS) {
             term_print("[EBYTE] C2E error, E34:");
@@ -120,30 +121,29 @@ void ebyte_process() {
             term_print("[EBYTE] E2C error, E34: ");
             term_println(rc.status.desc());
         }
-        else
-        if (ebyte_loopback_flag) {
-
-            uplink_byte_sum += len;  // Kepp stat
-
-            ResponseStatus status = ebyte.sendMessage(p, len);
-            if (status.code != E34_SUCCESS) {
-                term_print("[EBYTE] E2E error, E34:");
-                term_println(status.desc());
+        else {
+            // Forward uplink
+            if (computer.write(p, len) != len) {
+                term_println("[EBYTE] E2C error. Cannot write all");
             }
             else {
-                term_printf("[EBYTE] sendback to E34: %d bytes" ENDL, len);
-                downlink_byte_sum += len;  // Kepp stat
+                term_printf("[EBYTE] recv from E34: %d bytes" ENDL, len);
+                term_println(" >> " + hex_stream(p, len));
+                uplink_byte_sum += len;  // Kepp stat
             }
 
-        }
-        else
-        if (computer.write(p, len) != len) {
-            term_println("[EBYTE] E2C error. Cannot write all");
-        }
-        else {
-            term_printf("[EBYTE] recv from E34: %d bytes" ENDL, len);
-            term_println(" >> " + hex_stream(p, len));
-            uplink_byte_sum += len;  // Kepp stat
+            // Send back
+            if (ebyte_loopback_flag) {
+                ResponseStatus status = ebyte.sendMessage(p, len);
+                if (status.code != E34_SUCCESS) {
+                    term_print("[EBYTE] E2E error, E34:");
+                    term_println(status.desc());
+                }
+                else {
+                    term_printf("[EBYTE] sendback to E34: %d bytes" ENDL, len);
+                    downlink_byte_sum += len;  // Kepp stat
+                }
+            }
         }
     }
 
