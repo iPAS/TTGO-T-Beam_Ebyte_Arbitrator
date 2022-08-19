@@ -160,7 +160,7 @@ void on_cmd_ebyte_loopback(cmd * c) {
 
     long flag;
     if (extract_int(param, &flag) == false) {
-        if (param.c_str() != "") {
+        if (param != "") {
             term_print(F("[CLI] What? ..")); term_println(param);
         }
     }
