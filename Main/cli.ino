@@ -11,6 +11,7 @@ Command cmd_help;
 Command cmd_ebyte_send;
 Command cmd_ebyte_get_config;
 Command cmd_ebyte_show_report;
+Command cmd_ebyte_loopback;
 
 #define DEFAULT_SEND_MESSAGE "0123456789"
 #define DEFAULT_REPORT_COUNT 1
@@ -19,7 +20,8 @@ const static char *help_description[] = {
     "\thelp",
     "\tsend [message] -- send [default \"" DEFAULT_SEND_MESSAGE "\"]",
     "\tconfig         -- get configuration",
-    "\treport [count] -- show report as count number [default \"" STR(DEFAULT_REPORT_COUNT) "\"]",
+    "\treport [count] -- show report. 0:dis -1:always [default \"" STR(DEFAULT_REPORT_COUNT) "\"]",
+    "\tloopback [1|0] -- show, ena, dis the 'send-back' mode",
 };
 
 // ----------------------------------------------------------------------------
@@ -40,15 +42,20 @@ void cli_setup() {
 
     cli.setOnError(&on_error_callback); // Set error Callback
 
-    cmd_help = cli.addCommand("help", on_cmd_help);
+    cmd_help = cli.addCommand("h/elp", on_cmd_help);
 
-    cmd_ebyte_send = cli.addCommand("send", on_cmd_ebyte_send);
+    cmd_ebyte_send = cli.addCommand("s/end", on_cmd_ebyte_send);
     cmd_ebyte_send.addPositionalArgument("message", DEFAULT_SEND_MESSAGE);
 
-    cmd_ebyte_get_config = cli.addCommand("config", on_cmd_ebyte_get_config);
+    cmd_ebyte_get_config = cli.addCommand("c/onfig", on_cmd_ebyte_get_config);
 
-    cmd_ebyte_show_report = cli.addCommand("report", on_cmd_ebyte_show_report);
-    cmd_ebyte_show_report.addPositionalArgument("count", STR(DEFAULT_REPORT_COUNT));
+    // cmd_ebyte_show_report = cli.addCommand("r/eport", on_cmd_ebyte_show_report);
+    // cmd_ebyte_show_report.addPositionalArgument("count", STR(DEFAULT_REPORT_COUNT));
+    // cmd_ebyte_show_report = cli.addBoundlessCommand("r/eport", on_cmd_ebyte_show_report);  // To be able to get -1
+    cmd_ebyte_show_report = cli.addSingleArgumentCommand("r/eport", on_cmd_ebyte_show_report);  // To be able to get -1
+
+    cmd_ebyte_loopback = cli.addCommand("l/oopback", on_cmd_ebyte_loopback);
+    cmd_ebyte_loopback.addPositionalArgument("flag", "");
 }
 
 // ----------------------------------------------------------------------------
@@ -127,15 +134,39 @@ void on_cmd_ebyte_get_config(cmd *c) {
 // ----------------------------------------------------------------------------
 void on_cmd_ebyte_show_report(cmd * c) {
     Command cmd(c);
-    Argument arg = cmd.getArgument("count");
+    // Argument arg = cmd.getArgument("count");
+    Argument arg = cmd.getArgument(0);
     String param = arg.getValue();
+
+    if (param == "") {
+        param = STR(DEFAULT_REPORT_COUNT);
+    }
 
     long count;
     if (extract_int(param, &count)) {
         term_printf("[CLI] Ebyte report count=%d" ENDL, count);
-        show_report_count = count;
+        ebyte_show_report_count = count;
     }
     else {
         term_print(F("[CLI] What? ..")); term_println(param);
     }
+}
+
+// ----------------------------------------------------------------------------
+void on_cmd_ebyte_loopback(cmd * c) {
+    Command cmd(c);
+    Argument arg = cmd.getArgument("flag");
+    String param = arg.getValue();
+
+    long flag;
+    if (extract_int(param, &flag) == false) {
+        if (param.c_str() != "") {
+            term_print(F("[CLI] What? ..")); term_println(param);
+        }
+    }
+    else {
+        ebyte_loopback_flag = (flag == 0)? false : true;
+    }
+
+    term_printf("[CLI] Ebyte loopback: %s" ENDL, (ebyte_loopback_flag)? "true" : "false");
 }

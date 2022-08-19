@@ -15,7 +15,7 @@
 
 
 // Uncomment to enable printing out nice debug messages.
-#define EBYTE_DEBUG
+// #define EBYTE_DEBUG
 
 // Setup debug printing macros.
 #ifdef EBYTE_DEBUG
@@ -33,6 +33,9 @@
 #define EBYTE_E34_MAX_LEN 250
 #define EBYTE_EXTRA_WAIT 40
 #define EBYTE_CONFIG_BAUD 9600
+
+#define EBYTE_UART_BUFFER_SIZE 512
+#define EBYTE_UART_BUFFER_TMO 1000
 
 typedef enum RESPONSE_STATUS {
     E34_SUCCESS = 1,

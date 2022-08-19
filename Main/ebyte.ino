@@ -18,8 +18,6 @@
 #define EBYTE_PIN_AUX   34
 #define EBYTE_PIN_M0    25
 #define EBYTE_PIN_M1    14
-#define EBYTE_UART_BUFFER_SIZE 512
-#define EBYTE_UART_BUFFER_TMO 1000
 
 Ebyte_E34 ebyte(&EBYTE_SERIAL, EBYTE_PIN_AUX, EBYTE_PIN_M0, EBYTE_PIN_M1, EBYTE_PIN_E34_RX, EBYTE_PIN_E34_TX);
 
@@ -27,14 +25,16 @@ Ebyte_E34 ebyte(&EBYTE_SERIAL, EBYTE_PIN_AUX, EBYTE_PIN_M0, EBYTE_PIN_M1, EBYTE_
 static uint32_t report_millis;
 static uint32_t downlink_byte_sum = 0;
 static uint32_t uplink_byte_sum = 0;
-int show_report_count = 0;  // 0 is 'disable', -1 is 'forever', other +n will be counted down to zero.
+int ebyte_show_report_count = 0;  // 0 is 'disable', -1 is 'forever', other +n will be counted down to zero.
+
+bool ebyte_loopback_flag = false;
 
 
 // ----------------------------------------------------------------------------
 void ebyte_setup() {
     // Setup as a modem connected to computer
-    computer.begin(EBYTE_FC_BAUD, SERIAL_8N1, EBYTE_FC_PIN_RX, EBYTE_FC_PIN_TX);
     computer.setRxBufferSize(EBYTE_FC_RX_BUFFER_SIZE);
+    computer.begin(EBYTE_FC_BAUD, SERIAL_8N1, EBYTE_FC_PIN_RX, EBYTE_FC_PIN_TX);
     computer.setTimeout(EBYTE_FC_UART_TMO);
     while (!computer) taskYIELD();  // Yield
     while (computer.available())
@@ -101,6 +101,7 @@ void ebyte_process() {
         uint8_t len = (computer.available() < EBYTE_E34_MAX_LEN)? computer.available() : EBYTE_E34_MAX_LEN;
         computer.readBytes(buf, len);
 
+        // Forward downlink
         ResponseStatus status = ebyte.sendMessage(buf, len);
         if (status.code != E34_SUCCESS) {
             term_print("[EBYTE] C2E error, E34:");
@@ -120,14 +121,29 @@ void ebyte_process() {
             term_print("[EBYTE] E2C error, E34: ");
             term_println(rc.status.desc());
         }
-        else
-        if (computer.write(p, len) != len) {
-            term_println("[EBYTE] E2C error. Cannot write all");
-        }
         else {
-            term_printf("[EBYTE] recv from E34: %d bytes" ENDL, len);
-            term_println(" >> " + hex_stream(p, len));
-            uplink_byte_sum += len;
+            // Forward uplink
+            if (computer.write(p, len) != len) {
+                term_println("[EBYTE] E2C error. Cannot write all");
+            }
+            else {
+                term_printf("[EBYTE] recv from E34: %d bytes" ENDL, len);
+                term_println(" >> " + hex_stream(p, len));
+                uplink_byte_sum += len;  // Kepp stat
+            }
+
+            // Send back
+            if (ebyte_loopback_flag) {
+                ResponseStatus status = ebyte.sendMessage(p, len);
+                if (status.code != E34_SUCCESS) {
+                    term_print("[EBYTE] E2E error, E34:");
+                    term_println(status.desc());
+                }
+                else {
+                    term_printf("[EBYTE] sendback to E34: %d bytes" ENDL, len);
+                    downlink_byte_sum += len;  // Kepp stat
+                }
+            }
         }
     }
 
@@ -137,12 +153,12 @@ void ebyte_process() {
         float up_rate = (uplink_byte_sum * 1000) / period;
         float down_rate = (downlink_byte_sum * 1000) / period;  // per second
 
-        if (show_report_count > 0 || show_report_count < 0) {
+        if (ebyte_show_report_count > 0 || ebyte_show_report_count < 0) {
             // term_printf("[CLI] Ebyte report up:%d down:%d" ENDL, uplink_byte_sum, downlink_byte_sum);
             term_printf("[CLI] Ebyte report up:%.2fB/s down:%.2fB/s period:%.2fms" ENDL, up_rate, down_rate, period);
 
-            if (show_report_count > 0)
-                show_report_count--;
+            if (ebyte_show_report_count > 0)
+                ebyte_show_report_count--;
         }
 
         uplink_byte_sum = 0;

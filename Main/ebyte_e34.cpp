@@ -249,6 +249,8 @@ void Ebyte_E34::changeBpsRate(uint32_t new_bps) {
     this->bpsRate = new_bps;
 
     if (this->hs) {
+        this->hs->setRxBufferSize(EBYTE_UART_BUFFER_SIZE);
+
         if (this->txPin != -1 && this->rxPin != -1) {
             this->hs->begin(this->bpsRate, this->serialConfig,
                             this->rxPin,  // To TX of Ebyte
@@ -258,6 +260,8 @@ void Ebyte_E34::changeBpsRate(uint32_t new_bps) {
         else {
             this->hs->begin(this->bpsRate, this->serialConfig);
         }
+
+        this->hs->setTimeout(EBYTE_UART_BUFFER_TMO);
 
         while (!this->hs) vTaskDelay(1);  // wait for serial port to connect. Needed for native USB
     }
@@ -564,28 +568,28 @@ ResponseStatus Ebyte_E34::sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, cons
  */
 
 void Ebyte_E34::printHead(byte HEAD) {
-    DEBUG_PRINT(F(" HEAD : "));
-    DEBUG_PRINT(HEAD, BIN); DEBUG_PRINT(" ");
-    DEBUG_PRINT(HEAD, DEC); DEBUG_PRINT(" ");
-    DEBUG_PRINTLN(HEAD, HEX);
+    term_print(F(" HEAD : "));
+    term_print(HEAD, BIN); term_print(" ");
+    term_print(HEAD, DEC); term_print(" ");
+    term_println(HEAD, HEX);
 }
 
 void Ebyte_E34::printParameters(struct Configuration * cfg) {
     this->printHead(cfg->HEAD);
 
-    DEBUG_PRINT(F(" AddH   : ")); DEBUG_PRINTLN(cfg->ADDH, DEC);
-    DEBUG_PRINT(F(" AddL   : ")); DEBUG_PRINTLN(cfg->ADDL, DEC);
-    DEBUG_PRINT(F(" Chan   : ")); DEBUG_PRINTLN(cfg->CHAN, DEC);
+    term_print(F(" AddH   : ")); term_println(cfg->ADDH, DEC);
+    term_print(F(" AddL   : ")); term_println(cfg->ADDL, DEC);
+    term_print(F(" Chan   : ")); term_println(cfg->CHAN, DEC);
 
-    DEBUG_PRINT(F(" Parity : ")); DEBUG_PRINT(cfg->SPED.uartParity, BIN);   DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->SPED.parity_desc());
-    DEBUG_PRINT(F(" Baud   : ")); DEBUG_PRINT(cfg->SPED.uartBaudRate, BIN); DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->SPED.baudrate_desc());
-    DEBUG_PRINT(F(" AirRate: ")); DEBUG_PRINT(cfg->SPED.airDataRate, BIN);  DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->SPED.airrate_desc());
+    term_print(F(" Parity : ")); term_print(cfg->SPED.uartParity, BIN);   term_print(" -> "); term_println(cfg->SPED.parity_desc());
+    term_print(F(" Baud   : ")); term_print(cfg->SPED.uartBaudRate, BIN); term_print(" -> "); term_println(cfg->SPED.baudrate_desc());
+    term_print(F(" AirRate: ")); term_print(cfg->SPED.airDataRate, BIN);  term_print(" -> "); term_println(cfg->SPED.airrate_desc());
 
-    DEBUG_PRINT(F(" OptTx  : ")); DEBUG_PRINT(cfg->OPTION.fixedTransmission, BIN);  DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->OPTION.fixed_tx_desc());
-    DEBUG_PRINT(F(" OptPlup: ")); DEBUG_PRINT(cfg->OPTION.ioDriveMode, BIN);        DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->OPTION.io_drv_desc());
-    // DEBUG_PRINT(F(" OptWkUp: ")); DEBUG_PRINT(cfg->OPTION.wirelessWakeupTime, BIN); DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->OPTION.wl_wake_desc());
-    // DEBUG_PRINT(F(" OptFEC : ")); DEBUG_PRINT(cfg->OPTION.fec, BIN);                DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->OPTION.fec_desc());
-    DEBUG_PRINT(F(" OptPow : ")); DEBUG_PRINT(cfg->OPTION.transmissionPower, BIN);  DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->OPTION.txpower_desc());
+    term_print(F(" OptTx  : ")); term_print(cfg->OPTION.fixedTransmission, BIN);  term_print(" -> "); term_println(cfg->OPTION.fixed_tx_desc());
+    term_print(F(" OptPlup: ")); term_print(cfg->OPTION.ioDriveMode, BIN);        term_print(" -> "); term_println(cfg->OPTION.io_drv_desc());
+    // term_print(F(" OptWkUp: ")); term_print(cfg->OPTION.wirelessWakeupTime, BIN); term_print(" -> "); term_println(cfg->OPTION.wl_wake_desc());
+    // term_print(F(" OptFEC : ")); term_print(cfg->OPTION.fec, BIN);                term_print(" -> "); term_println(cfg->OPTION.fec_desc());
+    term_print(F(" OptPow : ")); term_print(cfg->OPTION.transmissionPower, BIN);  term_print(" -> "); term_println(cfg->OPTION.txpower_desc());
 
-    DEBUG_PRINTLN();
+    term_println();
 }

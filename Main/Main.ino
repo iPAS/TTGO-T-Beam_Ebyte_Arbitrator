@@ -17,7 +17,7 @@ void setup() {
     cli_setup();
     ebyte_setup();  // Ebyte
 
-    term_printf(ENDL "[MAIN] System initialized successfully @ version: %s" ENDL, __GIT_SHA1_ID__);
+    term_printf(ENDL "[MAIN] System initialized successfully @rev: %s" ENDL, __GIT_SHA1_ID__);
 }
 
 // ---------- Main ----------
