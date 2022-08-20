@@ -144,7 +144,7 @@ void ebyte_process() {
             if (ebyte_loopback_flag) {
                 ResponseStatus status = ebyte.sendMessage(p, len);
                 if (status.code != E34_SUCCESS) {
-                    term_print("[EBYTE] E2E error, E34:");
+                    term_printf("[EBYTE] E2E error on sending %d bytes, E34:", len);
                     term_println(status.desc());
                 }
                 else {

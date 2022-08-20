@@ -24,6 +24,7 @@ import random
 
 
 TMO_PERIOD = 3.
+PAYLOAD_LEN = 510
 
 # -----------------------------------------------------------------------------
 def print_info(str):
@@ -52,7 +53,7 @@ if __name__ == '__main__':
     with serial.Serial(serial_port, serial_baud) as ser:
         while ((time.time() - start_time) < 60):
             # send test string to slave device
-            send_str = random_string(5) #"0123456789a0123456789b0123456789c0123456789d0123456789e0123456789f" #random_string(30)
+            send_str = random_string(PAYLOAD_LEN)  #"0123456789a0123456789b0123456789c0123456789d0123456789e0123456789f" #random_string(30)
             recv_str = ''
             ser.write(send_str.encode())
             waiting = True

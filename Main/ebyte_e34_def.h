@@ -30,7 +30,7 @@
 
 #define EBYTE_BROADCAST_ADDR 0xFF
 // #define EBYTE_E34_MAX_LEN 29
-#define EBYTE_E34_MAX_LEN 250
+#define EBYTE_E34_MAX_LEN 250  // 256 bytes at most
 #define EBYTE_EXTRA_WAIT 40
 #define EBYTE_CONFIG_BAUD 9600
 

@@ -448,7 +448,7 @@ RESPONSE_STATUS Ebyte_E34::checkUARTConfiguration(MODE_TYPE mode) {
  * Put your structure definition into a .h file and include in both the sender and reciever sketches.
  */
 Status Ebyte_E34::sendStruct(const void * structureManaged, uint16_t size_of_st) {
-    if (size_of_st > EBYTE_E34_MAX_LEN + 2) {
+    if (size_of_st > EBYTE_E34_MAX_LEN) {  // 256 bytes at most
         return ERR_E34_PACKET_TOO_BIG;
     }
 
