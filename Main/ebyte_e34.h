@@ -84,44 +84,22 @@ class Ebyte_E34 {
 
     int available();
 
+    uint32_t getBpsRate();
     void changeBpsRate(uint32_t new_bps);
 
-    #ifdef EBYTE_DEBUG
     void printHead(byte HEAD);
     void printParameters(struct Configuration * cfg);
-    #endif
 
   private:
     HardwareSerial * hs;
-    uint32_t bpsRate = 9600;
+    uint32_t bpsRate = EBYTE_CONFIG_BAUD;
     uint32_t serialConfig = SERIAL_8N1;
 
-    int8_t auxPin   = -1;
-    int8_t m0Pin    = -1;
-    int8_t m1Pin    = -1;
-    int8_t rxPin    = -1;
-    int8_t txPin    = -1;
-
-    struct NeedsStream {
-        Stream * stream;
-
-        template <typename T> void begin(T & t, uint32_t baud, uint32_t config) {
-            DEBUG_PRINT("Init Serial: "); DEBUG_PRINTLN(baud);
-            t.setTimeout(500);
-            t.begin(baud, config);
-            stream = &t;
-        }
-
-        template <typename T> void begin(T & t, uint32_t baud, uint32_t config, int8_t rx_pin, int8_t tx_pin) {
-            DEBUG_PRINT("Init Serial: "); DEBUG_PRINTLN(baud);
-            t.setTimeout(500);
-            t.begin(baud, config, rx_pin, tx_pin);  // SerialPort.begin (BaudRate, SerialMode, RX_pin, TX_pin)
-            stream = &t;
-        }
-
-        void listen() {}
-    };
-    NeedsStream serialDef;
+    int8_t auxPin  = -1;
+    int8_t m0Pin   = -1;
+    int8_t m1Pin   = -1;
+    int8_t rxPin   = -1;
+    int8_t txPin   = -1;
 
     MODE_TYPE mode = MODE_0_FIXED;
 

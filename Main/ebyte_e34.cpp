@@ -57,25 +57,25 @@ Ebyte_E34::Ebyte_E34(HardwareSerial * serial, byte auxPin, byte m0Pin, byte m1Pi
 bool Ebyte_E34::begin() {
     DEBUG_PRINTLN("[E34] begin");
 
-    DEBUG_PRINT("uC RX to TX ---> "); DEBUG_PRINTLN(this->txPin);
-    DEBUG_PRINT("uC TX to RX ---> "); DEBUG_PRINTLN(this->rxPin);
-    DEBUG_PRINT("AUX ---> ");         DEBUG_PRINTLN(this->auxPin);
-    DEBUG_PRINT("M0 ---> ");          DEBUG_PRINTLN(this->m0Pin);
-    DEBUG_PRINT("M1 ---> ");          DEBUG_PRINTLN(this->m1Pin);
+    DEBUG_PRINT(" RX (To Ebyte TX) ---> "); DEBUG_PRINTLN(this->rxPin);
+    DEBUG_PRINT(" TX (To Ebyte RX) ---> "); DEBUG_PRINTLN(this->txPin);
+    DEBUG_PRINT(" AUX ---> "); DEBUG_PRINTLN(this->auxPin);
+    DEBUG_PRINT(" M0 ---> "); DEBUG_PRINTLN(this->m0Pin);
+    DEBUG_PRINT(" M1 ---> "); DEBUG_PRINTLN(this->m1Pin);
 
     if (this->auxPin != -1) {
         pinMode(this->auxPin, INPUT);
-        DEBUG_PRINTLN("Init AUX pin!");
+        DEBUG_PRINTLN(" Init AUX pin!");
     }
     if (this->m0Pin != -1) {
         pinMode(this->m0Pin, OUTPUT);
         digitalWrite(this->m0Pin, HIGH);
-        DEBUG_PRINTLN("Init M0 pin!");
+        DEBUG_PRINTLN(" Init M0 pin!");
     }
     if (this->m1Pin != -1) {
         pinMode(this->m1Pin, OUTPUT);
         digitalWrite(this->m1Pin, HIGH);
-        DEBUG_PRINTLN("Init M1 pin!");
+        DEBUG_PRINTLN(" Init M1 pin!");
     }
 
     this->changeBpsRate(this->bpsRate);
@@ -107,33 +107,33 @@ Status Ebyte_E34::setMode(MODE_TYPE mode) {
     this->managedDelay(EBYTE_EXTRA_WAIT);
 
     if (this->m0Pin == -1 && this->m1Pin == -1) {
-        DEBUG_PRINTLN(F(
-            "The M0 and M1 pins is not set,"
-            " this mean that you are connect directly the pins as you need!"));
+        DEBUG_PRINTLN(F("[E34] Pins: M0 & M1 are not set. Hard-wiring is required!"));
     }
     else {
+        DEBUG_PRINT(F("[E34] Mode: "));
+
         switch (mode) {
             case MODE_0_FIXED:
                 // Mode 0 | normal operation
                 digitalWrite(this->m0Pin, LOW);
                 digitalWrite(this->m1Pin, LOW);
-                DEBUG_PRINTLN("MODE FIXED FREQ!");
+                DEBUG_PRINTLN("FIXED FREQ!");
                 break;
             case MODE_1_HOPPING:
                 digitalWrite(this->m0Pin, HIGH);
                 digitalWrite(this->m1Pin, LOW);
-                DEBUG_PRINTLN("MODE HOPPING FREQ!");
+                DEBUG_PRINTLN("HOPPING FREQ!");
                 break;
             case MODE_2_RESERVED:
                 digitalWrite(this->m0Pin, LOW);
                 digitalWrite(this->m1Pin, HIGH);
-                DEBUG_PRINTLN("MODE RESERVATION!");
+                DEBUG_PRINTLN("RESERVATION!");
                 break;
             case MODE_3_SLEEP:
                 // Mode 3 | Setting operation
                 digitalWrite(this->m0Pin, HIGH);
                 digitalWrite(this->m1Pin, HIGH);
-                DEBUG_PRINTLN("MODE PROGRAM/SLEEP!");
+                DEBUG_PRINTLN("PROGRAM/SLEEP!");
                 break;
             default: return ERR_E34_INVALID_PARAM;
         }
@@ -150,7 +150,7 @@ Status Ebyte_E34::setMode(MODE_TYPE mode) {
         this->mode = mode;
     }
 
-    DEBUG_PRINTLN(F("Clear Rx buf after mode change"));
+    DEBUG_PRINTLN(F("[E34] Clear Rx buf after mode change"));
     this->cleanUARTBuffer();
 
     return res;
@@ -203,22 +203,22 @@ Status Ebyte_E34::waitCompleteResponse(unsigned long timeout, unsigned int waitN
 
             if (is_timeout(t, t_prev, timeout)) {
                 result = ERR_E34_TIMEOUT;
-                DEBUG_PRINTLN("Wait response: timeout error! AUX still LOW");
+                DEBUG_PRINTLN(F("[E34] Wait response: timeout error! AUX still LOW"));
                 return result;
             }
         }
-        DEBUG_PRINTLN("AUX HIGH!");
+        DEBUG_PRINTLN(F("[E34] AUX HIGH!"));
     }
     else {
         // If you can't use aux pin, use 4K7 pullup with Arduino.
         // You may need to adjust this value if transmissions fail.
         this->managedDelay(waitNoAux);
-        DEBUG_PRINTLN(F("Wait response: no AUX pin -- just wait.."));
+        DEBUG_PRINTLN(F("[E34] Wait response: no AUX pin -- just wait.."));
     }
 
     // As per data sheet, control after aux goes high is 2ms; so delay for at least that long
     this->managedDelay(EBYTE_EXTRA_WAIT);
-    DEBUG_PRINTLN(F("Wait response: complete!"));
+    DEBUG_PRINTLN(F("[E34] Wait response: complete!"));
     return result;
 }
 
@@ -227,17 +227,21 @@ Status Ebyte_E34::waitCompleteResponse(unsigned long timeout, unsigned int waitN
  * Method to indicate availability & to clear the buffer
  */
 int Ebyte_E34::available() {
-    return this->serialDef.stream->available();
+    return this->hs->available();
 }
 
 void Ebyte_E34::flush() {
-    this->serialDef.stream->flush();
+    this->hs->flush();
 }
 
 void Ebyte_E34::cleanUARTBuffer() {
     while (this->available()) {
-        this->serialDef.stream->read();
+        this->hs->read();
     }
+}
+
+uint32_t Ebyte_E34::getBpsRate() {
+    return this->bpsRate;
 }
 
 void Ebyte_E34::changeBpsRate(uint32_t new_bps) {
@@ -245,20 +249,24 @@ void Ebyte_E34::changeBpsRate(uint32_t new_bps) {
     this->bpsRate = new_bps;
 
     if (this->hs) {
+        this->hs->setRxBufferSize(EBYTE_UART_BUFFER_SIZE);
+
         if (this->txPin != -1 && this->rxPin != -1) {
-            this->serialDef.begin(*this->hs, this->bpsRate, this->serialConfig,
-                                  this->txPin,  // To RX of uC
-                                  this->rxPin   // To TX of uC
-                                  );
+            this->hs->begin(this->bpsRate, this->serialConfig,
+                            this->rxPin,  // To TX of Ebyte
+                            this->txPin   // To RX of Ebyte
+                            );
         }
         else {
-            this->serialDef.begin(*this->hs, this->bpsRate, this->serialConfig);
+            this->hs->begin(this->bpsRate, this->serialConfig);
         }
 
-        while (!this->hs) vTaskDelay(1);  // wait for serial port to connect. Needed for native USB
+        this->hs->setTimeout(EBYTE_UART_BUFFER_TMO);
+
+        while (!this->hs) taskYIELD();  // wait for serial port to connect. Needed for native USB
     }
 
-    this->serialDef.stream->setTimeout(1000);  // Timeout data in the buffer, then send.
+    this->hs->setTimeout(1000);  // Timeout data in the buffer, then send.
 }
 
 
@@ -270,7 +278,7 @@ void Ebyte_E34::changeBpsRate(uint32_t new_bps) {
 void Ebyte_E34::writeProgramCommand(PROGRAM_COMMAND cmd) {
     uint8_t CMD[3] = {cmd, cmd, cmd};
     // uint8_t size =
-    this->serialDef.stream->write(CMD, 3);
+    this->hs->write(CMD, 3);
     this->managedDelay(EBYTE_EXTRA_WAIT);
 }
 
@@ -302,6 +310,7 @@ ResponseStructContainer Ebyte_E34::getConfiguration() {
     }
 
     #ifdef EBYTE_DEBUG
+    DEBUG_PRINTLN(F("[E34] Get configuration"));
     this->printHead(((Configuration *)rc.data)->HEAD);
     #endif
 
@@ -340,6 +349,7 @@ ResponseStatus Ebyte_E34::setConfiguration(Configuration configuration, PROGRAM_
     }
 
     #ifdef EBYTE_DEBUG
+    DEBUG_PRINTLN(F("[E34] Set configuration"));
     this->printHead(configuration.HEAD);
     #endif
 
@@ -381,14 +391,12 @@ ResponseStructContainer Ebyte_E34::getModuleInformation() {
     }
 
     #ifdef EBYTE_DEBUG
+    DEBUG_PRINTLN(F("[E34] Module information"));
     this->printHead(moduleInformation->HEAD);
+    DEBUG_PRINT(F(" Freq. : "));    DEBUG_PRINTLN(moduleInformation->frequency, HEX);
+    DEBUG_PRINT(F(" Ver.  : "));    DEBUG_PRINTLN(moduleInformation->version, HEX);
+    DEBUG_PRINT(F(" Features : ")); DEBUG_PRINTLN(moduleInformation->features, HEX);
     #endif
-    DEBUG_PRINT(F("Freq.: "));
-    DEBUG_PRINTLN(moduleInformation->frequency, HEX);
-    DEBUG_PRINT(F("Version  : "));
-    DEBUG_PRINTLN(moduleInformation->version, HEX);
-    DEBUG_PRINT(F("Features : "));
-    DEBUG_PRINTLN(moduleInformation->features, HEX);
 
     rc.data = moduleInformation;  // malloc(sizeof (moduleInformation));
     return rc;
@@ -425,7 +433,7 @@ ResponseStatus Ebyte_E34::resetModule() {
  * @return RESPONSE_STATUS
  */
 RESPONSE_STATUS Ebyte_E34::checkUARTConfiguration(MODE_TYPE mode) {
-    if (mode == MODE_3_PROGRAM && this->bpsRate != 9600) {
+    if (mode == MODE_3_PROGRAM && this->bpsRate != EBYTE_CONFIG_BAUD) {
         return ERR_E34_WRONG_UART_CONFIG;
     }
     return E34_SUCCESS;
@@ -440,16 +448,13 @@ RESPONSE_STATUS Ebyte_E34::checkUARTConfiguration(MODE_TYPE mode) {
  * Put your structure definition into a .h file and include in both the sender and reciever sketches.
  */
 Status Ebyte_E34::sendStruct(const void * structureManaged, uint16_t size_of_st) {
-    if (size_of_st > EBYTE_E34_MAX_LEN + 2) {
+    if (size_of_st > EBYTE_E34_MAX_LEN) {  // 256 bytes at most
         return ERR_E34_PACKET_TOO_BIG;
     }
 
-    uint8_t len = this->serialDef.stream->write((uint8_t *)structureManaged, size_of_st);
+    uint8_t len = this->hs->write((uint8_t *)structureManaged, size_of_st);
 
-    DEBUG_PRINT(F("Send struct len:"));
-    DEBUG_PRINT(len);
-    DEBUG_PRINT(F(" size:"))
-    DEBUG_PRINTLN(size_of_st);
+    DEBUG_PRINTF("[E34] Send struct len:%d size:%d" ENDL, len, size_of_st);
 
     if (len != size_of_st) {
         return (len == 0)? ERR_E34_NO_RESPONSE_FROM_DEVICE : ERR_E34_DATA_SIZE_NOT_MATCH;
@@ -458,12 +463,9 @@ Status Ebyte_E34::sendStruct(const void * structureManaged, uint16_t size_of_st)
 }
 
 Status Ebyte_E34::receiveStruct(void * structureManaged, uint16_t size_of_st) {
-    uint8_t len = this->serialDef.stream->readBytes((uint8_t *)structureManaged, size_of_st);
+    uint8_t len = this->hs->readBytes((uint8_t *)structureManaged, size_of_st);
 
-    DEBUG_PRINT(F("Recv struct len:"));
-    DEBUG_PRINT(len);
-    DEBUG_PRINT(F(" size:"));
-    DEBUG_PRINTLN(size_of_st);
+    DEBUG_PRINTF("[E34] Recv struct len:%d size:%d" ENDL, len, size_of_st);
 
     if (len != size_of_st) {
         return (len == 0)? ERR_E34_NO_RESPONSE_FROM_DEVICE : ERR_E34_DATA_SIZE_NOT_MATCH;
@@ -480,7 +482,7 @@ Status Ebyte_E34::receiveStruct(void * structureManaged, uint16_t size_of_st) {
 ResponseContainer Ebyte_E34::receiveMessage() {
     ResponseContainer rc;
     rc.status.code = E34_SUCCESS;
-    rc.data        = this->serialDef.stream->readString();
+    rc.data        = this->hs->readString();
     // this->cleanUARTBuffer();
     return rc;
 }
@@ -496,7 +498,7 @@ ResponseStructContainer Ebyte_E34::receiveMessageFixedSize(uint8_t size) {
 ResponseContainer Ebyte_E34::receiveMessageUntil(char delimiter) {
     ResponseContainer rc;
     rc.status.code = E34_SUCCESS;
-    rc.data        = this->serialDef.stream->readStringUntil(delimiter);
+    rc.data        = this->hs->readStringUntil(delimiter);
     // this->cleanUARTBuffer();  <-- no flush, keep for next time
     return rc;
 }
@@ -506,7 +508,7 @@ ResponseContainer Ebyte_E34::receiveMessageString(uint8_t size) {
     rc.status.code = E34_SUCCESS;
     char buff[size+1];
     buff[size] = '\0';  // To be sure as a null terminated string.
-    uint8_t len = this->serialDef.stream->readBytes(buff, size);
+    uint8_t len = this->hs->readBytes(buff, size);
     rc.data = buff;
 
     if (len != size) {
@@ -565,35 +567,29 @@ ResponseStatus Ebyte_E34::sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, cons
  *
  */
 
-#ifdef EBYTE_DEBUG
 void Ebyte_E34::printHead(byte HEAD) {
-    DEBUG_PRINT(F("HEAD : "));
-    DEBUG_PRINT(HEAD, BIN);
-    DEBUG_PRINT(" ");
-    DEBUG_PRINT(HEAD, DEC);
-    DEBUG_PRINT(" ");
-    DEBUG_PRINTLN(HEAD, HEX);
+    term_print(F(" HEAD : "));
+    term_print(HEAD, BIN); term_print(" ");
+    term_print(HEAD, DEC); term_print(" ");
+    term_println(HEAD, HEX);
 }
 
 void Ebyte_E34::printParameters(struct Configuration * cfg) {
-    DEBUG_PRINTLN(ENDL"[E34] Configuration");
-
     this->printHead(cfg->HEAD);
 
-    DEBUG_PRINT(F("AddH   : ")); DEBUG_PRINTLN(cfg->ADDH, DEC);
-    DEBUG_PRINT(F("AddL   : ")); DEBUG_PRINTLN(cfg->ADDL, DEC);
-    DEBUG_PRINT(F("Chan   : ")); DEBUG_PRINTLN(cfg->CHAN, DEC);
+    term_print(F(" AddH   : ")); term_println(cfg->ADDH, DEC);
+    term_print(F(" AddL   : ")); term_println(cfg->ADDL, DEC);
+    term_print(F(" Chan   : ")); term_println(cfg->CHAN, DEC);
 
-    DEBUG_PRINT(F("Parity : ")); DEBUG_PRINT(cfg->SPED.uartParity, BIN);   DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->SPED.parity_desc());
-    DEBUG_PRINT(F("Baud   : ")); DEBUG_PRINT(cfg->SPED.uartBaudRate, BIN); DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->SPED.baudrate_desc());
-    DEBUG_PRINT(F("AirRate: ")); DEBUG_PRINT(cfg->SPED.airDataRate, BIN);  DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->SPED.airrate_desc());
+    term_print(F(" Parity : ")); term_print(cfg->SPED.uartParity, BIN);   term_print(" -> "); term_println(cfg->SPED.parity_desc());
+    term_print(F(" Baud   : ")); term_print(cfg->SPED.uartBaudRate, BIN); term_print(" -> "); term_println(cfg->SPED.baudrate_desc());
+    term_print(F(" AirRate: ")); term_print(cfg->SPED.airDataRate, BIN);  term_print(" -> "); term_println(cfg->SPED.airrate_desc());
 
-    DEBUG_PRINT(F("OptTx  : ")); DEBUG_PRINT(cfg->OPTION.fixedTransmission, BIN);  DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->OPTION.fixed_tx_desc());
-    DEBUG_PRINT(F("OptPlup: ")); DEBUG_PRINT(cfg->OPTION.ioDriveMode, BIN);        DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->OPTION.io_drv_desc());
-    // DEBUG_PRINT(F("OptWkUp: ")); DEBUG_PRINT(cfg->OPTION.wirelessWakeupTime, BIN); DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->OPTION.wl_wake_desc());
-    // DEBUG_PRINT(F("OptFEC : ")); DEBUG_PRINT(cfg->OPTION.fec, BIN);                DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->OPTION.fec_desc());
-    DEBUG_PRINT(F("OptPow : ")); DEBUG_PRINT(cfg->OPTION.transmissionPower, BIN);  DEBUG_PRINT(" -> "); DEBUG_PRINTLN(cfg->OPTION.txpower_desc());
+    term_print(F(" OptTx  : ")); term_print(cfg->OPTION.fixedTransmission, BIN);  term_print(" -> "); term_println(cfg->OPTION.fixed_tx_desc());
+    term_print(F(" OptPlup: ")); term_print(cfg->OPTION.ioDriveMode, BIN);        term_print(" -> "); term_println(cfg->OPTION.io_drv_desc());
+    // term_print(F(" OptWkUp: ")); term_print(cfg->OPTION.wirelessWakeupTime, BIN); term_print(" -> "); term_println(cfg->OPTION.wl_wake_desc());
+    // term_print(F(" OptFEC : ")); term_print(cfg->OPTION.fec, BIN);                term_print(" -> "); term_println(cfg->OPTION.fec_desc());
+    term_print(F(" OptPow : ")); term_print(cfg->OPTION.transmissionPower, BIN);  term_print(" -> "); term_println(cfg->OPTION.txpower_desc());
 
-    DEBUG_PRINTLN();
+    term_println();
 }
-#endif
