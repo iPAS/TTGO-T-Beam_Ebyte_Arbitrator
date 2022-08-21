@@ -128,9 +128,6 @@ void ebyte_process() {
         inter_arival_count++;
         prev_arival_millis = arival_millis;
 
-        // uint8_t len = (ebyte.available() < EBYTE_E34_MAX_LEN)? ebyte.available() : EBYTE_E34_MAX_LEN;
-        // ResponseStructContainer rc = ebyte.receiveMessageFixedSize(len);
-        // const char * p = (char *)rc.data;
         ResponseContainer rc = ebyte.receiveMessage();
         const char * p = rc.data.c_str();
         uint16_t len = rc.data.length();
@@ -162,7 +159,6 @@ void ebyte_process() {
                 }
             }
         }
-        // rc.close();  // Free allocated memory
     }
 
     //

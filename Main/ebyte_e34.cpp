@@ -447,12 +447,12 @@ RESPONSE_STATUS Ebyte_E34::checkUARTConfiguration(MODE_TYPE mode) {
  *
  * Put your structure definition into a .h file and include in both the sender and reciever sketches.
  */
-Status Ebyte_E34::sendStruct(const void * structureManaged, uint16_t size_of_st) {
+Status Ebyte_E34::sendStruct(const void * structureManaged, size_t size_of_st) {
     if (size_of_st > EBYTE_E34_MAX_LEN) {
         return ERR_E34_PACKET_TOO_BIG;
     }
 
-    uint8_t len = this->hs->write((uint8_t *)structureManaged, size_of_st);
+    size_t len = this->hs->write((uint8_t *)structureManaged, size_of_st);
 
     DEBUG_PRINTF("[E34] Send struct len:%d size:%d" ENDL, len, size_of_st);
 
@@ -462,8 +462,8 @@ Status Ebyte_E34::sendStruct(const void * structureManaged, uint16_t size_of_st)
     return this->waitCompleteResponse(1000);
 }
 
-Status Ebyte_E34::receiveStruct(void * structureManaged, uint16_t size_of_st) {
-    uint8_t len = this->hs->readBytes((uint8_t *)structureManaged, size_of_st);
+Status Ebyte_E34::receiveStruct(void * structureManaged, size_t size_of_st) {
+    size_t len = this->hs->readBytes((uint8_t *)structureManaged, size_of_st);
 
     DEBUG_PRINTF("[E34] Recv struct len:%d size:%d" ENDL, len, size_of_st);
 
@@ -487,7 +487,7 @@ ResponseContainer Ebyte_E34::receiveMessage() {
     return rc;
 }
 
-ResponseStructContainer Ebyte_E34::receiveMessageFixedSize(uint8_t size) {
+ResponseStructContainer Ebyte_E34::receiveMessageFixedSize(size_t size) {
     ResponseStructContainer rc;
     rc.data        = malloc(size);
     rc.status.code = this->receiveStruct(rc.data, size);
@@ -503,12 +503,12 @@ ResponseContainer Ebyte_E34::receiveMessageUntil(char delimiter) {
     return rc;
 }
 
-ResponseContainer Ebyte_E34::receiveMessageString(uint8_t size) {
+ResponseContainer Ebyte_E34::receiveMessageString(size_t size) {
     ResponseContainer rc;
     rc.status.code = E34_SUCCESS;
     char buff[size+1];
     buff[size] = '\0';  // To be sure as a null terminated string.
-    uint8_t len = this->hs->readBytes(buff, size);
+    size_t len = this->hs->readBytes(buff, size);
     rc.data = buff;
 
     if (len != size) {
@@ -526,7 +526,7 @@ ResponseStatus Ebyte_E34::sendMessage(const String message) {
     return this->sendMessage(message.c_str(), message.length());
 }
 
-ResponseStatus Ebyte_E34::sendMessage(const void * message, uint8_t size) {
+ResponseStatus Ebyte_E34::sendMessage(const void * message, size_t size) {
     ResponseStatus status;
     status.code = this->sendStruct(message, size);
     return status;
@@ -540,13 +540,13 @@ ResponseStatus Ebyte_E34::sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, cons
     return this->sendFixedMessage(ADDH, ADDL, CHAN, message.c_str(), message.length());
 }
 
-ResponseStatus Ebyte_E34::sendBroadcastFixedMessage(byte CHAN, const void * message, const uint8_t size) {
+ResponseStatus Ebyte_E34::sendBroadcastFixedMessage(byte CHAN, const void * message, size_t size) {
     return this->sendFixedMessage(EBYTE_BROADCAST_ADDR, EBYTE_BROADCAST_ADDR, CHAN, message, size);
 }
 
-ResponseStatus Ebyte_E34::sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, const void * message, const uint8_t size) {
-    uint8_t message_size = sizeof(* FixedStransmission::message) * size;
-    uint8_t packet_size = sizeof(FixedStransmission) + message_size;  // sizeof(FixedStransmission) neglect ::message !
+ResponseStatus Ebyte_E34::sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, const void * message, size_t size) {
+    size_t message_size = sizeof(* FixedStransmission::message) * size;
+    size_t packet_size = sizeof(FixedStransmission) + message_size;  // sizeof(FixedStransmission) neglect ::message !
     FixedStransmission * fixedPacket = (FixedStransmission *)malloc(packet_size);
 
     fixedPacket->ADDH = ADDH;
