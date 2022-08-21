@@ -24,7 +24,7 @@ import random
 
 
 TMO_PERIOD = 3.
-DEFAULT_PAYLOAD_LEN = 500
+DEFAULT_PAYLOAD_LEN = 280  # MAVLink v2 max length -- https://mavlink.io/en/guide/serialization.html
 
 
 # -----------------------------------------------------------------------------

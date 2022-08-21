@@ -554,8 +554,7 @@ ResponseStatus Ebyte_E34::sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, cons
     fixedPacket->CHAN = CHAN;
     memcpy(fixedPacket->message, message, message_size);
 
-    ResponseStatus status;
-    status.code = this->sendStruct(fixedPacket, packet_size);
+    ResponseStatus status = this->sendMessage(fixedPacket, packet_size);
     free(fixedPacket);
 
     return status;
