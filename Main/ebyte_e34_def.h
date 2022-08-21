@@ -15,7 +15,7 @@
 
 
 // Uncomment to enable printing out nice debug messages.
-#define EBYTE_DEBUG
+// #define EBYTE_DEBUG
 
 // Setup debug printing macros.
 #ifdef EBYTE_DEBUG
@@ -32,7 +32,8 @@
 // #define EBYTE_E34_MAX_LEN 29
 #define EBYTE_E34_MAX_LEN 250  // 256 bytes at most
 #define EBYTE_EXTRA_WAIT 40
-#define EBYTE_SEND_WAIT 100
+#define EBYTE_NO_AUX_WAIT 100
+#define EBYTE_RESPONSE_TMO 1000
 #define EBYTE_CONFIG_BAUD 9600
 
 #define EBYTE_UART_BUFFER_SIZE 512

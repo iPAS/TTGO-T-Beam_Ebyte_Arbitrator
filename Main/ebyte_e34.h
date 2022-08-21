@@ -83,6 +83,7 @@ class Ebyte_E34 {
     Status receiveStruct(void * structureManaged, size_t size_of_st);
 
     int available();
+    Status auxReady(unsigned long timeout);
 
     uint32_t getBpsRate();
     void changeBpsRate(uint32_t new_bps);
@@ -104,7 +105,7 @@ class Ebyte_E34 {
     MODE_TYPE mode = MODE_0_FIXED;
 
     void   managedDelay(unsigned long timeout);
-    Status waitCompleteResponse(unsigned long timeout = 1000, unsigned int waitNoAux = 100);
+    Status waitCompleteResponse(unsigned long timeout = EBYTE_RESPONSE_TMO, unsigned long waitNoAux = EBYTE_NO_AUX_WAIT);
 
     void flush();
     void cleanUARTBuffer();
