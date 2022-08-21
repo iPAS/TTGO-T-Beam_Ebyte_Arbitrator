@@ -1,5 +1,9 @@
-# EByte Module Arbitrator with TTGO-T-Beam
+# Ebyte-module Flow Controller with TTGO-T-Beam
 
+Flow controller takes responsibility for managing data flowing in and out 
+    between Ebyte module (E34), as a communication equipment, and the terminal equipment, e.g. a computer.
+Due to the fact that the module is limitted in memory buffer, 
+    normally the payload cannot be sent over than 255 bytes in single time.
 
 
 ## Quick Start
@@ -9,14 +13,22 @@
 
 #### Connect T-Beam with EByte Module
 
-* [T-Beam].2  (TXD2)  
-* [T-Beam].13 (RXD2)  
+* [T-Beam].4  (RXD1) to [Term].Tx
+* [T-Beam].23 (TXD1) to [Term].Rx
+
+* [T-Beam].13 (RXD2) to [Ebyte].Tx
+* [T-Beam].2  (TXD2) to [EByte].Rx
+* [T-Beam].34 (GPIO) to [Ebyte].AUX
+* [T-Beam].25 (GPIO) to [EByte].M0
+* [T-Beam].14 (GPIO) to [Ebyte].M1
+
 * [T-Beam].GND        
 * [T-Beam].5V        
 
 
 ### Firmware
 
+x
 
 
 ## System Overview
@@ -24,10 +36,7 @@
 
 ### How Firmware Work
 
-
-
-
-
+x
 
 
 ### Resources
@@ -58,8 +67,3 @@
 #### Examples
 
 * [Examples for each peripheral on T-Beam](https://github.com/Xinyuan-LilyGO/LilyGo-LoRa-Series)
-
-* [Low-power design guide for T-Beam](https://github.com/JoepSchyns/Low_power_TTGO_T-beam)
-* [Most comprehensive resource on Riot-OS website](https://doc.riot-os.org/group__boards__esp32__ttgo-t-beam.html)
-
-* [SPI Bug Fix on Sendeepmistry's LoRa Library](https://github.com/eduautomatiza/arduino-LoRa/commit/6d1d8e48d216c24618c9d230c795160a00f510dd) -- reconfirmed with [Arduino SPI Library](https://www.e-tinkers.com/2020/03/do-you-know-arduino-spi-and-arduino-spi-library/)

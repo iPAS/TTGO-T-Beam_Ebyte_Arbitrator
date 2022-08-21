@@ -13,8 +13,8 @@
 // Ebyte config
 #define EBYTE_SERIAL    Serial2
 #define EBYTE_BAUD      115200
-#define EBYTE_PIN_E34_RX 13 // TX to Ebyte RX
-#define EBYTE_PIN_E34_TX 2  // RX to Ebyte TX
+#define EBYTE_PIN_E34_RX 13 // RX to Ebyte TX
+#define EBYTE_PIN_E34_TX 2  // TX to Ebyte RX
 #define EBYTE_PIN_AUX   34
 #define EBYTE_PIN_M0    25
 #define EBYTE_PIN_M1    14
@@ -99,6 +99,9 @@ void ebyte_setup() {
 
 // ----------------------------------------------------------------------------
 void ebyte_process() {
+    //
+    // Downlink
+    //
     if (computer.available()) {
         byte buf[EBYTE_E34_MAX_LEN];
         uint8_t len = (computer.available() < EBYTE_E34_MAX_LEN)? computer.available() : EBYTE_E34_MAX_LEN;
@@ -116,15 +119,21 @@ void ebyte_process() {
         }
     }
 
+    //
+    // Uplink
+    //
     if (ebyte.available()) {
         uint32_t arival_millis = millis();  // Arival timestamp
         inter_arival_sum_millis += arival_millis - prev_arival_millis;
         inter_arival_count++;
         prev_arival_millis = arival_millis;
 
-        ResponseContainer rc = ebyte.receiveMessage();
-        const char * p = rc.data.c_str();
-        uint16_t len = rc.data.length();
+        uint8_t len = (ebyte.available() < EBYTE_E34_MAX_LEN)? ebyte.available() : EBYTE_E34_MAX_LEN;
+        ResponseStructContainer rc = ebyte.receiveMessageFixedSize(len);
+        const char * p = (char *)rc.data;
+        // ResponseContainer rc = ebyte.receiveMessage();
+        // const char * p = rc.data.c_str();
+        // uint16_t len = rc.data.length();
         if (rc.status.code != E34_SUCCESS) {
             term_print("[EBYTE] E2C error, E34: ");
             term_println(rc.status.desc());
@@ -153,8 +162,13 @@ void ebyte_process() {
                 }
             }
         }
+
+        rc.close();  // Free allocated memory
     }
 
+    //
+    // Statistic calculation
+    //
     uint32_t now = millis();
     if (now > report_millis) {
         if (ebyte_show_report_count > 0 || ebyte_show_report_count < 0) {
