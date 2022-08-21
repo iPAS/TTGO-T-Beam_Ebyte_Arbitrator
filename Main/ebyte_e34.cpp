@@ -452,6 +452,26 @@ Status Ebyte_E34::sendStruct(const void * structureManaged, size_t size_of_st) {
         return ERR_E34_PACKET_TOO_BIG;
     }
 
+    unsigned long t_prev = millis();
+    if (this->auxPin != -1) {
+        while (digitalRead(this->auxPin) == LOW) {
+            unsigned long t = millis();  // It will be overflow about every 50 days.
+
+            if (is_timeout(t, t_prev, EBYTE_SEND_WAIT)) {
+                DEBUG_PRINTLN(F("[E34] Wait response: timeout error! AUX still LOW"));
+                return ERR_E34_TIMEOUT;
+            }
+            DEBUG_PRINTLN(F("[E34] Wait AUX HIGH.."));
+        }
+        DEBUG_PRINTLN(F("[E34] AUX HIGH!"));
+    }
+    else {
+        // If you can't use aux pin, use 4K7 pullup with Arduino.
+        // You may need to adjust this value if transmissions fail.
+        this->managedDelay(EBYTE_SEND_WAIT);
+        DEBUG_PRINTLN(F("[E34] Wait response: no AUX pin -- just wait.."));
+    }
+
     size_t len = this->hs->write((uint8_t *)structureManaged, size_of_st);
 
     DEBUG_PRINTF("[E34] Send struct len:%d size:%d" ENDL, len, size_of_st);

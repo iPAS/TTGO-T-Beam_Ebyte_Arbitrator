@@ -104,7 +104,7 @@ void ebyte_process() {
     //
     if (computer.available()) {
         byte buf[EBYTE_E34_MAX_LEN];
-        uint8_t len = (computer.available() < EBYTE_E34_MAX_LEN)? computer.available() : EBYTE_E34_MAX_LEN;
+        size_t len = (computer.available() < EBYTE_E34_MAX_LEN)? computer.available() : EBYTE_E34_MAX_LEN;
         computer.readBytes(buf, len);
 
         // Forward downlink
@@ -128,9 +128,12 @@ void ebyte_process() {
         inter_arival_count++;
         prev_arival_millis = arival_millis;
 
-        ResponseContainer rc = ebyte.receiveMessage();
-        const char * p = rc.data.c_str();
-        uint16_t len = rc.data.length();
+        size_t len = (ebyte.available() < EBYTE_E34_MAX_LEN)? ebyte.available() : EBYTE_E34_MAX_LEN;
+        ResponseStructContainer rc = ebyte.receiveMessageFixedSize(len);
+        const char * p = (char *)rc.data;
+        // ResponseContainer rc = ebyte.receiveMessage();
+        // const char * p = rc.data.c_str();
+        // size_t len = rc.data.length();
         if (rc.status.code != E34_SUCCESS) {
             term_print("[EBYTE] E2C error, E34: ");
             term_println(rc.status.desc());
@@ -159,6 +162,8 @@ void ebyte_process() {
                 }
             }
         }
+
+        rc.close();  // Free..
     }
 
     //
