@@ -108,14 +108,24 @@ void ebyte_process() {
         computer.readBytes(buf, len);
 
         // Forward downlink
-        ResponseStatus resp_sts = ebyte.sendMessage(buf, len);
-        if (resp_sts.code != E34_SUCCESS) {
-            term_print("[EBYTE] C2E error, E34:");
-            term_println(resp_sts.desc());
+        ResponseStatus resp_sts;
+        resp_sts.code = ebyte.auxReady(100);
+
+        if (resp_sts.code == E34_SUCCESS)
+        {
+            resp_sts = ebyte.sendMessage(buf, len);
+            if (resp_sts.code != E34_SUCCESS) {
+                term_print("[EBYTE] C2E error, E34:");
+                term_println(resp_sts.desc());
+            }
+            else {
+                term_printf("[EBYTE] send to E34: %3d bytes" ENDL, len);
+                downlink_byte_sum += len;  // Keep stat
+            }
         }
         else {
-            term_printf("[EBYTE] send to E34: %3d bytes" ENDL, len);
-            downlink_byte_sum += len;  // Keep stat
+            term_printf("[EBYTE] C2E error on waiting AUX HIGH to send %d bytes, E34:", len);
+            term_println(resp_sts.desc());
         }
     }
 
@@ -150,7 +160,7 @@ void ebyte_process() {
                 uplink_byte_sum += len;  // Kepp stat
             }
 
-            // Send back
+            // Loopback
             if (ebyte_loopback_flag) {
                 ResponseStatus resp_sts;
                 resp_sts.code = ebyte.auxReady(10);
@@ -160,16 +170,16 @@ void ebyte_process() {
                     resp_sts = ebyte.sendMessage(p, len);
 
                     if (resp_sts.code != E34_SUCCESS) {
-                        term_printf("[EBYTE] E2E error on sending %d bytes, E34:", len);
+                        term_printf("[EBYTE] loopback error on sending %d bytes, E34:", len);
                         term_println(resp_sts.desc());
                     }
                     else {
-                        term_printf("[EBYTE] loop to E34: %3d bytes" ENDL, len);
+                        term_printf("[EBYTE] loopback to E34: %3d bytes" ENDL, len);
                         downlink_byte_sum += len;  // Kepp stat
                     }
                 }
                 else {
-                    term_printf("[EBYTE] E2E error on waiting to send %d bytes, E34:", len);
+                    term_printf("[EBYTE] loopback error on waiting AUX HIGH to send %d bytes, E34:", len);
                     term_println(resp_sts.desc());
                 }
             }

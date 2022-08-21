@@ -15,7 +15,7 @@
 
 
 // Uncomment to enable printing out nice debug messages.
-// #define EBYTE_DEBUG
+#define EBYTE_DEBUG
 
 // Setup debug printing macros.
 #ifdef EBYTE_DEBUG
