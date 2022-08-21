@@ -24,7 +24,7 @@ import random
 
 
 TMO_PERIOD = 3.
-DEFAULT_PAYLOAD_LEN = 512
+DEFAULT_PAYLOAD_LEN = 500
 
 
 # -----------------------------------------------------------------------------
@@ -46,7 +46,7 @@ if __name__ == '__main__':
         print('Ex.> {} <port> <baud> [payload_len | {}]'.format(sys.argv[0], DEFAULT_PAYLOAD_LEN))
     serial_port = sys.argv[1]
     serial_baud = sys.argv[2]
-    payload_len = sys.argv[3] if len(sys.argv) >= 4 else DEFAULT_PAYLOAD_LEN
+    payload_len = int(sys.argv[3]) if len(sys.argv) >= 4 else DEFAULT_PAYLOAD_LEN
     print_info(str(sys.argv))
 
     result_ok = 0
