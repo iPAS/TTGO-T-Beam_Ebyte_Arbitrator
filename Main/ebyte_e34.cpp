@@ -48,6 +48,8 @@ Ebyte_E34::Ebyte_E34(HardwareSerial * serial, byte auxPin, byte m0Pin, byte m1Pi
 
     this->rxPin = rxPin;
     this->txPin = txPin;
+
+    q_init(&this->queueTx);
 }
 
 
@@ -568,6 +570,57 @@ ResponseStatus Ebyte_E34::sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, cons
     free(fixedPacket);
 
     return resp_sts;
+}
+
+
+/**
+ * @brief Queue sending
+ *
+ */
+
+size_t Ebyte_E34::lengthMessageQueueTx() {
+    return q_length(&this->queueTx);
+}
+
+ResponseStatus Ebyte_E34::fragmentMessageQueueTx(const void * message, size_t size) {
+    ResponseStatus resp_sts;
+    resp_sts.code = E34_SUCCESS;
+
+    byte * p = (byte *)message;
+    while (size > 0) {
+        size_t len = (size < EBYTE_E34_MAX_LEN)? size : EBYTE_E34_MAX_LEN;
+        size -= len;
+        if (q_enqueue(&this->queueTx, p, len) == NULL) {
+            resp_sts.code = ERR_E34_BUF_TOO_SMALL;
+            break;
+        }
+        p += len; 
+    }
+
+    return resp_sts;
+}
+
+size_t Ebyte_E34::processMessageQueueTx() {
+    if (this->lengthMessageQueueTx() > 0) {
+        ResponseStatus resp_sts;
+        resp_sts.code = this->auxReady(EBYTE_NO_AUX_WAIT);
+        if (resp_sts.code == E34_SUCCESS)
+        {
+            byte * p = (byte *)q_item(&this->queueTx, 0)->data;
+            size_t len = q_item(&this->queueTx, 0)->len;
+            resp_sts = this->sendMessage(p, len);
+            if (resp_sts.code == E34_SUCCESS) {
+                q_dequeue(&this->queueTx, NULL, 0);  // Succeeded!
+                return len;
+            }
+        }
+        else {
+            DEBUG_PRINT(F("[E34] Process queueTx error on waiting AUX HIGH, "));
+            DEBUG_PRINTLN(resp_sts.desc());
+        }
+    }
+
+    return 0;
 }
 
 

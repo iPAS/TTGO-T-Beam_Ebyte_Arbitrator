@@ -24,10 +24,10 @@ void term_printf(const char *format, ...)
  * @brief HEX stream
  */
 String hex_stream(const void * p, uint16_t len) {
+    char * c = (char *)p;
     String str;
     while (len--) {
-        // term_printf(" %2X", *p++);
-        str += String(*((char *)p++), HEX);
+        str += String(*c++, HEX);
         str += " ";
     }
     return str;

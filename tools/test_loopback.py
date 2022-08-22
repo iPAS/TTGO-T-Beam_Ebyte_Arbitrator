@@ -24,8 +24,9 @@ import random
 
 
 TMO_PERIOD_SEC = 3.
+DELAY_CHECK_SEC = .01
 DELAY_INTER_FRAME_SEC = 1
-DEFAULT_PAYLOAD_LEN = 280  # MAVLink v2 max length -- https://mavlink.io/en/guide/serialization.html
+DEFAULT_PAYLOAD_LEN = 279  # MAVLink v2 max length -- https://mavlink.io/en/guide/serialization.html
 
 
 # -----------------------------------------------------------------------------
@@ -54,7 +55,7 @@ if __name__ == '__main__':
     result_failed = 0
     result_timeout = 0
     start_time = time.time()
-    send_max = 1
+    send_max = 1000
 
     with serial.Serial(serial_port, serial_baud) as ser:
         while ((time.time() - start_time) < 60):
@@ -85,7 +86,7 @@ if __name__ == '__main__':
                     waiting = False
                     result_timeout += 1
                     print_info('timeout '+ recv_str)
-                time.sleep(0.1)
+                time.sleep(DELAY_CHECK_SEC)
 
             # suspend sending thread
             # time.sleep(DELAY_INTER_FRAME_SEC)  # sleep between frames
