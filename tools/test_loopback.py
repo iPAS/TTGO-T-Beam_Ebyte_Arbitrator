@@ -24,6 +24,7 @@ import random
 
 
 TMO_PERIOD_SEC = 3.
+DELAY_CHECK_SEC = .01
 DELAY_INTER_FRAME_SEC = 1
 DEFAULT_PAYLOAD_LEN = 279  # MAVLink v2 max length -- https://mavlink.io/en/guide/serialization.html
 
@@ -85,7 +86,7 @@ if __name__ == '__main__':
                     waiting = False
                     result_timeout += 1
                     print_info('timeout '+ recv_str)
-                time.sleep(0.1)
+                time.sleep(DELAY_CHECK_SEC)
 
             # suspend sending thread
             # time.sleep(DELAY_INTER_FRAME_SEC)  # sleep between frames

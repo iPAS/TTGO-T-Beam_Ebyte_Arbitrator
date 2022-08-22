@@ -2,7 +2,7 @@
 #define __VERSION_H__
 
 
-#define __GIT_SHA1_ID__ ", heads/queue2-0-g2de9dae"
+#define __GIT_SHA1_ID__ ", heads/queue2-0-gb623c9a"
 
 
 #endif  // __GIT_SHA1_ID__
