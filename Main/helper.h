@@ -18,11 +18,20 @@ extern void term_printf(const char *format, ...);
 #define STRINGIFY(x) #x
 #define STR(x) STRINGIFY(x)
 
+
 extern String hex_stream(const void * p, uint16_t len);
 extern boolean is_numeric(String str);
 extern bool extract_int(String str, long *ret);
 
-extern uint8_t system_verbose_level;
+
+typedef enum {
+    VERBOSE_NONE    = 0,
+    VERBOSE_ERROR   = 1,
+    VERBOSE_WARNING = 2,
+    VERBOSE_INFO    = 3,
+    VERBOSE_DEBUG   = 4,
+} verbose_code_t;
+extern verbose_code_t system_verbose_level;
 
 
 #endif  // __HELPER_H__

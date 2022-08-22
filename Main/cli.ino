@@ -16,15 +16,14 @@ Command cmd_ebyte_loopback;
 
 #define DEFAULT_SEND_MESSAGE "0123456789"
 #define DEFAULT_REPORT_COUNT 1
-#define DEFAULT_VERBOSE_LEVEL 1
 
 const static char *help_description[] = {
     "\thelp",
-    "\tverbose [level] -- show information by level [default \"" STR(DEFAULT_VERBOSE_LEVEL) "\"]",
+    "\tverbose [level] -- show or set info level [0=none | 1=err | 2=warn | 3=info | 4=debug]",
     "\tsend [message] -- send [default \"" DEFAULT_SEND_MESSAGE "\"]",
     "\tconfig         -- get configuration",
     "\treport [count] -- show report. 0:dis -1:always [default \"" STR(DEFAULT_REPORT_COUNT) "\"]",
-    "\tloopback [1|0] -- show, ena, dis the 'send-back' mode",
+    "\tloopback [1|0] -- show, enable, disable the 'send-back' mode",
 };
 
 // ----------------------------------------------------------------------------
@@ -48,7 +47,7 @@ void cli_setup() {
     cmd_help = cli.addCommand("h/elp", on_cmd_help);
 
     cmd_verbose = cli.addCommand("v/erbose", on_cmd_verbose);
-    cmd_verbose.addPositionalArgument("level", STR(DEFAULT_VERBOSE_LEVEL));
+    cmd_verbose.addPositionalArgument("level", "");
 
     cmd_ebyte_send = cli.addCommand("s/end", on_cmd_ebyte_send);
     cmd_ebyte_send.addPositionalArgument("message", DEFAULT_SEND_MESSAGE);
@@ -102,18 +101,17 @@ static void on_cmd_verbose(cmd *c) {
     Argument arg = cmd.getArgument("level");
     String param = arg.getValue();
 
-    if (param == "") {
-        param = STR(DEFAULT_VERBOSE_LEVEL);
-    }
-
     long level;
-    if (extract_int(param, &level)) {
-        term_printf("[CLI] Verbose level=%d" ENDL, level);
-        system_verbose_level = level;
+    if (extract_int(param, &level) == false) {
+        if (param != "") {
+            term_print(F("[CLI] What? ..")); term_println(param);
+        }
     }
     else {
-        term_print(F("[CLI] What? ..")); term_println(param);
+        system_verbose_level = (verbose_code_t)level;
     }
+
+    term_printf("[CLI] Verbose level=%d" ENDL, system_verbose_level);
 }
 
 // ----------------------------------------------------------------------------

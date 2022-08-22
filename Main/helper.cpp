@@ -1,7 +1,8 @@
 #include "global.h"
 
 
-uint8_t system_verbose_level = 0;
+verbose_code_t system_verbose_level = VERBOSE_NONE;
+
 
 /**
  * @brief Print to terminal
