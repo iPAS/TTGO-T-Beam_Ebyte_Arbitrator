@@ -119,7 +119,9 @@ void ebyte_process() {
                 term_println(resp_sts.desc());
             }
             else {
-                term_printf("[EBYTE] send to E34: %3d bytes" ENDL, len);
+                if (system_verbose_level >= VERBOSE_INFO) {
+                    term_printf("[EBYTE] send to E34: %3d bytes" ENDL, len);
+                }
                 downlink_byte_sum += len;  // Keep stat
             }
         }
@@ -155,8 +157,15 @@ void ebyte_process() {
                 term_println("[EBYTE] E2C error. Cannot write all");
             }
             else {
-                term_printf("[EBYTE] recv fm E34: %3d bytes", len);
-                term_println(" >> " + hex_stream(p, len));
+                if (system_verbose_level >= VERBOSE_INFO) {
+                    term_printf("[EBYTE] recv fm E34: %3d bytes", len);
+                    if (system_verbose_level >= VERBOSE_DEBUG) {
+                        term_println(" >> " + hex_stream(p, len));
+                    }
+                    else {
+                        term_println();
+                    }
+                }
                 uplink_byte_sum += len;  // Kepp stat
             }
 

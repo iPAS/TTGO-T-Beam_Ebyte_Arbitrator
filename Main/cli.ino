@@ -8,6 +8,7 @@
 
 SimpleCLI cli;
 Command cmd_help;
+Command cmd_verbose;
 Command cmd_ebyte_send;
 Command cmd_ebyte_get_config;
 Command cmd_ebyte_show_report;
@@ -18,10 +19,11 @@ Command cmd_ebyte_loopback;
 
 const static char *help_description[] = {
     "\thelp",
+    "\tverbose [level] -- show or set info level [0=none | 1=err | 2=warn | 3=info | 4=debug]",
     "\tsend [message] -- send [default \"" DEFAULT_SEND_MESSAGE "\"]",
     "\tconfig         -- get configuration",
     "\treport [count] -- show report. 0:dis -1:always [default \"" STR(DEFAULT_REPORT_COUNT) "\"]",
-    "\tloopback [1|0] -- show, ena, dis the 'send-back' mode",
+    "\tloopback [1|0] -- show, enable, disable the 'send-back' mode",
 };
 
 // ----------------------------------------------------------------------------
@@ -43,6 +45,9 @@ void cli_setup() {
     cli.setOnError(&on_error_callback); // Set error Callback
 
     cmd_help = cli.addCommand("h/elp", on_cmd_help);
+
+    cmd_verbose = cli.addCommand("v/erbose", on_cmd_verbose);
+    cmd_verbose.addPositionalArgument("level", "");
 
     cmd_ebyte_send = cli.addCommand("s/end", on_cmd_ebyte_send);
     cmd_ebyte_send.addPositionalArgument("message", DEFAULT_SEND_MESSAGE);
@@ -84,10 +89,29 @@ void cli_interpretation_process() {
 static void on_cmd_help(cmd *c) {
     uint8_t i;
     Command cmd(c);
-    term_println("[CLI] help:");
+    term_println("[CLI] Help:");
     for (i = 0; i < sizeof(help_description)/sizeof(help_description[0]); i++) {
         term_println(help_description[i]);
     }
+}
+
+// ----------------------------------------------------------------------------
+static void on_cmd_verbose(cmd *c) {
+    Command cmd(c);
+    Argument arg = cmd.getArgument("level");
+    String param = arg.getValue();
+
+    long level;
+    if (extract_int(param, &level) == false) {
+        if (param != "") {
+            term_print(F("[CLI] What? ..")); term_println(param);
+        }
+    }
+    else {
+        system_verbose_level = (verbose_code_t)level;
+    }
+
+    term_printf("[CLI] Verbose level=%d" ENDL, system_verbose_level);
 }
 
 // ----------------------------------------------------------------------------
