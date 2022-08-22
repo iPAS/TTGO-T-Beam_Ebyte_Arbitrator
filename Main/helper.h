@@ -22,5 +22,7 @@ extern String hex_stream(const void * p, uint16_t len);
 extern boolean is_numeric(String str);
 extern bool extract_int(String str, long *ret);
 
+extern uint8_t system_verbose_level;
+
 
 #endif  // __HELPER_H__

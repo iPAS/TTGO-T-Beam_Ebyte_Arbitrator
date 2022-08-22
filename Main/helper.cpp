@@ -1,6 +1,8 @@
 #include "global.h"
 
 
+uint8_t system_verbose_level = 0;
+
 /**
  * @brief Print to terminal
  */
