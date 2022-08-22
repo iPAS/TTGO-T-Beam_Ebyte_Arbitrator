@@ -51,13 +51,21 @@ for p in ${ports}; do
     dev=/dev/ttyUSB${p}
     echo "--------- Flash ${dev} ---------"
     if [ -c "${dev}" ]; then
-        if [ $(ps ax | grep "screen ${dev}" -i -c) -ne 0 ]; then
+        # echo $(ps ax | grep "screen ${dev}" -i)
+        # echo $(pgrep "screen ${dev}" -f -i -c)
+        # exit
+
+        # if [ $(pgrep "screen ${dev}" -f -i -c) -ne 0 ]; then
+        #     echo ">>> Occupy ${dev}"
+        #     pid=$(pgrep "screen ${dev}" -f)
+        #     kill $pid
+        #     pid=$(pgrep "SCREEN ${dev}" -f)
+        #     kill $pid
+        # fi
+        for pid in $(pgrep "screen ${dev}" -f -i); do
             echo ">>> Occupy ${dev}"
-            pid=$(pgrep "screen ${dev}" -f)
             kill $pid
-            pid=$(pgrep "SCREEN ${dev}" -f)
-            kill $pid
-        fi
+        done
 
         flash "${dev}" 
     else
