@@ -148,7 +148,9 @@ void ebyte_process() {
                     term_println(resp_sts.desc());
                 }
                 else {
-                    term_printf("[EBYTE] Loopback enqueueing %3d bytes" ENDL, len);
+                    if (system_verbose_level >= VERBOSE_INFO) {
+                        term_printf("[EBYTE] Loopback enqueueing %3d bytes" ENDL, len);
+                    }
                     downlink_byte_sum += len;  // Kepp stat
                 }
             }
@@ -157,7 +159,8 @@ void ebyte_process() {
     }
 
     //
-    // Loopback -- if all frame has been received  &&  fragments to be sent are in the queue
+    // Loopback -- to another Ebyte
+    //  if all frame has been received  &&  fragments to be sent are in the queue
     //
     if ((ebyte.available() == 0) && ebyte.lengthMessageQueueTx()) {
         size_t len = ebyte.processMessageQueueTx();
@@ -165,14 +168,17 @@ void ebyte_process() {
             term_println(F("[EBYTE] Loopback error on sending queue!"));
         }
         else {
-            term_printf("[EBYTE] Loopback sending queue %3d bytes" ENDL, len);
+            if (system_verbose_level >= VERBOSE_DEBUG) {
+                term_printf("[EBYTE] Loopback sending queue %3d bytes" ENDL, len);
+            }
             downlink_byte_sum += len;  // Kepp stat
         }
     }
+
     //
     // Downlink -- to computer
     //
-    else
+    else  // XXX: <-- Wait until all loopback frames are sent.
     if (computer.available()) {
         ResponseStatus resp_sts;
         resp_sts.code = ebyte.auxReady(100);
