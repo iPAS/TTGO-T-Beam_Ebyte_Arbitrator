@@ -100,7 +100,7 @@ void ebyte_setup() {
 // ----------------------------------------------------------------------------
 void ebyte_process() {
     //
-    // Uplink -- to other Ebyte
+    // Uplink -- Ebyte to Computer
     //
     if (ebyte.available()) {
         uint32_t arival_millis = millis();  // Arival timestamp
@@ -151,7 +151,6 @@ void ebyte_process() {
                     if (system_verbose_level >= VERBOSE_INFO) {
                         term_printf("[EBYTE] Loopback enqueueing %3d bytes" ENDL, len);
                     }
-                    downlink_byte_sum += len;  // Kepp stat
                 }
             }
 
@@ -176,12 +175,12 @@ void ebyte_process() {
     }
 
     //
-    // Downlink -- to computer
+    // Downlink -- Computer to Ebyte
     //
     else  // XXX: <-- Wait until all loopback frames are sent.
     if (computer.available()) {
         ResponseStatus resp_sts;
-        resp_sts.code = ebyte.auxReady(100);
+        resp_sts.code = ebyte.auxReady(EBYTE_NO_AUX_WAIT);
 
         // Forward downlink
         if (resp_sts.code == E34_SUCCESS)

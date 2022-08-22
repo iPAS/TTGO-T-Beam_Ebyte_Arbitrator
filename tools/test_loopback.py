@@ -25,7 +25,7 @@ import random
 
 TMO_PERIOD_SEC = 3.
 DELAY_INTER_FRAME_SEC = 1
-DEFAULT_PAYLOAD_LEN = 280  # MAVLink v2 max length -- https://mavlink.io/en/guide/serialization.html
+DEFAULT_PAYLOAD_LEN = 279  # MAVLink v2 max length -- https://mavlink.io/en/guide/serialization.html
 
 
 # -----------------------------------------------------------------------------

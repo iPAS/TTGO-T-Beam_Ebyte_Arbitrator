@@ -601,10 +601,9 @@ ResponseStatus Ebyte_E34::fragmentMessageQueueTx(const void * message, size_t si
 }
 
 size_t Ebyte_E34::processMessageQueueTx() {
-    ResponseStatus resp_sts;
-
     if (this->lengthMessageQueueTx() > 0) {
-        resp_sts.code = this->auxReady(100);
+        ResponseStatus resp_sts;
+        resp_sts.code = this->auxReady(EBYTE_NO_AUX_WAIT);
         if (resp_sts.code == E34_SUCCESS)
         {
             byte * p = (byte *)q_item(&this->queueTx, 0)->data;
