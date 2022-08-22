@@ -92,6 +92,10 @@ class Ebyte_E34 {
     void printHead(byte HEAD);
     void printParameters(struct Configuration * cfg);
 
+    size_t lengthMessageQueueTx();
+    ResponseStatus  fragmentMessageQueueTx(const void * message, size_t size);
+    size_t processMessageQueueTx();
+
   private:
     HardwareSerial * hs;
     uint32_t bpsRate = EBYTE_CONFIG_BAUD;
@@ -104,6 +108,8 @@ class Ebyte_E34 {
     int8_t txPin   = -1;
 
     MODE_TYPE mode = MODE_0_FIXED;
+
+    queue_t queueTx;
 
     void   managedDelay(unsigned long timeout);
     Status waitCompleteResponse(unsigned long timeout = EBYTE_RESPONSE_TMO, unsigned long waitNoAux = EBYTE_NO_AUX_WAIT);

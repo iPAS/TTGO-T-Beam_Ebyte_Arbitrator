@@ -108,25 +108,25 @@ void ebyte_process() {
         inter_arival_count++;
         prev_arival_millis = arival_millis;
 
-        size_t len = (ebyte.available() < EBYTE_E34_MAX_LEN)? ebyte.available() : EBYTE_E34_MAX_LEN;
-        ResponseStructContainer rc = ebyte.receiveMessageFixedSize(len);
-        const char * p = (char *)rc.data;
-        // ResponseContainer rc = ebyte.receiveMessage();
-        // const char * p = rc.data.c_str();
-        // size_t len = rc.data.length();
+        ResponseContainer rc = ebyte.receiveMessage();
+        const char * p = rc.data.c_str();
+        size_t len = rc.data.length();
 
         if (rc.status.code != E34_SUCCESS) {
             term_print("[EBYTE] E2C error, E34: ");
             term_println(rc.status.desc());
         }
         else {
+
+            //
             // Forward uplink
+            //
             if (computer.write(p, len) != len) {
                 term_println("[EBYTE] E2C error. Cannot write all");
             }
             else {
                 if (system_verbose_level >= VERBOSE_INFO) {
-                    term_printf("[EBYTE] recv fm E34: %3d bytes", len);
+                    term_printf("[EBYTE] Recv fm E34: %3d bytes", len);
                     if (system_verbose_level >= VERBOSE_DEBUG) {
                         term_println(" >> " + hex_stream(p, len));
                     }
@@ -137,40 +137,37 @@ void ebyte_process() {
                 uplink_byte_sum += len;  // Kepp stat
             }
 
+            //
             // Loopback
+            //
             if (ebyte_loopback_flag) {
-                ResponseStatus resp_sts;
-                resp_sts.code = ebyte.auxReady(100);
+                ResponseStatus resp_sts = ebyte.fragmentMessageQueueTx(p, len);
 
-                if (resp_sts.code == E34_SUCCESS)
-                {
-                    resp_sts = ebyte.sendMessage(p, len);
-
-                    if (resp_sts.code != E34_SUCCESS) {
-                        term_printf("[EBYTE] loopback error on sending %d bytes, E34:", len);
-                        term_println(resp_sts.desc());
-                    }
-                    else {
-                        term_printf("[EBYTE] loopback to E34: %3d bytes" ENDL, len);
-                        downlink_byte_sum += len;  // Kepp stat
-                    }
-                }
-                else {
-                    term_printf("[EBYTE] loopback error on waiting AUX HIGH to send %d bytes, E34:", len);
+                if (resp_sts.code != E34_SUCCESS) {
+                    term_printf("[EBYTE] Loopback error on enqueueing %d bytes, E34:", len);
                     term_println(resp_sts.desc());
                 }
+                else {
+                    term_printf("[EBYTE] Loopback enqueueing %3d bytes" ENDL, len);
+                    downlink_byte_sum += len;  // Kepp stat
+                }
             }
-        }
 
-        rc.close();  // Free.. received data
+        }
     }
 
     //
-    // Loopback -- if all frame has been received
+    // Loopback -- if all frame has been received  &&  fragments to be sent are in the queue
     //
-    else
-    if (ebyte_loopback_flag && ebyte.available() == 0) {
-
+    if ((ebyte.available() == 0) && ebyte.lengthMessageQueueTx()) {
+        size_t len = ebyte.processMessageQueueTx();
+        if (len == 0) {
+            term_println(F("[EBYTE] Loopback error on sending queue!"));
+        }
+        else {
+            term_printf("[EBYTE] Loopback sending queue %3d bytes" ENDL, len);
+            downlink_byte_sum += len;  // Kepp stat
+        }
     }
     //
     // Downlink -- to computer
@@ -194,7 +191,7 @@ void ebyte_process() {
             }
             else {
                 if (system_verbose_level >= VERBOSE_INFO) {
-                    term_printf("[EBYTE] send to E34: %3d bytes" ENDL, len);
+                    term_printf("[EBYTE] Send to E34: %3d bytes" ENDL, len);
                 }
                 downlink_byte_sum += len;  // Keep stat
             }
@@ -224,7 +221,7 @@ void ebyte_process() {
             inter_arival_sum_millis = 0;
             inter_arival_count = 0;
 
-            term_printf("[Ebyte] report up:%.2fB/s down:%.2fB/s period:%.2fs inter_arival:%s" ENDL,
+            term_printf("[Ebyte] Report up:%.2fB/s down:%.2fB/s period:%.2fs inter_arival:%s" ENDL,
                 up_rate, down_rate, period, inter_arival_str);
 
             if (ebyte_show_report_count > 0)

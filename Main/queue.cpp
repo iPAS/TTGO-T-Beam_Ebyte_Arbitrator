@@ -9,7 +9,7 @@ void q_init(queue_t *q)
 }
 
 
-linklist_t *q_enqueue(queue_t *q, void *data, uint8_t len)
+linklist_t *q_enqueue(queue_t *q, void *data, size_t len)
 {
     // For the new item.
     linklist_t *ll = (linklist_t *)malloc(sizeof(linklist_t));
@@ -46,10 +46,10 @@ linklist_t *q_enqueue(queue_t *q, void *data, uint8_t len)
 }
 
 
-uint8_t q_dequeue(queue_t *q, void *data, uint8_t maxlen)
+size_t q_dequeue(queue_t *q, void *data, size_t maxlen)
 {
     linklist_t *ll = q->tail;
-    uint8_t len;
+    size_t len;
 
     // Dequeue
     if (q->len == 0)
@@ -61,7 +61,9 @@ uint8_t q_dequeue(queue_t *q, void *data, uint8_t maxlen)
 
     // Transfer data and remove allocated memories.
     len = (ll->len < maxlen)? ll->len : maxlen;
-    memcpy(data, ll->data, len);
+    if (data != NULL) {  // On NULL, no copying
+        memcpy(data, ll->data, len);
+    }
     free(ll->data);
     free(ll);
 
@@ -69,7 +71,7 @@ uint8_t q_dequeue(queue_t *q, void *data, uint8_t maxlen)
 }
 
 
-uint8_t q_length(queue_t *q)
+size_t q_length(queue_t *q)
 {
     return q->len;
 }

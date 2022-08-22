@@ -54,7 +54,7 @@ if __name__ == '__main__':
     result_failed = 0
     result_timeout = 0
     start_time = time.time()
-    send_max = 1
+    send_max = 1000
 
     with serial.Serial(serial_port, serial_baud) as ser:
         while ((time.time() - start_time) < 60):
