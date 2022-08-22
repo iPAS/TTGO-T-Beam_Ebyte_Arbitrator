@@ -44,6 +44,7 @@
 #endif
 
 #include "ebyte_e34_def.h"
+#include "queue.h"
 
 
 /**

@@ -100,39 +100,7 @@ void ebyte_setup() {
 // ----------------------------------------------------------------------------
 void ebyte_process() {
     //
-    // Downlink
-    //
-    if (computer.available()) {
-        ResponseStatus resp_sts;
-        resp_sts.code = ebyte.auxReady(100);
-
-        // Forward downlink
-        if (resp_sts.code == E34_SUCCESS)
-        {
-            byte buf[EBYTE_E34_MAX_LEN];
-            size_t len = (computer.available() < EBYTE_E34_MAX_LEN)? computer.available() : EBYTE_E34_MAX_LEN;
-            computer.readBytes(buf, len);
-
-            resp_sts = ebyte.sendMessage(buf, len);
-            if (resp_sts.code != E34_SUCCESS) {
-                term_print("[EBYTE] C2E error, E34:");
-                term_println(resp_sts.desc());
-            }
-            else {
-                if (system_verbose_level >= VERBOSE_INFO) {
-                    term_printf("[EBYTE] send to E34: %3d bytes" ENDL, len);
-                }
-                downlink_byte_sum += len;  // Keep stat
-            }
-        }
-        else {
-            term_printf("[EBYTE] C2E error on waiting AUX HIGH, E34:");
-            term_println(resp_sts.desc());
-        }
-    }
-
-    //
-    // Uplink
+    // Uplink -- to other Ebyte
     //
     if (ebyte.available()) {
         uint32_t arival_millis = millis();  // Arival timestamp
@@ -194,7 +162,47 @@ void ebyte_process() {
             }
         }
 
-        rc.close();  // Free..
+        rc.close();  // Free.. received data
+    }
+
+    //
+    // Loopback -- if all frame has been received
+    //
+    else
+    if (ebyte_loopback_flag && ebyte.available() == 0) {
+
+    }
+    //
+    // Downlink -- to computer
+    //
+    else
+    if (computer.available()) {
+        ResponseStatus resp_sts;
+        resp_sts.code = ebyte.auxReady(100);
+
+        // Forward downlink
+        if (resp_sts.code == E34_SUCCESS)
+        {
+            byte buf[EBYTE_E34_MAX_LEN];
+            size_t len = (computer.available() < EBYTE_E34_MAX_LEN)? computer.available() : EBYTE_E34_MAX_LEN;
+            computer.readBytes(buf, len);
+
+            resp_sts = ebyte.sendMessage(buf, len);
+            if (resp_sts.code != E34_SUCCESS) {
+                term_print("[EBYTE] C2E error, E34:");
+                term_println(resp_sts.desc());
+            }
+            else {
+                if (system_verbose_level >= VERBOSE_INFO) {
+                    term_printf("[EBYTE] send to E34: %3d bytes" ENDL, len);
+                }
+                downlink_byte_sum += len;  // Keep stat
+            }
+        }
+        else {
+            term_printf("[EBYTE] C2E error on waiting AUX HIGH, E34:");
+            term_println(resp_sts.desc());
+        }
     }
 
     //
@@ -216,7 +224,7 @@ void ebyte_process() {
             inter_arival_sum_millis = 0;
             inter_arival_count = 0;
 
-            term_printf("[CLI] Ebyte report up:%.2fB/s down:%.2fB/s period:%.2fs inter_arival:%s" ENDL,
+            term_printf("[Ebyte] report up:%.2fB/s down:%.2fB/s period:%.2fs inter_arival:%s" ENDL,
                 up_rate, down_rate, period, inter_arival_str);
 
             if (ebyte_show_report_count > 0)
