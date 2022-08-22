@@ -57,7 +57,7 @@ void ebyte_setup() {
             ebyte.printParameters(&cfg);
 
             // Setup the desired mode
-            cfg.ADDH = EBYTE_BROADCAST_ADDR;// & 0x0F;  // No re-sending
+            cfg.ADDH = EBYTE_BROADCAST_ADDR & 0x0F;  // No re-sending
             cfg.ADDL = EBYTE_BROADCAST_ADDR;
             cfg.CHAN = 6;  // XXX: 2.508 GHz -- out of WiFi channels
             cfg.OPTION.transmissionPower = TXPOWER_20;
@@ -103,16 +103,16 @@ void ebyte_process() {
     // Downlink
     //
     if (computer.available()) {
-        byte buf[EBYTE_E34_MAX_LEN];
-        size_t len = (computer.available() < EBYTE_E34_MAX_LEN)? computer.available() : EBYTE_E34_MAX_LEN;
-        computer.readBytes(buf, len);
-
-        // Forward downlink
         ResponseStatus resp_sts;
         resp_sts.code = ebyte.auxReady(100);
 
+        // Forward downlink
         if (resp_sts.code == E34_SUCCESS)
         {
+            byte buf[EBYTE_E34_MAX_LEN];
+            size_t len = (computer.available() < EBYTE_E34_MAX_LEN)? computer.available() : EBYTE_E34_MAX_LEN;
+            computer.readBytes(buf, len);
+
             resp_sts = ebyte.sendMessage(buf, len);
             if (resp_sts.code != E34_SUCCESS) {
                 term_print("[EBYTE] C2E error, E34:");
@@ -124,7 +124,7 @@ void ebyte_process() {
             }
         }
         else {
-            term_printf("[EBYTE] C2E error on waiting AUX HIGH to send %d bytes, E34:", len);
+            term_printf("[EBYTE] C2E error on waiting AUX HIGH, E34:");
             term_println(resp_sts.desc());
         }
     }
@@ -163,7 +163,7 @@ void ebyte_process() {
             // Loopback
             if (ebyte_loopback_flag) {
                 ResponseStatus resp_sts;
-                resp_sts.code = ebyte.auxReady(10);
+                resp_sts.code = ebyte.auxReady(100);
 
                 if (resp_sts.code == E34_SUCCESS)
                 {

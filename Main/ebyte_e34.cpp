@@ -465,7 +465,6 @@ Status Ebyte_E34::sendStruct(const void * structureManaged, size_t size_of_st) {
     }
 
     size_t len = this->hs->write((uint8_t *)structureManaged, size_of_st);
-
     DEBUG_PRINTF("[E34] Send struct len:%d size:%d" ENDL, len, size_of_st);
 
     if (len != size_of_st) {
@@ -476,7 +475,6 @@ Status Ebyte_E34::sendStruct(const void * structureManaged, size_t size_of_st) {
 
 Status Ebyte_E34::receiveStruct(void * structureManaged, size_t size_of_st) {
     size_t len = this->hs->readBytes((uint8_t *)structureManaged, size_of_st);
-
     DEBUG_PRINTF("[E34] Recv struct len:%d size:%d" ENDL, len, size_of_st);
 
     if (len != size_of_st) {
