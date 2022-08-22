@@ -13,8 +13,8 @@
 // Ebyte config
 #define EBYTE_SERIAL    Serial2
 #define EBYTE_BAUD      115200
-#define EBYTE_PIN_E34_RX 13 // TX to Ebyte RX
-#define EBYTE_PIN_E34_TX 2  // RX to Ebyte TX
+#define EBYTE_PIN_E34_RX 13 // RX to Ebyte TX
+#define EBYTE_PIN_E34_TX 2  // TX to Ebyte RX
 #define EBYTE_PIN_AUX   34
 #define EBYTE_PIN_M0    25
 #define EBYTE_PIN_M1    14
@@ -47,17 +47,17 @@ void ebyte_setup() {
     if (ebyte.begin()) {  // Start communication with Ebyte module: config & etc.
         term_println(ENDL "[EBYTE] Initialized successfully");
 
-        ResponseStructContainer resp;
-        resp = ebyte.getConfiguration();  // Get c.data from here
-        Configuration cfg = *((Configuration *)resp.data); // This is a memory transfer, NOT by-reference.
-        resp.close();  // Clean c.data that was allocated in ::getConfiguration()
+        ResponseStructContainer rc;
+        rc = ebyte.getConfiguration();  // Get c.data from here
+        Configuration cfg = *((Configuration *)rc.data); // This is a memory transfer, NOT by-reference.
+        rc.close();  // Clean c.data that was allocated in ::getConfiguration()
 
-        if (resp.status.code == E34_SUCCESS){
+        if (rc.status.code == E34_SUCCESS){
             term_println(F("[EBYTE] Old configuration"));
             ebyte.printParameters(&cfg);
 
             // Setup the desired mode
-            cfg.ADDH = EBYTE_BROADCAST_ADDR;// & 0x0F;  // No re-sending
+            cfg.ADDH = EBYTE_BROADCAST_ADDR & 0x0F;  // No re-sending
             cfg.ADDL = EBYTE_BROADCAST_ADDR;
             cfg.CHAN = 6;  // XXX: 2.508 GHz -- out of WiFi channels
             cfg.OPTION.transmissionPower = TXPOWER_20;
@@ -70,23 +70,23 @@ void ebyte_setup() {
             // ebyte.setConfiguration(cfg, WRITE_CFG_PWR_DWN_SAVE);  // XXX: Save
 
             // Recheck
-            resp = ebyte.getConfiguration();  // Get c.data from here
-            cfg = *((Configuration *)resp.data); // This is a memory transfer, NOT by-reference.
-            resp.close();
+            rc = ebyte.getConfiguration();  // Get c.data from here
+            cfg = *((Configuration *)rc.data); // This is a memory transfer, NOT by-reference.
+            rc.close();
 
-            if (resp.status.code == E34_SUCCESS){
+            if (rc.status.code == E34_SUCCESS){
                 term_println(F("[EBYTE] New configuration"));
                 ebyte.printParameters(&cfg);
             }
             else {
-                term_println(resp.status.desc());  // Description of code
+                term_println(rc.status.desc());  // Description of code
             }
 
             // Change the baudrate for data transfer.
             ebyte.changeBpsRate(EBYTE_BAUD);
         }
         else {
-            term_println(resp.status.desc());  // Description of code
+            term_println(rc.status.desc());  // Description of code
         }
     }
     else {
@@ -99,32 +99,52 @@ void ebyte_setup() {
 
 // ----------------------------------------------------------------------------
 void ebyte_process() {
+    //
+    // Downlink
+    //
     if (computer.available()) {
-        byte buf[EBYTE_E34_MAX_LEN];
-        uint8_t len = (computer.available() < EBYTE_E34_MAX_LEN)? computer.available() : EBYTE_E34_MAX_LEN;
-        computer.readBytes(buf, len);
+        ResponseStatus resp_sts;
+        resp_sts.code = ebyte.auxReady(100);
 
         // Forward downlink
-        ResponseStatus status = ebyte.sendMessage(buf, len);
-        if (status.code != E34_SUCCESS) {
-            term_print("[EBYTE] C2E error, E34:");
-            term_println(status.desc());
+        if (resp_sts.code == E34_SUCCESS)
+        {
+            byte buf[EBYTE_E34_MAX_LEN];
+            size_t len = (computer.available() < EBYTE_E34_MAX_LEN)? computer.available() : EBYTE_E34_MAX_LEN;
+            computer.readBytes(buf, len);
+
+            resp_sts = ebyte.sendMessage(buf, len);
+            if (resp_sts.code != E34_SUCCESS) {
+                term_print("[EBYTE] C2E error, E34:");
+                term_println(resp_sts.desc());
+            }
+            else {
+                term_printf("[EBYTE] send to E34: %3d bytes" ENDL, len);
+                downlink_byte_sum += len;  // Keep stat
+            }
         }
         else {
-            term_printf("[EBYTE] send to E34: %3d bytes" ENDL, len);
-            downlink_byte_sum += len;  // Keep stat
+            term_printf("[EBYTE] C2E error on waiting AUX HIGH, E34:");
+            term_println(resp_sts.desc());
         }
     }
 
+    //
+    // Uplink
+    //
     if (ebyte.available()) {
         uint32_t arival_millis = millis();  // Arival timestamp
         inter_arival_sum_millis += arival_millis - prev_arival_millis;
         inter_arival_count++;
         prev_arival_millis = arival_millis;
 
-        ResponseContainer rc = ebyte.receiveMessage();
-        const char * p = rc.data.c_str();
-        uint16_t len = rc.data.length();
+        size_t len = (ebyte.available() < EBYTE_E34_MAX_LEN)? ebyte.available() : EBYTE_E34_MAX_LEN;
+        ResponseStructContainer rc = ebyte.receiveMessageFixedSize(len);
+        const char * p = (char *)rc.data;
+        // ResponseContainer rc = ebyte.receiveMessage();
+        // const char * p = rc.data.c_str();
+        // size_t len = rc.data.length();
+
         if (rc.status.code != E34_SUCCESS) {
             term_print("[EBYTE] E2C error, E34: ");
             term_println(rc.status.desc());
@@ -140,21 +160,37 @@ void ebyte_process() {
                 uplink_byte_sum += len;  // Kepp stat
             }
 
-            // Send back
+            // Loopback
             if (ebyte_loopback_flag) {
-                ResponseStatus status = ebyte.sendMessage(p, len);
-                if (status.code != E34_SUCCESS) {
-                    term_printf("[EBYTE] E2E error on sending %d bytes, E34:", len);
-                    term_println(status.desc());
+                ResponseStatus resp_sts;
+                resp_sts.code = ebyte.auxReady(100);
+
+                if (resp_sts.code == E34_SUCCESS)
+                {
+                    resp_sts = ebyte.sendMessage(p, len);
+
+                    if (resp_sts.code != E34_SUCCESS) {
+                        term_printf("[EBYTE] loopback error on sending %d bytes, E34:", len);
+                        term_println(resp_sts.desc());
+                    }
+                    else {
+                        term_printf("[EBYTE] loopback to E34: %3d bytes" ENDL, len);
+                        downlink_byte_sum += len;  // Kepp stat
+                    }
                 }
                 else {
-                    term_printf("[EBYTE] loop to E34: %3d bytes" ENDL, len);
-                    downlink_byte_sum += len;  // Kepp stat
+                    term_printf("[EBYTE] loopback error on waiting AUX HIGH to send %d bytes, E34:", len);
+                    term_println(resp_sts.desc());
                 }
             }
         }
+
+        rc.close();  // Free..
     }
 
+    //
+    // Statistic calculation
+    //
     uint32_t now = millis();
     if (now > report_millis) {
         if (ebyte_show_report_count > 0 || ebyte_show_report_count < 0) {

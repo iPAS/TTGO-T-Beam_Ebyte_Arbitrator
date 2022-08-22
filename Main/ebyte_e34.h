@@ -65,24 +65,25 @@ class Ebyte_E34 {
     ResponseStructContainer getModuleInformation();
     ResponseStatus          resetModule();
 
-    ResponseStatus          sendMessage(const void * message, const uint8_t size);
+    ResponseStatus          sendMessage(const void * message, size_t size);
     ResponseStatus          sendMessage(const String message);
 
-    ResponseStatus          sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, const void * message, const uint8_t size);
+    ResponseStatus          sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, const void * message, size_t size);
     ResponseStatus          sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, const String message);
 
-    ResponseStatus          sendBroadcastFixedMessage(byte CHAN, const void * message, const uint8_t size);
+    ResponseStatus          sendBroadcastFixedMessage(byte CHAN, const void * message, size_t size);
     ResponseStatus          sendBroadcastFixedMessage(byte CHAN, const String message);
 
     ResponseContainer       receiveMessage();
-    ResponseStructContainer receiveMessageFixedSize(uint8_t size);
+    ResponseStructContainer receiveMessageFixedSize(size_t size);
     ResponseContainer       receiveMessageUntil(char delimiter = '\0');
-    ResponseContainer       receiveMessageString(uint8_t size);
+    ResponseContainer       receiveMessageString(size_t size);
 
-    Status sendStruct(const void * structureManaged, uint16_t size_);
-    Status receiveStruct(void * structureManaged, uint16_t size_);
+    Status sendStruct(const void * structureManaged, size_t size_of_st);
+    Status receiveStruct(void * structureManaged, size_t size_of_st);
 
     int available();
+    Status auxReady(unsigned long timeout);
 
     uint32_t getBpsRate();
     void changeBpsRate(uint32_t new_bps);
@@ -104,7 +105,7 @@ class Ebyte_E34 {
     MODE_TYPE mode = MODE_0_FIXED;
 
     void   managedDelay(unsigned long timeout);
-    Status waitCompleteResponse(unsigned long timeout = 1000, unsigned int waitNoAux = 100);
+    Status waitCompleteResponse(unsigned long timeout = EBYTE_RESPONSE_TMO, unsigned long waitNoAux = EBYTE_NO_AUX_WAIT);
 
     void flush();
     void cleanUARTBuffer();

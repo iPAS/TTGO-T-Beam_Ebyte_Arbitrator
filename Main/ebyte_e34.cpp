@@ -144,16 +144,16 @@ Status Ebyte_E34::setMode(MODE_TYPE mode) {
     this->managedDelay(EBYTE_EXTRA_WAIT);
 
     // Wait until AUX pin goes back to low.
-    Status res = this->waitCompleteResponse(1000);
+    Status status = this->waitCompleteResponse();
 
-    if (res == E34_SUCCESS) {
+    if (status == E34_SUCCESS) {
         this->mode = mode;
     }
 
     DEBUG_PRINTLN(F("[E34] Clear Rx buf after mode change"));
     this->cleanUARTBuffer();
 
-    return res;
+    return status;
 }
 
 
@@ -191,25 +191,10 @@ void Ebyte_E34::managedDelay(unsigned long timeout) {
  * Utility method to wait until module does not transmit.
  * The timeout is provided to avoid an infinite loop
  */
-Status Ebyte_E34::waitCompleteResponse(unsigned long timeout, unsigned int waitNoAux) {
-    Status result = E34_SUCCESS;
-    unsigned long t_prev = millis();
+Status Ebyte_E34::waitCompleteResponse(unsigned long timeout, unsigned long waitNoAux) {
+    Status status = this->auxReady(timeout);
 
-    // If AUX pin was supplied, and look for HIGH state.
-    // XXX: You can omit using AUX if no pins are available, but you will have to use delay() to let module finish
-    if (this->auxPin != -1) {
-        while (digitalRead(this->auxPin) == LOW) {
-            unsigned long t = millis();  // It will be overflow about every 50 days.
-
-            if (is_timeout(t, t_prev, timeout)) {
-                result = ERR_E34_TIMEOUT;
-                DEBUG_PRINTLN(F("[E34] Wait response: timeout error! AUX still LOW"));
-                return result;
-            }
-        }
-        DEBUG_PRINTLN(F("[E34] AUX HIGH!"));
-    }
-    else {
+    if (status == ERR_E34_NOT_IMPLEMENT) {
         // If you can't use aux pin, use 4K7 pullup with Arduino.
         // You may need to adjust this value if transmissions fail.
         this->managedDelay(waitNoAux);
@@ -219,7 +204,7 @@ Status Ebyte_E34::waitCompleteResponse(unsigned long timeout, unsigned int waitN
     // As per data sheet, control after aux goes high is 2ms; so delay for at least that long
     this->managedDelay(EBYTE_EXTRA_WAIT);
     DEBUG_PRINTLN(F("[E34] Wait response: complete!"));
-    return result;
+    return status;
 }
 
 
@@ -238,6 +223,33 @@ void Ebyte_E34::cleanUARTBuffer() {
     while (this->available()) {
         this->hs->read();
     }
+}
+
+Status Ebyte_E34::auxReady(unsigned long timeout) {
+    unsigned long t_prev = millis();
+
+    // If AUX pin was supplied, and look for HIGH state.
+    // XXX: You can omit using AUX if no pins are available, but you will have to use delay() to let module finish
+    if (this->auxPin != -1) {
+        while (digitalRead(this->auxPin) == LOW) {
+            unsigned long t = millis();  // It will be overflow about every 50 days.
+
+            if (is_timeout(t, t_prev, timeout)) {
+                DEBUG_PRINTLN(F("[E34] Wait AUX HIGH: timeout! AUX still LOW"));
+                return ERR_E34_TIMEOUT;
+            }
+
+            DEBUG_PRINTLN(F("[E34] Wait AUX HIGH.."));
+            taskYIELD();
+        }
+        DEBUG_PRINTLN(F("[E34] AUX HIGH!"));
+    }
+    else {
+        DEBUG_PRINTLN(F("[E34] Wait AUX HIGH: no AUX pin"));
+        return ERR_E34_NOT_IMPLEMENT;
+    }
+
+    return E34_SUCCESS;
 }
 
 uint32_t Ebyte_E34::getBpsRate() {
@@ -328,24 +340,24 @@ ResponseStructContainer Ebyte_E34::getConfiguration() {
 }
 
 ResponseStatus Ebyte_E34::setConfiguration(Configuration configuration, PROGRAM_COMMAND saveType) {
-    ResponseStatus rc;
+    ResponseStatus resp_sts;
 
-    rc.code = checkUARTConfiguration(MODE_3_PROGRAM);
-    if (rc.code != E34_SUCCESS) return rc;
+    resp_sts.code = checkUARTConfiguration(MODE_3_PROGRAM);
+    if (resp_sts.code != E34_SUCCESS) return resp_sts;
 
     MODE_TYPE prevMode = this->mode;
 
-    rc.code = this->setMode(MODE_3_PROGRAM);
-    if (rc.code != E34_SUCCESS) return rc;
+    resp_sts.code = this->setMode(MODE_3_PROGRAM);
+    if (resp_sts.code != E34_SUCCESS) return resp_sts;
 
     this->writeProgramCommand(READ_CONFIGURATION);
 
     configuration.HEAD = saveType;
 
-    rc.code = this->sendStruct((uint8_t *)&configuration, sizeof(Configuration));
-    if (rc.code != E34_SUCCESS) {
+    resp_sts.code = this->sendStruct((uint8_t *)&configuration, sizeof(Configuration));
+    if (resp_sts.code != E34_SUCCESS) {
         this->setMode(prevMode);
-        return rc;
+        return resp_sts;
     }
 
     #ifdef EBYTE_DEBUG
@@ -353,14 +365,14 @@ ResponseStatus Ebyte_E34::setConfiguration(Configuration configuration, PROGRAM_
     this->printHead(configuration.HEAD);
     #endif
 
-    rc.code = this->setMode(prevMode);
-    if (rc.code != E34_SUCCESS) return rc;
+    resp_sts.code = this->setMode(prevMode);
+    if (resp_sts.code != E34_SUCCESS) return resp_sts;
 
     if ((0xC0 != configuration.HEAD) && (0xC2 != configuration.HEAD)) {
-        rc.code = ERR_E34_HEAD_NOT_RECOGNIZED;
+        resp_sts.code = ERR_E34_HEAD_NOT_RECOGNIZED;
     }
 
-    return rc;
+    return resp_sts;
 }
 
 ResponseStructContainer Ebyte_E34::getModuleInformation() {
@@ -403,26 +415,26 @@ ResponseStructContainer Ebyte_E34::getModuleInformation() {
 }
 
 ResponseStatus Ebyte_E34::resetModule() {
-    ResponseStatus status;
+    ResponseStatus resp_sts;
 
-    status.code = checkUARTConfiguration(MODE_3_PROGRAM);
-    if (status.code != E34_SUCCESS) return status;
+    resp_sts.code = checkUARTConfiguration(MODE_3_PROGRAM);
+    if (resp_sts.code != E34_SUCCESS) return resp_sts;
 
     MODE_TYPE prevMode = this->mode;
 
-    status.code = this->setMode(MODE_3_PROGRAM);
-    if (status.code != E34_SUCCESS) return status;
+    resp_sts.code = this->setMode(MODE_3_PROGRAM);
+    if (resp_sts.code != E34_SUCCESS) return resp_sts;
 
     this->writeProgramCommand(WRITE_RESET_MODULE);
 
-    status.code = this->waitCompleteResponse(1000);
-    if (status.code != E34_SUCCESS) {
+    resp_sts.code = this->waitCompleteResponse();
+    if (resp_sts.code != E34_SUCCESS) {
         this->setMode(prevMode);
-        return status;
+        return resp_sts;
     }
 
-    status.code = this->setMode(prevMode);
-    return status;
+    resp_sts.code = this->setMode(prevMode);
+    return resp_sts;
 }
 
 
@@ -447,30 +459,28 @@ RESPONSE_STATUS Ebyte_E34::checkUARTConfiguration(MODE_TYPE mode) {
  *
  * Put your structure definition into a .h file and include in both the sender and reciever sketches.
  */
-Status Ebyte_E34::sendStruct(const void * structureManaged, uint16_t size_of_st) {
-    if (size_of_st > EBYTE_E34_MAX_LEN) {  // 256 bytes at most
+Status Ebyte_E34::sendStruct(const void * structureManaged, size_t size_of_st) {
+    if (size_of_st > EBYTE_E34_MAX_LEN) {
         return ERR_E34_PACKET_TOO_BIG;
     }
 
-    uint8_t len = this->hs->write((uint8_t *)structureManaged, size_of_st);
-
+    size_t len = this->hs->write((uint8_t *)structureManaged, size_of_st);
     DEBUG_PRINTF("[E34] Send struct len:%d size:%d" ENDL, len, size_of_st);
 
     if (len != size_of_st) {
         return (len == 0)? ERR_E34_NO_RESPONSE_FROM_DEVICE : ERR_E34_DATA_SIZE_NOT_MATCH;
     }
-    return this->waitCompleteResponse(1000);
+    return this->waitCompleteResponse();
 }
 
-Status Ebyte_E34::receiveStruct(void * structureManaged, uint16_t size_of_st) {
-    uint8_t len = this->hs->readBytes((uint8_t *)structureManaged, size_of_st);
-
+Status Ebyte_E34::receiveStruct(void * structureManaged, size_t size_of_st) {
+    size_t len = this->hs->readBytes((uint8_t *)structureManaged, size_of_st);
     DEBUG_PRINTF("[E34] Recv struct len:%d size:%d" ENDL, len, size_of_st);
 
     if (len != size_of_st) {
         return (len == 0)? ERR_E34_NO_RESPONSE_FROM_DEVICE : ERR_E34_DATA_SIZE_NOT_MATCH;
     }
-    return this->waitCompleteResponse(1000);
+    return this->waitCompleteResponse();
 }
 
 
@@ -487,7 +497,7 @@ ResponseContainer Ebyte_E34::receiveMessage() {
     return rc;
 }
 
-ResponseStructContainer Ebyte_E34::receiveMessageFixedSize(uint8_t size) {
+ResponseStructContainer Ebyte_E34::receiveMessageFixedSize(size_t size) {
     ResponseStructContainer rc;
     rc.data        = malloc(size);
     rc.status.code = this->receiveStruct(rc.data, size);
@@ -503,12 +513,12 @@ ResponseContainer Ebyte_E34::receiveMessageUntil(char delimiter) {
     return rc;
 }
 
-ResponseContainer Ebyte_E34::receiveMessageString(uint8_t size) {
+ResponseContainer Ebyte_E34::receiveMessageString(size_t size) {
     ResponseContainer rc;
     rc.status.code = E34_SUCCESS;
     char buff[size+1];
     buff[size] = '\0';  // To be sure as a null terminated string.
-    uint8_t len = this->hs->readBytes(buff, size);
+    size_t len = this->hs->readBytes(buff, size);
     rc.data = buff;
 
     if (len != size) {
@@ -526,10 +536,10 @@ ResponseStatus Ebyte_E34::sendMessage(const String message) {
     return this->sendMessage(message.c_str(), message.length());
 }
 
-ResponseStatus Ebyte_E34::sendMessage(const void * message, uint8_t size) {
-    ResponseStatus status;
-    status.code = this->sendStruct(message, size);
-    return status;
+ResponseStatus Ebyte_E34::sendMessage(const void * message, size_t size) {
+    ResponseStatus resp_sts;
+    resp_sts.code = this->sendStruct(message, size);
+    return resp_sts;
 }
 
 ResponseStatus Ebyte_E34::sendBroadcastFixedMessage(byte CHAN, const String message) {
@@ -540,13 +550,13 @@ ResponseStatus Ebyte_E34::sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, cons
     return this->sendFixedMessage(ADDH, ADDL, CHAN, message.c_str(), message.length());
 }
 
-ResponseStatus Ebyte_E34::sendBroadcastFixedMessage(byte CHAN, const void * message, const uint8_t size) {
+ResponseStatus Ebyte_E34::sendBroadcastFixedMessage(byte CHAN, const void * message, size_t size) {
     return this->sendFixedMessage(EBYTE_BROADCAST_ADDR, EBYTE_BROADCAST_ADDR, CHAN, message, size);
 }
 
-ResponseStatus Ebyte_E34::sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, const void * message, const uint8_t size) {
-    uint8_t message_size = sizeof(* FixedStransmission::message) * size;
-    uint8_t packet_size = sizeof(FixedStransmission) + message_size;  // sizeof(FixedStransmission) neglect ::message !
+ResponseStatus Ebyte_E34::sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, const void * message, size_t size) {
+    size_t message_size = sizeof(* FixedStransmission::message) * size;
+    size_t packet_size = sizeof(FixedStransmission) + message_size;  // sizeof(FixedStransmission) neglect ::message !
     FixedStransmission * fixedPacket = (FixedStransmission *)malloc(packet_size);
 
     fixedPacket->ADDH = ADDH;
@@ -554,11 +564,10 @@ ResponseStatus Ebyte_E34::sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, cons
     fixedPacket->CHAN = CHAN;
     memcpy(fixedPacket->message, message, message_size);
 
-    ResponseStatus status;
-    status.code = this->sendStruct(fixedPacket, packet_size);
+    ResponseStatus resp_sts = this->sendMessage(fixedPacket, packet_size);
     free(fixedPacket);
 
-    return status;
+    return resp_sts;
 }
 
 
