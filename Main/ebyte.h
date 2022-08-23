@@ -7,6 +7,7 @@
 
 extern void ebyte_setup();
 extern void ebyte_process();  // Store & forward data between
+extern void ebyte_set_airrate(uint8_t level);
 
 extern Ebyte_E34 ebyte;
 extern int ebyte_show_report_count;

@@ -139,6 +139,7 @@ static void on_cmd_ebyte_airrate(cmd *c) {
     else {
         if (0 <= level && level <= 2) {
             ebyte_airrate_level = level;
+            ebyte_set_airrate(level);
         }
     }
 

@@ -39,7 +39,7 @@ void ebyte_setup() {
 
     // Ebyte setup
     if (ebyte.begin()) {  // Start communication with Ebyte module: config & etc.
-        term_println(ENDL "[EBYTE] Initialized successfully");
+        term_println(F(ENDL "[EBYTE] Initialized successfully"));
 
         ResponseStructContainer rc;
         rc = ebyte.getConfiguration();  // Get c.data from here
@@ -47,10 +47,16 @@ void ebyte_setup() {
         rc.close();  // Clean c.data that was allocated in ::getConfiguration()
 
         if (rc.status.code == E34_SUCCESS){
+
+            //
+            // Old configuration
+            //
             term_println(F("[EBYTE] Old configuration"));
             ebyte.printParameters(&cfg);
 
+            //
             // Setup the desired mode
+            //
             cfg.ADDH = EBYTE_BROADCAST_ADDR & 0x0F;  // No re-sending
             cfg.ADDL = EBYTE_BROADCAST_ADDR;
             cfg.CHAN = 6;  // XXX: 2.508 GHz -- out of WiFi channels
@@ -63,7 +69,9 @@ void ebyte_setup() {
             ebyte.setConfiguration(cfg);
             // ebyte.setConfiguration(cfg, WRITE_CFG_PWR_DWN_SAVE);  // XXX: Save
 
+            //
             // Recheck
+            //
             rc = ebyte.getConfiguration();  // Get c.data from here
             cfg = *((Configuration *)rc.data); // This is a memory transfer, NOT by-reference.
             rc.close();
@@ -73,18 +81,20 @@ void ebyte_setup() {
                 ebyte.printParameters(&cfg);
             }
             else {
+                term_print(F("[EBYTE] Re-checking failed!, E34: "));
                 term_println(rc.status.desc());  // Description of code
             }
 
-            // Change the baudrate for data transfer.
+            // Change the baudrate to data transfer rate.
             ebyte.changeBpsRate(EBYTE_BAUD);
         }
         else {
+            term_print(F("[EBYTE] Reading old configuration failed!, E34: "));
             term_println(rc.status.desc());  // Description of code
         }
     }
     else {
-        term_printf("[EBYTE] Initialized fail!" ENDL);
+        term_println(F("[EBYTE] Initialized fail!"));
     }
 }
 
@@ -235,4 +245,40 @@ void ebyte_process() {
         downlink_byte_sum = 0;
         report_millis = now + EBYTE_REPORT_PERIOD_MS;
     }
+}
+
+// ----------------------------------------------------------------------------
+void ebyte_set_airrate(uint8_t level) {
+    // Change the baudrate for configuring.
+    ebyte.changeBpsRate(EBYTE_CONFIG_BAUD);
+
+    ResponseStructContainer rc;
+    rc = ebyte.getConfiguration();  // Get c.data from here
+    Configuration cfg = *((Configuration *)rc.data); // This is a memory transfer, NOT by-reference.
+    rc.close();  // Clean c.data that was allocated in ::getConfiguration()
+
+    if (rc.status.code == E34_SUCCESS){
+        // Setting
+        cfg.SPED.airDataRate = level;
+        ebyte.setConfiguration(cfg);
+
+        // Recheck
+        rc = ebyte.getConfiguration();      // Get c.data from here
+        cfg = *((Configuration *)rc.data);  // This is a memory transfer, NOT by-reference.
+        rc.close();
+
+        if (cfg.SPED.airDataRate == level) {
+            term_println(F("[EBYTE] ebyte_set_airrate() succeeded!"));
+        }
+        else {
+            term_println(F("[EBYTE] ebyte_set_airrate() failed!"));
+        }
+    }
+    else {
+        term_print(F("[EBYTE] ebyte_set_airrate() failed!, E34: "));
+        term_println(rc.status.desc());  // Description of code
+    }
+
+    // Change the baudrate for data transfer.
+    ebyte.changeBpsRate(EBYTE_BAUD);
 }
