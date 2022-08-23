@@ -50,7 +50,7 @@ ports=`seq 0 $((NODE_COUNT - 1))`
 for p in ${ports}; do
     dev=/dev/ttyUSB${p}
     echo "--------- Flash ${dev} ---------"
-    if [ -c "${dev}" ]; then
+    if [ -c ${dev} ]; then
         # echo $(ps ax | grep "screen ${dev}" -i)
         # echo $(pgrep "screen ${dev}" -f -i -c)
         # exit
@@ -62,12 +62,15 @@ for p in ${ports}; do
         #     pid=$(pgrep "SCREEN ${dev}" -f)
         #     kill $pid
         # fi
-        for pid in $(pgrep "screen ${dev}" -f -i); do
-            echo ">>> Occupy ${dev}"
-            kill $pid
-        done
 
-        flash "${dev}" 
+        # for pid in $(pgrep "screen ${dev}" -f -i); do
+        #     echo ">>> Occupy ${dev}"
+        #     kill $pid
+        # done
+
+        "$(currentpos)"/occupy_port.sh ${dev}
+
+        flash "${dev}"
     else
         echo "${dev} does not exist!"
     fi
