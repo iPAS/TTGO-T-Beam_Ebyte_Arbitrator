@@ -11,6 +11,7 @@
 #include "led.h"
 #include "cli.h"
 #include "ebyte.h"
+#include "gps.h"
 
 
 #endif  // __GLOBAL_H__
