@@ -15,7 +15,8 @@ void setup() {
     do_axp_exist = axp_setup(); // Init axp20x and return T-Beam Version
     led_setup(do_axp_exist);    // LED
     cli_setup();
-    ebyte_setup();  // Ebyte
+    ebyte_setup();
+    gps_setup(do_axp_exist);
 
     term_printf(ENDL "[MAIN] System initialized successfully @rev: %s" ENDL, __GIT_SHA1_ID__);
 }
@@ -24,10 +25,11 @@ void setup() {
 void loop() {
     if (do_axp_exist)
         axp_logging_process();  // Report energy usage on the node.
-    led_blinking_process();  // LED blinking
+    led_blinking_process();     // LED blinking
     cli_interpretation_process();  // Interpret command-line
 
-    ebyte_process();  // Store & passing data between uC & Ebyte module
+    ebyte_process();            // Store & passing data between uC & Ebyte module
+    gps_decoding_process();     // Decode GPS message to print
 
     taskYIELD();
 }

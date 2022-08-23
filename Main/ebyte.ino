@@ -22,14 +22,7 @@
 Ebyte_E34 ebyte(&EBYTE_SERIAL, EBYTE_PIN_AUX, EBYTE_PIN_M0, EBYTE_PIN_M1, EBYTE_PIN_E34_RX, EBYTE_PIN_E34_TX);
 
 #define EBYTE_REPORT_PERIOD_MS 10000
-static uint32_t report_millis;
-static uint32_t downlink_byte_sum = 0;
-static uint32_t uplink_byte_sum = 0;
-static uint32_t prev_arival_millis = 0;         // Previous time the packet came
-static uint32_t inter_arival_sum_millis = 0;    // Cummulative sum of inter-packet arival time
-static uint32_t inter_arival_count = 0;
 int ebyte_show_report_count = 0;  // 0 is 'disable', -1 is 'forever', other +n will be counted down to zero.
-
 bool ebyte_loopback_flag = false;
 
 
@@ -92,13 +85,17 @@ void ebyte_setup() {
     else {
         term_printf("[EBYTE] Initialized fail!" ENDL);
     }
-
-    // Periods setup
-    report_millis = millis() + EBYTE_REPORT_PERIOD_MS;
 }
 
 // ----------------------------------------------------------------------------
 void ebyte_process() {
+    static uint32_t report_millis = millis() + EBYTE_REPORT_PERIOD_MS;
+    static uint32_t downlink_byte_sum = 0;
+    static uint32_t uplink_byte_sum = 0;
+    static uint32_t prev_arival_millis = 0;         // Previous time the packet came
+    static uint32_t inter_arival_sum_millis = 0;    // Cummulative sum of inter-packet arival time
+    static uint32_t inter_arival_count = 0;
+
     //
     // Uplink -- Ebyte to Computer
     //
