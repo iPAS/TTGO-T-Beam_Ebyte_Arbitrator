@@ -44,19 +44,17 @@ void gps_setup(bool do_axp_exist) {
 void gps_decoding_process() {
     static uint32_t report_millis = millis() + GPS_PRINT_PERIOD;
 
-    while (SERIAL_GPS.available()) {
-        gps.encode(SERIAL_GPS.read());
-    }
-
     if (gps_print_count != 0) {
+        while (SERIAL_GPS.available()) {
+            gps.encode(SERIAL_GPS.read());
+        }
 
-
-        if (gps.satellites.isValid() && gps.time.isUpdated() && gps.location.isValid()) {
+        if (gps.time.isUpdated() && gps.satellites.isValid() && gps.location.isValid()) {
 
             if (millis() > report_millis) {
                 // Example: http://arduiniana.org/libraries/tinygpsplus/
-                gps_update_data();
-                term_println( gps_update_str("[GPS] %s, (%s), Sat:%s") );
+                update_gps_str();
+                term_println(format_gps_str("[GPS] %s, (%s), Sat:%s"));
 
                 if (gps_print_count > 0) {
                     gps_print_count--;
@@ -69,7 +67,7 @@ void gps_decoding_process() {
 }
 
 // ----------------------------------------------------------------------------
-void gps_update_data() {
+void update_gps_str() {
     snprintf(str_date, sizeof(str_date), "%02u-%02u-%04u %02u:%02u:%02u",
         gps.date.day(),  gps.date.month(),  gps.date.year(),
         gps.time.hour(), gps.time.minute(), gps.time.second());
@@ -80,7 +78,7 @@ void gps_update_data() {
 }
 
 // ----------------------------------------------------------------------------
-char *gps_update_str(const char *fmt) {
+char * format_gps_str(const char *fmt) {
     if (str_date[0] == '\0' || str_loc[0] == '\0' || str_quality[0] == '\0') return NULL;
 
     static char str[sizeof(str_date) + sizeof(str_loc) + sizeof(str_quality) + 10];
