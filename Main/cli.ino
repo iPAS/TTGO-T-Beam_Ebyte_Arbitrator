@@ -13,9 +13,11 @@ Command cmd_ebyte_send;
 Command cmd_ebyte_get_config;
 Command cmd_ebyte_show_report;
 Command cmd_ebyte_loopback;
+Command cmd_print_gps;
 
 #define DEFAULT_SEND_MESSAGE "0123456789"
 #define DEFAULT_REPORT_COUNT 1
+#define DEFAULT_PRINT_GPS_COUNT 1
 
 const static char *help_description[] = {
     "\thelp",
@@ -24,6 +26,7 @@ const static char *help_description[] = {
     "\tconfig         -- get configuration",
     "\treport [count] -- show report. 0:dis -1:always [default \"" STR(DEFAULT_REPORT_COUNT) "\"]",
     "\tloopback [1|0] -- show, enable, disable the 'send-back' mode",
+    "\tgps [count]    -- print GPS info. 0:dis -1:always [default \"" STR(DEFAULT_PRINT_GPS_COUNT) "\"]",
 };
 
 // ----------------------------------------------------------------------------
@@ -61,6 +64,8 @@ void cli_setup() {
 
     cmd_ebyte_loopback = cli.addCommand("l/oopback", on_cmd_ebyte_loopback);
     cmd_ebyte_loopback.addPositionalArgument("flag", "");
+
+    cmd_print_gps = cli.addSingleArgumentCommand("g/ps", on_cmd_print_gps);  // To be able to get -1
 }
 
 // ----------------------------------------------------------------------------
@@ -193,4 +198,24 @@ void on_cmd_ebyte_loopback(cmd * c) {
     }
 
     term_printf("[CLI] Ebyte loopback: %s" ENDL, (ebyte_loopback_flag)? "true" : "false");
+}
+
+// ----------------------------------------------------------------------------
+void on_cmd_print_gps(cmd * c) {
+    Command cmd(c);
+    Argument arg = cmd.getArgument(0);
+    String param = arg.getValue();
+
+    if (param == "") {
+        param = STR(DEFAULT_PRINT_GPS_COUNT);
+    }
+
+    long count;
+    if (extract_int(param, &count)) {
+        term_printf("[CLI] Print GPS count=%d" ENDL, count);
+        gps_print_count = count;
+    }
+    else {
+        term_print(F("[CLI] What? ..")); term_println(param);
+    }
 }

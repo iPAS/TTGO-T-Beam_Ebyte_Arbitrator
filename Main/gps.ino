@@ -14,9 +14,12 @@ static uint8_t gps_rx;
 
 static TinyGPSPlus gps;
 
-static char str_gps_datetime[20] = {'\0'};
-static char str_gps_loc[32] = {'\0'};
-static char str_gps_quality[10] = {'\0'};
+static char str_date[20]    = {'\0'};
+static char str_loc[32]     = {'\0'};
+static char str_quality[10] = {'\0'};
+
+#define GPS_PRINT_PERIOD 5000
+int gps_print_count = 0;
 
 
 // ----------------------------------------------------------------------------
@@ -39,48 +42,48 @@ void gps_setup(bool do_axp_exist) {
 
 // ----------------------------------------------------------------------------
 void gps_decoding_process() {
-    // while (SERIAL_GPS.available()) {
-    //     gps.encode(SERIAL_GPS.read());
-    // }
+    static uint32_t report_millis = millis() + GPS_PRINT_PERIOD;
 
-    // // --------------------
-    // // Print time cyclingly
-    // // --------------------
-    // if (millis() > next_gps_stamp_millis) {
-    //     if (gps.satellites.isValid() && gps.time.isUpdated() && gps.location.isValid()) {
-    //         // Example: http://arduiniana.org/libraries/tinygpsplus/
-    //         gps_update_data();
-    //         term_println( gps_update_str("[GPS] %s, (%s), Sat:%s") );
-    //     }
-    //     next_gps_stamp_millis = millis() + GPS_STAMP_PERIOD;
+    while (SERIAL_GPS.available()) {
+        gps.encode(SERIAL_GPS.read());
+    }
 
-    //     if (getAddress() != SINK_ADDRESS) {
-    //         if (millis() > next_gps_report_millis) {
-    //             if (report_gps_to(SINK_ADDRESS) == false) {
-    //                 term_println("[GPS] Reporting failed!");
-    //             }
-    //             next_gps_report_millis = millis() + GPS_REPORT_PERIOD;
-    //         }
-    //     }
-    // }
+    if (gps_print_count != 0) {
+
+
+        if (gps.satellites.isValid() && gps.time.isUpdated() && gps.location.isValid()) {
+
+            if (millis() > report_millis) {
+                // Example: http://arduiniana.org/libraries/tinygpsplus/
+                gps_update_data();
+                term_println( gps_update_str("[GPS] %s, (%s), Sat:%s") );
+
+                if (gps_print_count > 0) {
+                    gps_print_count--;
+                }
+
+                report_millis = millis() + GPS_PRINT_PERIOD;
+            }
+        }
+    }
 }
 
 // ----------------------------------------------------------------------------
 void gps_update_data() {
-    snprintf(str_gps_datetime, sizeof(str_gps_datetime), "%02u-%02u-%04u %02u:%02u:%02u",
+    snprintf(str_date, sizeof(str_date), "%02u-%02u-%04u %02u:%02u:%02u",
         gps.date.day(),  gps.date.month(),  gps.date.year(),
         gps.time.hour(), gps.time.minute(), gps.time.second());
-    snprintf(str_gps_loc, sizeof(str_gps_loc), "%.6f, %.6f, %.2f",
+    snprintf(str_loc, sizeof(str_loc), "%.6f, %.6f, %.2f",
         gps.location.lat(), gps.location.lng(), gps.altitude.meters());
-    snprintf(str_gps_quality, sizeof(str_gps_quality), "%d",
+    snprintf(str_quality, sizeof(str_quality), "%d",
         gps.satellites.value());
 }
 
 // ----------------------------------------------------------------------------
 char *gps_update_str(const char *fmt) {
-    if (str_gps_datetime[0] == '\0' || str_gps_loc[0] == '\0' || str_gps_quality[0] == '\0') return NULL;
+    if (str_date[0] == '\0' || str_loc[0] == '\0' || str_quality[0] == '\0') return NULL;
 
-    static char str[sizeof(str_gps_datetime) + sizeof(str_gps_loc) + sizeof(str_gps_quality) + 10];
-    snprintf(str, sizeof(str), fmt, str_gps_datetime, str_gps_loc, str_gps_quality);
+    static char str[sizeof(str_date) + sizeof(str_loc) + sizeof(str_quality) + 10];
+    snprintf(str, sizeof(str), fmt, str_date, str_loc, str_quality);
     return str;
 }
