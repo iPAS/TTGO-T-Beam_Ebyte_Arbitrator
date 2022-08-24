@@ -23,9 +23,9 @@ import string
 import random
 
 
-TMO_PERIOD_SEC = 3.
+TMO_PERIOD_SEC = 5.
 DELAY_CHECK_SEC = .01
-DELAY_INTER_FRAME_SEC = 1
+DELAY_INTER_FRAME_SEC = 0.
 DEFAULT_PAYLOAD_LEN = 279  # MAVLink v2 max length -- https://mavlink.io/en/guide/serialization.html
 
 
@@ -38,6 +38,7 @@ def print_info(str):
 # -----------------------------------------------------------------------------
 def random_string(N):
     str = ''.join(random.choices(string.ascii_letters + string.digits, k=N))
+    #str = ''.join([ chr(i) for i in range(N)])
     str = str + '\n'
     return str
 
@@ -60,7 +61,12 @@ if __name__ == '__main__':
     with serial.Serial(serial_port, serial_baud) as ser:
         while ((time.time() - start_time) < 60):
             # send test string to slave device
-            send_str = random_string(payload_len)  #"0123456789a0123456789b0123456789c0123456789d0123456789e0123456789f" #random_string(30)
+            #send_str = random_string(payload_len)  #"0123456789a0123456789b0123456789c0123456789d0123456789e0123456789f" #random_string(30)
+            send_str = "start:%d:0123456789a0123456789b0123456789c0123456789d0123456789e0123456789f|mid|0123456789a0123456789b0123456789c0123456789d0123456789e0123456789f|end\n" % (1000-send_max)  #random_string(30)
+            print(len(send_str))
+            print(send_str)
+            break
+
             recv_str = ''
             ser.write(send_str.encode())  # Sending..
             waiting = True
@@ -89,7 +95,7 @@ if __name__ == '__main__':
                 time.sleep(DELAY_CHECK_SEC)
 
             # suspend sending thread
-            # time.sleep(DELAY_INTER_FRAME_SEC)  # sleep between frames
+            #time.sleep(DELAY_INTER_FRAME_SEC)  # sleep between frames
             if send_max > 0:
                 send_max -= 1
             else:
