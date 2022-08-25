@@ -6,12 +6,15 @@ Due to the fact that the module is limitted in memory buffer,
     normally the payload cannot be sent over than 255 bytes in single time.
 
 
-## Quick Start
+## Let's Get Started
 
 
-### Hardware Assembly
+### Experiment Setting
 
-#### Connect T-Beam with EByte Module
+![](images/loopback.png)
+
+
+### Connect T-Beam with EByte Module
 
 * [T-Beam].4  (RXD1) to [Term].Tx
 * [T-Beam].23 (TXD1) to [Term].Rx
@@ -26,12 +29,9 @@ Due to the fact that the module is limitted in memory buffer,
 * [T-Beam].5V        
 
 
-### Firmware
+### Firmware Installation
 
 x
-
-
-## System Overview
 
 
 ### How Firmware Work
@@ -39,10 +39,15 @@ x
 x
 
 
-### Resources
+### Running Script for the Test
+
+x
 
 
-#### Hardware References
+## Resources
+
+
+### Hardware References
 
 * [All versions' schematics](https://github.com/Xinyuan-LilyGO/LilyGO-T-Beam)
 * [V0.7 information](https://tinymicros.com/wiki/TTGO_T-Beam)
@@ -64,6 +69,6 @@ x
 
 ![1.1](images/T-Beam%20V1_1.png)
 
-#### Examples
+### Examples
 
 * [Examples for each peripheral on T-Beam](https://github.com/Xinyuan-LilyGO/LilyGo-LoRa-Series)
