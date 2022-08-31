@@ -647,11 +647,9 @@ void Ebyte_E34::printParameters(struct Configuration * cfg) {
     term_print(F(" Baud   : ")); term_print(cfg->SPED.uartBaudRate, BIN); term_print(" -> "); term_println(cfg->SPED.baudrate_desc());
     term_print(F(" AirRate: ")); term_print(cfg->SPED.airDataRate, BIN);  term_print(" -> "); term_println(cfg->SPED.airrate_desc());
 
-    term_print(F(" OptTx  : ")); term_print(cfg->OPTION.fixedTransmission, BIN);  term_print(" -> "); term_println(cfg->OPTION.fixed_tx_desc());
-    term_print(F(" OptPlup: ")); term_print(cfg->OPTION.ioDriveMode, BIN);        term_print(" -> "); term_println(cfg->OPTION.io_drv_desc());
-    // term_print(F(" OptWkUp: ")); term_print(cfg->OPTION.wirelessWakeupTime, BIN); term_print(" -> "); term_println(cfg->OPTION.wl_wake_desc());
-    // term_print(F(" OptFEC : ")); term_print(cfg->OPTION.fec, BIN);                term_print(" -> "); term_println(cfg->OPTION.fec_desc());
-    term_print(F(" OptPow : ")); term_print(cfg->OPTION.transmissionPower, BIN);  term_print(" -> "); term_println(cfg->OPTION.txpower_desc());
+    term_print(F(" OpTxMod: ")); term_print(cfg->OPTION.fixedTransmission, BIN); term_print(" -> "); term_println(cfg->OPTION.fixed_tx_desc());
+    term_print(F(" OpPlup : ")); term_print(cfg->OPTION.ioDriveMode, BIN);       term_print(" -> "); term_println(cfg->OPTION.io_drv_desc());
+    term_print(F(" OpTxPow: ")); term_print(cfg->OPTION.transmissionPower, BIN); term_print(" -> "); term_println(cfg->OPTION.txpower_desc());
 
     term_println();
 }
