@@ -24,11 +24,11 @@ const static char *help_description[] = {
     "\thelp",
     "\tverbose [level] -- show or set info level [0=none | 1=err | 2=warn | 3=info | 4=debug]",
     "\tairrate [level] -- show or set airrate level [0=250kbps | 1=1Mbps | 2=2Mbps]",
-    "\tsend [message] -- send [default \"" DEFAULT_SEND_MESSAGE "\"]",
-    "\tconfig         -- get configuration",
-    "\treport [count] -- show report. 0:dis -1:always [default \"" STR(DEFAULT_REPORT_COUNT) "\"]",
-    "\tloopback [1|0] -- show, enable, disable the 'send-back' mode",
-    "\tgps [count]    -- print GPS info. 0:dis -1:always [default \"" STR(DEFAULT_PRINT_GPS_COUNT) "\"]",
+    "\tsend [message]  -- send [def. \"" DEFAULT_SEND_MESSAGE "\"]",
+    "\tconfig          -- get configuration",
+    "\treport [n]      -- show report n times. 0:dis -1:always [def. \"" STR(DEFAULT_REPORT_COUNT) "\"]",
+    "\tloopback [1|0]  -- show or set the 'send-back' mode",
+    "\tgps [n]         -- print GPS n times. 0:dis -1:always [def. \"" STR(DEFAULT_PRINT_GPS_COUNT) "\"]",
 };
 
 // ----------------------------------------------------------------------------
