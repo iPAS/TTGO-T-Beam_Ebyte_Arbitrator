@@ -2,7 +2,7 @@
 #define __VERSION_H__
 
 
-#define __GIT_SHA1_ID__ ", heads/master-0-gff32741"
+#define __GIT_SHA1_ID__ ", heads/change_txpower-0-gb37edbb"
 
 
 #endif  // __GIT_SHA1_ID__

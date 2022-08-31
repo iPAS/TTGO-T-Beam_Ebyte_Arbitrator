@@ -13,6 +13,7 @@ extern Ebyte_E34 ebyte;
 extern int ebyte_show_report_count;
 extern bool ebyte_loopback_flag;
 extern uint8_t ebyte_airrate_level;
+extern uint8_t ebyte_txpower_level;
 
 
 #endif  // __EBYTE_H__
