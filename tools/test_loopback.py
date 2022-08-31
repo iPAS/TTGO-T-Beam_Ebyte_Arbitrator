@@ -63,9 +63,9 @@ if __name__ == '__main__':
             # send test string to slave device
             #send_str = random_string(payload_len)  #"0123456789a0123456789b0123456789c0123456789d0123456789e0123456789f" #random_string(30)
             send_str = "start:%d:0123456789a0123456789b0123456789c0123456789d0123456789e0123456789f|mid|0123456789a0123456789b0123456789c0123456789d0123456789e0123456789f|end\n" % (1000-send_max)  #random_string(30)
-            print(len(send_str))
-            print(send_str)
-            break
+            # print(len(send_str))
+            # print(send_str)
+            # break
 
             recv_str = ''
             ser.write(send_str.encode())  # Sending..
