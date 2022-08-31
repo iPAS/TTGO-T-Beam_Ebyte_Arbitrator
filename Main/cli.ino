@@ -166,7 +166,7 @@ static void on_cmd_ebyte_txpower(cmd *c) {
     else {
         if (0 <= level && level <= 3) {
             ebyte_txpower_level = level;
-            // ebyte_set_txpower(level);
+            ebyte_set_txpower(level);
         }
     }
 
