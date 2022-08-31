@@ -10,10 +10,11 @@ class EbyteSetter {
     uint8_t level;
 
   public:
+    EbyteSetter() = delete;
     EbyteSetter(uint8_t level) {
         this->level = level;
     };
-    virtual void operator ()(Configuration *);
+    virtual void operator ()(Configuration *) = 0;
 };
 
 
