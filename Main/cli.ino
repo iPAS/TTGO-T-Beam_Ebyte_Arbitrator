@@ -33,6 +33,7 @@ const static char *help_description[] = {
     "\tgps [n]         -- print GPS n times. 0:dis -1:always [def. \"" STR(DEFAULT_PRINT_GPS_COUNT) "\"]",
 };
 
+
 // ----------------------------------------------------------------------------
 void on_error_callback(cmd_error *e) {
     CommandError cmdError(e); // Create wrapper object
@@ -123,7 +124,7 @@ static void on_cmd_verbose(cmd *c) {
         }
     }
     else {
-        system_verbose_level = (verbose_code_t)level;
+        system_verbose_level = (verbose_level_t)level;
     }
 
     term_printf("[CLI] Verbose level=%d" ENDL, system_verbose_level);
