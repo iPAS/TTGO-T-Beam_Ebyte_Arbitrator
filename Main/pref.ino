@@ -14,19 +14,21 @@ void pref_setup() {
 void pref_load(preference_topic_t topic) {
     pref.begin(PREF_NAME_SPACE, true);
 
+    // Load from flash
     if (topic.code == topic.PREF_VERBOSE  ||
         topic.code == topic.PREF_ALL) {
-        system_verbose_level = (verbose_level_t)pref.getUChar(STR(PREF_VERBOSE), 0);
+        system_verbose_level = (verbose_level_t)pref.getUChar(STR(PREF_VERBOSE), system_verbose_level);
     }
     if (topic.code == topic.PREF_AIRRATE  ||
         topic.code == topic.PREF_ALL) {
-        ebyte_airrate_level = pref.getUChar(STR(PREF_AIRRATE), 0);
+        ebyte_airrate_level = pref.getUChar(STR(PREF_AIRRATE), ebyte_airrate_level);
     }
     if (topic.code == topic.PREF_TXPOWER  ||
         topic.code == topic.PREF_ALL) {
-        ebyte_txpower_level = pref.getUChar(STR(PREF_TXPOWER), 0);
+        ebyte_txpower_level = pref.getUChar(STR(PREF_TXPOWER), ebyte_txpower_level);
     }
 
+    // Apply them
     switch (topic.code) {
         case topic.PREF_ALL: ebyte_apply_configs(); break;
         case topic.PREF_VERBOSE: break;
@@ -42,7 +44,19 @@ void pref_load(preference_topic_t topic) {
 void pref_save(preference_topic_t topic) {
     pref.begin(PREF_NAME_SPACE, false);
 
-    // pref.putUShort(STR(R_NODE_ID), getAddress());
+    // Save to flash
+    if (topic.code == topic.PREF_VERBOSE  ||
+        topic.code == topic.PREF_ALL) {
+        pref.putUChar(STR(PREF_VERBOSE), system_verbose_level);
+    }
+    if (topic.code == topic.PREF_AIRRATE  ||
+        topic.code == topic.PREF_ALL) {
+        pref.putUChar(STR(PREF_AIRRATE), ebyte_airrate_level);
+    }
+    if (topic.code == topic.PREF_TXPOWER  ||
+        topic.code == topic.PREF_ALL) {
+        pref.putUChar(STR(PREF_TXPOWER), ebyte_txpower_level);
+    }
 
     pref.end();
 }

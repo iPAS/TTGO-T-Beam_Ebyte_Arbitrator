@@ -11,6 +11,7 @@ typedef struct {
         PREF_AIRRATE,
         PREF_TXPOWER,
     } code;
+
     String desc() {
         switch (this->code) {
             case PREF_ALL:      return F("Not yet implemented!");  // TODO:
@@ -20,6 +21,7 @@ typedef struct {
             default:            return F("Not yet implemented!");
         }
     };
+
 } preference_topic_t;
 
 extern void pref_setup();
