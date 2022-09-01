@@ -312,6 +312,32 @@ void ebyte_set_configs(EbyteSetter & setter) {
  * @brief
  *
  */
+void ebyte_apply_configs() {
+    // Setup
+    class Setter: public EbyteSetter {
+      public:
+        Setter(uint8_t level): EbyteSetter(level) {};
+
+        void operator ()(Configuration * cfg) {
+            cfg->SPED.airDataRate = ebyte_airrate_level;
+            cfg->OPTION.transmissionPower = ebyte_txpower_level;
+            ebyte.setConfiguration(*cfg);
+        };
+
+        bool validate(Configuration * cfg) {
+            return (cfg->SPED.airDataRate         == ebyte_airrate_level  &&
+                    cfg->OPTION.transmissionPower == ebyte_txpower_level
+                    )? true : false;
+        };
+    } setter(0);
+
+    ebyte_set_configs(setter);
+}
+
+/**
+ * @brief
+ *
+ */
 void ebyte_set_airrate(uint8_t level) {
     // Setup
     class Setter: public EbyteSetter {
