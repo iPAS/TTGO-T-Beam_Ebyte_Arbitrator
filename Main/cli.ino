@@ -27,7 +27,7 @@ const static char *help_description[] = {
     "\tairrate [level] -- show or set airrate level [0=250kbps | 1=1Mbps | 2=2Mbps]",
     "\ttxpower [level] -- show or set txpower level [0=20dBm | 1=14dBm | 2=8dBm | 3=2dBm]",
     "\tsend [message]  -- send [def. \"" DEFAULT_SEND_MESSAGE "\"]",
-    "\tconfig          -- get configuration",
+    "\tconfig          -- get configuration from Ebyte directly",
     "\treport [n]      -- show report n times. 0:dis -1:always [def. \"" STR(DEFAULT_REPORT_COUNT) "\"]",
     "\tloopback [1|0]  -- show or set the 'send-back' mode",
     "\tgps [n]         -- print GPS n times. 0:dis -1:always [def. \"" STR(DEFAULT_PRINT_GPS_COUNT) "\"]",
