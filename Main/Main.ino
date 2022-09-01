@@ -21,7 +21,7 @@ void setup() {
     ebyte_setup();
     gps_setup(do_axp_exist);
 
-    config_setup();
+    pref_setup();
     term_printf(ENDL "[MAIN] System initialized successfully @rev: %s" ENDL, __GIT_SHA1_ID__);
 }
 

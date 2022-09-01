@@ -1,5 +1,5 @@
-#ifndef __CONFIG_H__
-#define __CONFIG_H__
+#ifndef __PREF_H__
+#define __PREF_H__
 
 
 #define PREF_NAME_SPACE "FLOW_CRTL"  // Max 15 chars
@@ -16,4 +16,4 @@ typedef struct {
 } preference_topic_t;
 
 
-#endif  // __CONFIG_H__
+#endif  // __PREF_H__

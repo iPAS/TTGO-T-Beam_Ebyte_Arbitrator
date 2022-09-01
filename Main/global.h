@@ -13,7 +13,7 @@
 #include "cli.h"
 #include "ebyte.h"
 #include "gps.h"
-#include "config.h"
+#include "pref.h"
 
 
 #endif  // __GLOBAL_H__

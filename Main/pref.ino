@@ -6,12 +6,12 @@ static Preferences pref;
 
 
 // ----------------------------------------------------------------------------
-void config_setup() {
-    // config_load(R_NODE_ID);
+void pref_setup() {
+    // pref_load(R_NODE_ID);
 }
 
 // ----------------------------------------------------------------------------
-void config_save(preference_topic_t reg) {
+void pref_save(preference_topic_t reg) {
     pref.begin(PREF_NAME_SPACE, false);
 
     // switch (reg) {
@@ -24,7 +24,7 @@ void config_save(preference_topic_t reg) {
 }
 
 // ----------------------------------------------------------------------------
-void config_load(preference_topic_t reg) {
+void pref_load(preference_topic_t reg) {
     pref.begin(PREF_NAME_SPACE, true);
 
     // switch (reg) {
