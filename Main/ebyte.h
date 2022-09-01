@@ -15,14 +15,17 @@ class EbyteSetter {
         this->level = level;
     };
     virtual void operator ()(Configuration *) = 0;
+    virtual bool validate(Configuration *) = 0;
 };
 
 
 extern void ebyte_setup();
 extern void ebyte_process();  // Store & forward data between
 
-extern void ebyte_set_airrate(uint8_t);
-extern void ebyte_set_txpower(uint8_t);
+extern void ebyte_set_configs(EbyteSetter & setter);
+extern void ebyte_apply_configs();
+extern void ebyte_set_airrate(uint8_t level);
+extern void ebyte_set_txpower(uint8_t level);
 
 extern Ebyte_E34 ebyte;
 extern int ebyte_show_report_count;

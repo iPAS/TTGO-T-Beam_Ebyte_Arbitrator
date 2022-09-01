@@ -60,15 +60,16 @@ void ebyte_setup() {
             //
             cfg.ADDH = EBYTE_BROADCAST_ADDR & 0x0F;  // No re-sending
             cfg.ADDL = EBYTE_BROADCAST_ADDR;
-            cfg.CHAN = 6;  // XXX: 2.508 GHz -- out of WiFi channels
-            cfg.OPTION.transmissionPower = TXPOWER_20;
-            cfg.OPTION.ioDriveMode      = IO_PUSH_PULL;
-            cfg.OPTION.fixedTransmission = TXMODE_TRANS;  // XXX:
-            cfg.SPED.airDataRate        = AIR_DATA_RATE_2M;
-            cfg.SPED.uartBaudRate       = UART_BPS_115200;  // XXX: don't forget to ::changeBpsRate( EBYTE_BAUD )
-            cfg.SPED.uartParity         = UART_PARITY_8N1;
+            cfg.CHAN = 6;  // ch6 = 2.508 GHz -- out of WiFi channels
+                           // TODO: configurable channel
+            cfg.OPTION.transmissionPower    = ebyte_txpower_level;  // TXPOWER_20;
+            cfg.OPTION.ioDriveMode          = IO_PUSH_PULL;
+            cfg.OPTION.fixedTransmission    = TXMODE_TRANS;         // no special bytes leading
+            cfg.SPED.airDataRate            = ebyte_airrate_level;  // AIR_DATA_RATE_2M;
+            cfg.SPED.uartBaudRate           = UART_BPS_115200;      // XXX: don't forget to ::changeBpsRate( EBYTE_BAUD )
+            cfg.SPED.uartParity             = UART_PARITY_8N1;
             ebyte.setConfiguration(cfg);
-            // ebyte.setConfiguration(cfg, WRITE_CFG_PWR_DWN_SAVE);  // XXX: Save
+            // ebyte.setConfiguration(cfg, WRITE_CFG_PWR_DWN_SAVE);  // XXX: Save on Ebyte's EEPROM
 
             //
             // Recheck
@@ -254,7 +255,7 @@ void ebyte_process() {
  *
  * @return ResponseStructContainer
  */
-ResponseStructContainer ebyte_get_configure(Configuration * cfg) {
+ResponseStructContainer ebyte_get_config(Configuration * cfg) {
     ResponseStructContainer rc = ebyte.getConfiguration();  // Get c.data from here
     // Configuration cfg = *((Configuration *)rc.data);  // This is a memory transfer, NOT by-reference.
     memcpy(cfg, rc.data, sizeof(Configuration));
@@ -270,7 +271,7 @@ ResponseStructContainer ebyte_get_configure(Configuration * cfg) {
  */
 ResponseStructContainer ebyte_set_config(EbyteSetter & setter) {
     Configuration cfg;
-    ResponseStructContainer rc = ebyte_get_configure(&cfg);
+    ResponseStructContainer rc = ebyte_get_config(&cfg);
     if (rc.status.code == E34_SUCCESS) {  // Setting
         setter(&cfg);
         ebyte.setConfiguration(cfg);
@@ -279,38 +280,29 @@ ResponseStructContainer ebyte_set_config(EbyteSetter & setter) {
 }
 
 /**
- * @brief
+ * @brief ebyte_setter
  *
  */
-void ebyte_set_airrate(uint8_t level) {
+void ebyte_set_configs(EbyteSetter & setter) {
     ebyte.changeBpsRate(EBYTE_CONFIG_BAUD);  // Change the baudrate for configuring.
 
-    // Setup
-    class Setter: public EbyteSetter {
-      public:
-        Setter(uint8_t level): EbyteSetter(level) {};
-        void operator ()(Configuration * cfg) {
-            cfg->SPED.airDataRate = this->level;
-            ebyte.setConfiguration(*cfg);
-        };
-    } setter(level);
-
+    // Setting
     ResponseStructContainer rc = ebyte_set_config(setter);
 
-    // Recheck
+    // Validate
     if (rc.status.code == E34_SUCCESS) {
         Configuration cfg;
-        rc = ebyte_get_configure(&cfg);
+        rc = ebyte_get_config(&cfg);
 
-        if (cfg.SPED.airDataRate == level) {
-            term_println(F("[EBYTE] ebyte_set_airrate() succeeded!"));
+        if (setter.validate(&cfg) == true) {
+            term_println(F("[EBYTE] setter.validate() succeeded!"));
         }
         else {
-            term_println(F("[EBYTE] ebyte_set_airrate() failed!"));
+            term_println(F("[EBYTE] setter.validate() failed!"));
         }
     }
     else {
-        term_print(F("[EBYTE] ebyte_set_airrate() failed!, E34: "));
+        term_print(F("[EBYTE] ebyte_set_config() failed!, E34: "));
         term_println(rc.status.desc());  // Description of code
     }
 
@@ -321,37 +313,70 @@ void ebyte_set_airrate(uint8_t level) {
  * @brief
  *
  */
-void ebyte_set_txpower(uint8_t level) {
-    ebyte.changeBpsRate(EBYTE_CONFIG_BAUD);  // Change the baudrate for configuring.
-
+void ebyte_apply_configs() {
     // Setup
     class Setter: public EbyteSetter {
       public:
         Setter(uint8_t level): EbyteSetter(level) {};
+
+        void operator ()(Configuration * cfg) {
+            cfg->SPED.airDataRate = ebyte_airrate_level;
+            cfg->OPTION.transmissionPower = ebyte_txpower_level;
+            ebyte.setConfiguration(*cfg);
+        };
+
+        bool validate(Configuration * cfg) {
+            return (cfg->SPED.airDataRate         == ebyte_airrate_level  &&
+                    cfg->OPTION.transmissionPower == ebyte_txpower_level
+                    )? true : false;
+        };
+    } setter(0);
+
+    ebyte_set_configs(setter);
+}
+
+/**
+ * @brief
+ *
+ */
+void ebyte_set_airrate(uint8_t level) {
+    // Setup
+    class Setter: public EbyteSetter {
+      public:
+        Setter(uint8_t level): EbyteSetter(level) {};
+
+        void operator ()(Configuration * cfg) {
+            cfg->SPED.airDataRate = this->level;
+            ebyte.setConfiguration(*cfg);
+        };
+
+        bool validate(Configuration * cfg) {
+            return (cfg->SPED.airDataRate == this->level)? true : false;
+        };
+    } setter(level);
+
+    ebyte_set_configs(setter);
+}
+
+/**
+ * @brief
+ *
+ */
+void ebyte_set_txpower(uint8_t level) {
+    // Setup
+    class Setter: public EbyteSetter {
+      public:
+        Setter(uint8_t level): EbyteSetter(level) {};
+
         void operator ()(Configuration * cfg) {
             cfg->OPTION.transmissionPower = this->level;
             ebyte.setConfiguration(*cfg);
         };
+
+        bool validate(Configuration * cfg) {
+            return (cfg->OPTION.transmissionPower == this->level)? true : false;
+        };
     } setter(level);
 
-    ResponseStructContainer rc = ebyte_set_config(setter);
-
-    // Recheck
-    if (rc.status.code == E34_SUCCESS) {
-        Configuration cfg;
-        rc = ebyte_get_configure(&cfg);
-
-        if (cfg.OPTION.transmissionPower == level) {
-            term_println(F("[EBYTE] ebyte_set_txpower() succeeded!"));
-        }
-        else {
-            term_println(F("[EBYTE] ebyte_set_txpower() failed!"));
-        }
-    }
-    else {
-        term_print(F("[EBYTE] ebyte_set_txpower() failed!, E34: "));
-        term_println(rc.status.desc());  // Description of code
-    }
-
-    ebyte.changeBpsRate(EBYTE_BAUD);  // Change the baudrate for data transfer.
+    ebyte_set_configs(setter);
 }

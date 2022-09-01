@@ -24,14 +24,4 @@ extern boolean is_numeric(String str);
 extern bool extract_int(String str, long *ret);
 
 
-typedef enum {
-    VERBOSE_NONE    = 0,
-    VERBOSE_ERROR   = 1,
-    VERBOSE_WARNING = 2,
-    VERBOSE_INFO    = 3,
-    VERBOSE_DEBUG   = 4,
-} verbose_code_t;
-extern verbose_code_t system_verbose_level;
-
-
 #endif  // __HELPER_H__
