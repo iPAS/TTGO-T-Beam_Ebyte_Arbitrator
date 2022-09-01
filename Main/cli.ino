@@ -13,6 +13,7 @@ Command cmd_ebyte_airrate;
 Command cmd_ebyte_txpower;
 Command cmd_ebyte_send;
 Command cmd_ebyte_get_config;
+Command cmd_pref_save_reset;
 Command cmd_ebyte_show_report;
 Command cmd_ebyte_loopback;
 Command cmd_print_gps;
@@ -28,6 +29,7 @@ const static char *help_description[] = {
     "\ttxpower [level] -- show or set txpower level [0=20dBm | 1=14dBm | 2=8dBm | 3=2dBm]",
     "\tsend [message]  -- send [def. \"" DEFAULT_SEND_MESSAGE "\"]",
     "\tconfig          -- get configuration from Ebyte directly",
+    "\tpref [0]        -- save or reset preferences. 0:reset null:save",
     "\treport [n]      -- show report n times. 0:dis -1:always [def. \"" STR(DEFAULT_REPORT_COUNT) "\"]",
     "\tloopback [1|0]  -- show or set the 'send-back' mode",
     "\tgps [n]         -- print GPS n times. 0:dis -1:always [def. \"" STR(DEFAULT_PRINT_GPS_COUNT) "\"]",
@@ -67,6 +69,9 @@ void cli_setup() {
     cmd_ebyte_send.addPositionalArgument("message", DEFAULT_SEND_MESSAGE);
 
     cmd_ebyte_get_config = cli.addCommand("c/onfig", on_cmd_ebyte_get_config);
+
+    cmd_pref_save_reset = cli.addCommand("p/ref", on_cmd_pref_save_reset);
+    cmd_pref_save_reset.addPositionalArgument("level", "");
 
     // cmd_ebyte_show_report = cli.addCommand("r/eport", on_cmd_ebyte_show_report);
     // cmd_ebyte_show_report.addPositionalArgument("count", STR(DEFAULT_REPORT_COUNT));
@@ -213,6 +218,33 @@ void on_cmd_ebyte_get_config(cmd *c) {
     }
 
     ebyte.changeBpsRate(old_baud);
+}
+
+// ----------------------------------------------------------------------------
+void on_cmd_pref_save_reset(cmd *c) {
+    Command cmd(c);
+    Argument arg = cmd.getArgument(0);
+    String param = arg.getValue();
+
+    long level;
+    if (extract_int(param, &level) == false) {
+        if (param != "") {
+            term_print(F("[CLI] What? ..")); term_println(param);
+        }
+        else {
+            // null --> save
+            preference_topic_t pref = { .code = pref.PREF_ALL };
+            pref_save(pref);
+            term_println(F("[CLI] Preferencs have been saved!"));
+        }
+    }
+    else {
+        if (level == 0) {
+            // 0 --> reset
+            // TODO:
+            term_println(F("[CLI] Not yet implemented!"));
+        }
+    }
 }
 
 // ----------------------------------------------------------------------------
