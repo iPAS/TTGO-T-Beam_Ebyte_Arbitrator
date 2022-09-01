@@ -18,10 +18,10 @@ void setup() {
     do_axp_exist = axp_setup(); // Init axp20x and return T-Beam Version
     led_setup(do_axp_exist);    // LED
     cli_setup();
+    pref_setup();
     ebyte_setup();
     gps_setup(do_axp_exist);
 
-    pref_setup();
     term_printf(ENDL "[MAIN] System initialized successfully @rev: %s" ENDL, __GIT_SHA1_ID__);
 }
 

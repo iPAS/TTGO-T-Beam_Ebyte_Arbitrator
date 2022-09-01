@@ -7,11 +7,11 @@ static Preferences pref;
 
 // ----------------------------------------------------------------------------
 void pref_setup() {
-    pref_load();
+    pref_load(false);
 }
 
 // ----------------------------------------------------------------------------
-void pref_load(preference_topic_t topic) {
+void pref_load(bool do_save, preference_topic_t topic) {
     pref.begin(PREF_NAME_SPACE, true);
 
     // Load from flash
@@ -29,12 +29,14 @@ void pref_load(preference_topic_t topic) {
     }
 
     // Apply them
-    switch (topic.code) {
-        case topic.PREF_ALL: ebyte_apply_configs(); break;
-        case topic.PREF_VERBOSE: break;
-        case topic.PREF_AIRRATE: ebyte_set_airrate(ebyte_airrate_level); break;
-        case topic.PREF_TXPOWER: ebyte_set_txpower(ebyte_txpower_level); break;
-        default: break;
+    if (do_save) {
+        switch (topic.code) {
+            case topic.PREF_ALL: ebyte_apply_configs(); break;
+            case topic.PREF_VERBOSE: break;
+            case topic.PREF_AIRRATE: ebyte_set_airrate(ebyte_airrate_level); break;
+            case topic.PREF_TXPOWER: ebyte_set_txpower(ebyte_txpower_level); break;
+            default: break;
+        }
     }
 
     pref.end();
