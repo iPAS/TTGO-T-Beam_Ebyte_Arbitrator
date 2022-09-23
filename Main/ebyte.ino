@@ -322,12 +322,14 @@ void ebyte_apply_configs() {
         void operator ()(Configuration * cfg) {
             cfg->SPED.airDataRate = ebyte_airrate_level;
             cfg->OPTION.transmissionPower = ebyte_txpower_level;
+            cfg->CHAN = ebyte_channel;
             ebyte.setConfiguration(*cfg);
         };
 
         bool validate(Configuration * cfg) {
             return (cfg->SPED.airDataRate         == ebyte_airrate_level  &&
-                    cfg->OPTION.transmissionPower == ebyte_txpower_level
+                    cfg->OPTION.transmissionPower == ebyte_txpower_level  &&
+                    cfg->CHAN                     == ebyte_channel
                     )? true : false;
         };
     } setter(0);

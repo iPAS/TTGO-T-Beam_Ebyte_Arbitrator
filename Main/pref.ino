@@ -27,6 +27,10 @@ void pref_load(bool do_save, preference_topic_t topic) {
         topic.code == topic.PREF_ALL) {
         ebyte_txpower_level = pref.getUChar(STR(PREF_TXPOWER), ebyte_txpower_level);
     }
+    if (topic.code == topic.PREF_CHANNEL  ||
+        topic.code == topic.PREF_ALL) {
+        ebyte_channel = pref.getUChar(STR(PREF_CHANNEL), ebyte_channel);
+    }
 
     // Apply them
     if (do_save) {
@@ -35,6 +39,7 @@ void pref_load(bool do_save, preference_topic_t topic) {
             case topic.PREF_VERBOSE: break;
             case topic.PREF_AIRRATE: ebyte_set_airrate(ebyte_airrate_level); break;
             case topic.PREF_TXPOWER: ebyte_set_txpower(ebyte_txpower_level); break;
+            case topic.PREF_CHANNEL: ebyte_set_channel(ebyte_channel); break;
             default: break;
         }
     }
@@ -58,6 +63,10 @@ void pref_save(preference_topic_t topic) {
     if (topic.code == topic.PREF_TXPOWER  ||
         topic.code == topic.PREF_ALL) {
         pref.putUChar(STR(PREF_TXPOWER), ebyte_txpower_level);
+    }
+    if (topic.code == topic.PREF_CHANNEL  ||
+        topic.code == topic.PREF_ALL) {
+        pref.putUChar(STR(PREF_CHANNEL), ebyte_channel);
     }
 
     pref.end();

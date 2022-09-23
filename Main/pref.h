@@ -10,6 +10,7 @@ typedef struct {
         PREF_VERBOSE,
         PREF_AIRRATE,
         PREF_TXPOWER,
+        PREF_CHANNEL,
     } code;
 
     String desc() {
