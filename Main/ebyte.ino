@@ -315,10 +315,9 @@ void ebyte_set_configs(EbyteSetter & setter) {
  *
  */
 void ebyte_apply_configs() {
-    // Setup
     class Setter: public EbyteSetter {
       public:
-        Setter(uint8_t level): EbyteSetter(level) {};
+        Setter(uint8_t param): EbyteSetter(param) {};
 
         void operator ()(Configuration * cfg) {
             cfg->SPED.airDataRate = ebyte_airrate_level;
@@ -341,18 +340,17 @@ void ebyte_apply_configs() {
  *
  */
 void ebyte_set_airrate(uint8_t level) {
-    // Setup
     class Setter: public EbyteSetter {
       public:
-        Setter(uint8_t level): EbyteSetter(level) {};
+        Setter(uint8_t param): EbyteSetter(param) {};
 
         void operator ()(Configuration * cfg) {
-            cfg->SPED.airDataRate = this->level;
+            cfg->SPED.airDataRate = this->byte_param;
             ebyte.setConfiguration(*cfg);
         };
 
         bool validate(Configuration * cfg) {
-            return (cfg->SPED.airDataRate == this->level)? true : false;
+            return (cfg->SPED.airDataRate == this->byte_param)? true : false;
         };
     } setter(level);
 
@@ -364,18 +362,17 @@ void ebyte_set_airrate(uint8_t level) {
  *
  */
 void ebyte_set_txpower(uint8_t level) {
-    // Setup
     class Setter: public EbyteSetter {
       public:
-        Setter(uint8_t level): EbyteSetter(level) {};
+        Setter(uint8_t param): EbyteSetter(param) {};
 
         void operator ()(Configuration * cfg) {
-            cfg->OPTION.transmissionPower = this->level;
+            cfg->OPTION.transmissionPower = this->byte_param;
             ebyte.setConfiguration(*cfg);
         };
 
         bool validate(Configuration * cfg) {
-            return (cfg->OPTION.transmissionPower == this->level)? true : false;
+            return (cfg->OPTION.transmissionPower == this->byte_param)? true : false;
         };
     } setter(level);
 
@@ -387,5 +384,19 @@ void ebyte_set_txpower(uint8_t level) {
  *
  */
 void ebyte_set_channel(uint8_t ch) {
+    class Setter: public EbyteSetter {
+      public:
+        Setter(uint8_t param): EbyteSetter(param) {};
 
+        void operator ()(Configuration * cfg) {
+            cfg->CHAN = this->byte_param;
+            ebyte.setConfiguration(*cfg);
+        };
+
+        bool validate(Configuration * cfg) {
+            return (cfg->CHAN == this->byte_param)? true : false;
+        };
+    } setter(ch);
+
+    ebyte_set_configs(setter);
 }

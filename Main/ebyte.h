@@ -7,12 +7,12 @@
 
 class EbyteSetter {
   protected:
-    uint8_t level;
+    uint8_t byte_param;
 
   public:
     EbyteSetter() = delete;
-    EbyteSetter(uint8_t level) {
-        this->level = level;
+    EbyteSetter(uint8_t param) {
+        this->byte_param = param;
     };
     virtual void operator ()(Configuration *) = 0;
     virtual bool validate(Configuration *) = 0;
