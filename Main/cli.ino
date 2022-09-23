@@ -197,7 +197,7 @@ static void on_cmd_ebyte_channel(cmd *c) {
         }
     }
     else {
-        if (0 <= ch && ch <= 3) {
+        if (0 <= ch && ch <= 11) {
             ebyte_channel = ch;
             ebyte_set_channel(ebyte_channel);
         }

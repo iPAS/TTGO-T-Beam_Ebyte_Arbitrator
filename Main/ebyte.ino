@@ -26,7 +26,7 @@ int ebyte_show_report_count = 0;  // 0 is 'disable', -1 is 'forever', other +n w
 bool ebyte_loopback_flag = false;
 uint8_t ebyte_airrate_level = 2;  // 0=250kbps | 1=1Mbps | 2=2Mbps
 uint8_t ebyte_txpower_level = 0;  // 0=20dBm | 1=14dBm | 2=8dBm | 3=2dBm
-uint8_t ebyte_channel = 0;
+uint8_t ebyte_channel = 6;  // 0-11 where ch6 = 2.508 GHz -- out of WiFi channels
 
 
 // ----------------------------------------------------------------------------
@@ -61,8 +61,7 @@ void ebyte_setup() {
             //
             cfg.ADDH = EBYTE_BROADCAST_ADDR & 0x0F;  // No re-sending
             cfg.ADDL = EBYTE_BROADCAST_ADDR;
-            cfg.CHAN = 6;  // ch6 = 2.508 GHz -- out of WiFi channels
-                           // TODO: configurable channel
+            cfg.CHAN = ebyte_channel;  // ch6 = 2.508 GHz -- out of WiFi channels
             cfg.OPTION.transmissionPower    = ebyte_txpower_level;  // TXPOWER_20;
             cfg.OPTION.ioDriveMode          = IO_PUSH_PULL;
             cfg.OPTION.fixedTransmission    = TXMODE_TRANS;         // no special bytes leading
