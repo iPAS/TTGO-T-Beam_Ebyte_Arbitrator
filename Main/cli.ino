@@ -11,6 +11,7 @@ Command cmd_help;
 Command cmd_verbose;
 Command cmd_ebyte_airrate;
 Command cmd_ebyte_txpower;
+Command cmd_ebyte_channel;
 Command cmd_ebyte_send;
 Command cmd_ebyte_get_config;
 Command cmd_pref_save_reset;
@@ -27,6 +28,7 @@ const static char *help_description[] = {
     "\tverbose [level] -- show or set info level [0=none | 1=err | 2=warn | 3=info | 4=debug]",
     "\tairrate [level] -- show or set airrate level [0=250kbps | 1=1Mbps | 2=2Mbps]",
     "\ttxpower [level] -- show or set txpower level [0=20dBm | 1=14dBm | 2=8dBm | 3=2dBm]",
+    "\tchannel [ch]    -- show or set channel [0-11]",
     "\tsend [message]  -- send [def. \"" DEFAULT_SEND_MESSAGE "\"]",
     "\tconfig          -- get configuration from Ebyte directly",
     "\tpref [0]        -- save or reset preferences. 0:reset null:save",
@@ -64,6 +66,9 @@ void cli_setup() {
 
     cmd_ebyte_txpower = cli.addCommand("t/xpower", on_cmd_ebyte_txpower);
     cmd_ebyte_txpower.addPositionalArgument("level", "");
+
+    cmd_ebyte_channel = cli.addCommand("ch/annel", on_cmd_ebyte_channel);
+    cmd_ebyte_channel.addPositionalArgument("ch", "");
 
     cmd_ebyte_send = cli.addCommand("s/end", on_cmd_ebyte_send);
     cmd_ebyte_send.addPositionalArgument("message", DEFAULT_SEND_MESSAGE);
@@ -177,6 +182,28 @@ static void on_cmd_ebyte_txpower(cmd *c) {
     }
 
     term_printf("[CLI] Ebyte txpower level=%d" ENDL, ebyte_txpower_level);
+}
+
+// ----------------------------------------------------------------------------
+static void on_cmd_ebyte_channel(cmd *c) {
+    Command cmd(c);
+    Argument arg = cmd.getArgument("ch");
+    String param = arg.getValue();
+
+    long ch;
+    if (extract_int(param, &ch) == false) {
+        if (param != "") {
+            term_print(F("[CLI] What? ..")); term_println(param);
+        }
+    }
+    else {
+        if (0 <= ch && ch <= 3) {
+            // ebyte_channel = ch;
+            // ebyte_set_channel(ebyte_channel);
+        }
+    }
+
+    term_printf("[CLI] Ebyte channel=%d" ENDL, ch);
 }
 
 // ----------------------------------------------------------------------------
