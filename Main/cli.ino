@@ -198,12 +198,12 @@ static void on_cmd_ebyte_channel(cmd *c) {
     }
     else {
         if (0 <= ch && ch <= 3) {
-            // ebyte_channel = ch;
-            // ebyte_set_channel(ebyte_channel);
+            ebyte_channel = ch;
+            ebyte_set_channel(ebyte_channel);
         }
     }
 
-    term_printf("[CLI] Ebyte channel=%d" ENDL, ch);
+    term_printf("[CLI] Ebyte channel=%d" ENDL, ebyte_channel);
 }
 
 // ----------------------------------------------------------------------------

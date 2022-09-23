@@ -26,6 +26,7 @@ int ebyte_show_report_count = 0;  // 0 is 'disable', -1 is 'forever', other +n w
 bool ebyte_loopback_flag = false;
 uint8_t ebyte_airrate_level = 2;  // 0=250kbps | 1=1Mbps | 2=2Mbps
 uint8_t ebyte_txpower_level = 0;  // 0=20dBm | 1=14dBm | 2=8dBm | 3=2dBm
+uint8_t ebyte_channel = 0;
 
 
 // ----------------------------------------------------------------------------
@@ -379,4 +380,12 @@ void ebyte_set_txpower(uint8_t level) {
     } setter(level);
 
     ebyte_set_configs(setter);
+}
+
+/**
+ * @brief
+ *
+ */
+void ebyte_set_channel(uint8_t ch) {
+
 }

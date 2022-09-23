@@ -26,12 +26,14 @@ extern void ebyte_set_configs(EbyteSetter & setter);
 extern void ebyte_apply_configs();
 extern void ebyte_set_airrate(uint8_t level);
 extern void ebyte_set_txpower(uint8_t level);
+extern void ebyte_set_channel(uint8_t ch);
 
 extern Ebyte_E34 ebyte;
 extern int ebyte_show_report_count;
 extern bool ebyte_loopback_flag;
 extern uint8_t ebyte_airrate_level;
 extern uint8_t ebyte_txpower_level;
+extern uint8_t ebyte_channel;
 
 
 #endif  // __EBYTE_H__
