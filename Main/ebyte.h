@@ -7,12 +7,12 @@
 
 class EbyteSetter {
   protected:
-    uint8_t level;
+    uint8_t byte_param;
 
   public:
     EbyteSetter() = delete;
-    EbyteSetter(uint8_t level) {
-        this->level = level;
+    EbyteSetter(uint8_t param) {
+        this->byte_param = param;
     };
     virtual void operator ()(Configuration *) = 0;
     virtual bool validate(Configuration *) = 0;
@@ -26,12 +26,14 @@ extern void ebyte_set_configs(EbyteSetter & setter);
 extern void ebyte_apply_configs();
 extern void ebyte_set_airrate(uint8_t level);
 extern void ebyte_set_txpower(uint8_t level);
+extern void ebyte_set_channel(uint8_t ch);
 
 extern Ebyte_E34 ebyte;
 extern int ebyte_show_report_count;
 extern bool ebyte_loopback_flag;
 extern uint8_t ebyte_airrate_level;
 extern uint8_t ebyte_txpower_level;
+extern uint8_t ebyte_channel;
 
 
 #endif  // __EBYTE_H__

@@ -26,6 +26,7 @@ int ebyte_show_report_count = 0;  // 0 is 'disable', -1 is 'forever', other +n w
 bool ebyte_loopback_flag = false;
 uint8_t ebyte_airrate_level = 2;  // 0=250kbps | 1=1Mbps | 2=2Mbps
 uint8_t ebyte_txpower_level = 0;  // 0=20dBm | 1=14dBm | 2=8dBm | 3=2dBm
+uint8_t ebyte_channel = 6;  // 0-11 where ch6 = 2.508 GHz -- out of WiFi channels
 
 
 // ----------------------------------------------------------------------------
@@ -60,8 +61,7 @@ void ebyte_setup() {
             //
             cfg.ADDH = EBYTE_BROADCAST_ADDR & 0x0F;  // No re-sending
             cfg.ADDL = EBYTE_BROADCAST_ADDR;
-            cfg.CHAN = 6;  // ch6 = 2.508 GHz -- out of WiFi channels
-                           // TODO: configurable channel
+            cfg.CHAN = ebyte_channel;  // ch6 = 2.508 GHz -- out of WiFi channels
             cfg.OPTION.transmissionPower    = ebyte_txpower_level;  // TXPOWER_20;
             cfg.OPTION.ioDriveMode          = IO_PUSH_PULL;
             cfg.OPTION.fixedTransmission    = TXMODE_TRANS;         // no special bytes leading
@@ -314,20 +314,21 @@ void ebyte_set_configs(EbyteSetter & setter) {
  *
  */
 void ebyte_apply_configs() {
-    // Setup
     class Setter: public EbyteSetter {
       public:
-        Setter(uint8_t level): EbyteSetter(level) {};
+        Setter(uint8_t param): EbyteSetter(param) {};
 
         void operator ()(Configuration * cfg) {
             cfg->SPED.airDataRate = ebyte_airrate_level;
             cfg->OPTION.transmissionPower = ebyte_txpower_level;
+            cfg->CHAN = ebyte_channel;
             ebyte.setConfiguration(*cfg);
         };
 
         bool validate(Configuration * cfg) {
             return (cfg->SPED.airDataRate         == ebyte_airrate_level  &&
-                    cfg->OPTION.transmissionPower == ebyte_txpower_level
+                    cfg->OPTION.transmissionPower == ebyte_txpower_level  &&
+                    cfg->CHAN                     == ebyte_channel
                     )? true : false;
         };
     } setter(0);
@@ -340,18 +341,17 @@ void ebyte_apply_configs() {
  *
  */
 void ebyte_set_airrate(uint8_t level) {
-    // Setup
     class Setter: public EbyteSetter {
       public:
-        Setter(uint8_t level): EbyteSetter(level) {};
+        Setter(uint8_t param): EbyteSetter(param) {};
 
         void operator ()(Configuration * cfg) {
-            cfg->SPED.airDataRate = this->level;
+            cfg->SPED.airDataRate = this->byte_param;
             ebyte.setConfiguration(*cfg);
         };
 
         bool validate(Configuration * cfg) {
-            return (cfg->SPED.airDataRate == this->level)? true : false;
+            return (cfg->SPED.airDataRate == this->byte_param)? true : false;
         };
     } setter(level);
 
@@ -363,20 +363,41 @@ void ebyte_set_airrate(uint8_t level) {
  *
  */
 void ebyte_set_txpower(uint8_t level) {
-    // Setup
     class Setter: public EbyteSetter {
       public:
-        Setter(uint8_t level): EbyteSetter(level) {};
+        Setter(uint8_t param): EbyteSetter(param) {};
 
         void operator ()(Configuration * cfg) {
-            cfg->OPTION.transmissionPower = this->level;
+            cfg->OPTION.transmissionPower = this->byte_param;
             ebyte.setConfiguration(*cfg);
         };
 
         bool validate(Configuration * cfg) {
-            return (cfg->OPTION.transmissionPower == this->level)? true : false;
+            return (cfg->OPTION.transmissionPower == this->byte_param)? true : false;
         };
     } setter(level);
+
+    ebyte_set_configs(setter);
+}
+
+/**
+ * @brief
+ *
+ */
+void ebyte_set_channel(uint8_t ch) {
+    class Setter: public EbyteSetter {
+      public:
+        Setter(uint8_t param): EbyteSetter(param) {};
+
+        void operator ()(Configuration * cfg) {
+            cfg->CHAN = this->byte_param;
+            ebyte.setConfiguration(*cfg);
+        };
+
+        bool validate(Configuration * cfg) {
+            return (cfg->CHAN == this->byte_param)? true : false;
+        };
+    } setter(ch);
 
     ebyte_set_configs(setter);
 }
