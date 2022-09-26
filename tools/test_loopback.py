@@ -61,7 +61,6 @@ def compare_send_recv_bytes(sent_bytes : bytes, recv_bytes : bytes):
     # temp = difflib.SequenceMatcher(None, string1, string2)
     # print(temp.get_matching_blocks())
     # print('Similarity Score: ', temp.ratio())
-
     temp = difflib.SequenceMatcher(None, sent_bytes, recv_bytes)
     print('   ', temp.get_matching_blocks())
     print('    Similarity Score: ', temp.ratio())
@@ -134,6 +133,9 @@ if __name__ == '__main__':
                     waiting = False
                     result_timeout += 1
                     print_info('timeout '+ recv_str)
+                    # clear receiving buffer
+                    while ser.in_waiting > 0:
+                        ser.read(ser.inWaiting())
 
                 time.sleep(DELAY_CHECK_SEC)
 
