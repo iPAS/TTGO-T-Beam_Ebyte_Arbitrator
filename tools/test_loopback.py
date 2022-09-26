@@ -63,7 +63,7 @@ def compare_send_recv_bytes(sent_bytes : bytes, recv_bytes : bytes):
     # print('Similarity Score: ', temp.ratio())
     temp = difflib.SequenceMatcher(None, sent_bytes, recv_bytes)
     print('   ', temp.get_matching_blocks())
-    print('    Similarity Score: ', temp.ratio())
+    print('    Similarity Score:', temp.ratio())
     return 1 if (temp.ratio() < 1.) else 0
 
 
@@ -85,9 +85,10 @@ if __name__ == '__main__':
     with serial.Serial(serial_port, serial_baud) as ser:
         while ((time.time() - start_time) < 60):
             # send test string to slave device
-            # send_str = random_string(payload_len)
             # send_str = b"start:%d:0123456789a0123456789b0123456789c0123456789d0123456789e0123456789f|mid|0123456789a0123456789b0123456789c0123456789d0123456789e0123456789f|end\n" % (1000-send_max)  #random_string(30)
+            # send_str = random_string(payload_len)
             send_str = generate_deterministic_string(0, payload_len)
+
             # print(len(send_str))
             # print(send_str)
             # break
@@ -98,8 +99,8 @@ if __name__ == '__main__':
             else:
                 recv_str = bytes()
                 ser.write(send_str)
-                send_str += bytes(10)  # Fake sending over than receiving
-                # send_str = send_str[:-10]  # Fake sending less than receiving
+                # send_str += bytes(10)  # XXX: Fake sending over than receiving
+                # send_str = send_str[10:]  # XXX: Fake sending less than receiving
 
             waiting = True
             send_time = time.time()
@@ -140,7 +141,7 @@ if __name__ == '__main__':
                     time.sleep(DELAY_CHECK_SEC)
 
             # Suspend sending thread
-            #time.sleep(DELAY_INTER_FRAME_SEC)  # sleep between frames
+            time.sleep(DELAY_INTER_FRAME_SEC)  # sleep between frames
             if send_max > 0:
                 send_max -= 1
             else:
