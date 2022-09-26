@@ -21,7 +21,8 @@ import time
 from datetime import datetime
 import string
 import random
-from enum import Enum
+
+import difflib
 
 
 TMO_PERIOD_SEC = 5.
@@ -54,7 +55,17 @@ def generate_deterministic_string(start : int, size : int) -> bytes:
 
 # -----------------------------------------------------------------------------
 def compare_send_recv_bytes(sent_bytes : bytes, recv_bytes : bytes):
-    return 0
+    # https://www.educative.io/answers/what-is-sequencematcher-in-python
+    # string1 = "I love to eat apple."
+    # string2 = "But I do not like to eat pineapple."
+    # temp = difflib.SequenceMatcher(None, string1, string2)
+    # print(temp.get_matching_blocks())
+    # print('Similarity Score: ', temp.ratio())
+
+    temp = difflib.SequenceMatcher(None, sent_bytes, recv_bytes)
+    print('   ', temp.get_matching_blocks())
+    print('    Similarity Score: ', temp.ratio())
+    return 1 if (temp.ratio() < 1.) else 0
 
 
 # -----------------------------------------------------------------------------
