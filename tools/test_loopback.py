@@ -104,10 +104,17 @@ if __name__ == '__main__':
             # print_info(send_str)
 
             while (waiting):
-                # read until endline (non blocking)
-                if (ser.in_waiting > 0):
+                # Check timeout
+                elapse_time = time.time() - send_time
+                if (elapse_time > TMO_PERIOD_SEC):
+                    waiting = False
+                    result_timeout += 1
+                    print_info('timeout! only {} bytes received'.format( len(recv_str) ))
+
+                # Read until endline (non blocking)
+                if ser.in_waiting > 0:
                     if isinstance(send_str,  str):
-                        recv_str = recv_str + ser.read(ser.inWaiting()).decode('ascii')  # Receiving..
+                        recv_str = recv_str + ser.read( ser.inWaiting() ).decode('ascii')  # Receiving..
                         if '\n' in recv_str:
                             if (recv_str == send_str):
                                 result_ok += 1
@@ -118,7 +125,7 @@ if __name__ == '__main__':
                             waiting = False
                     else:
                         recv_str = recv_str + ser.read( ser.inWaiting() )  # Actually, 'bytes' object
-                        if len(recv_str) >= len(send_str):
+                        if len(recv_str) >= len(send_str)  or  waiting == False:
                             if compare_send_recv_bytes(send_str, recv_str) == 0:
                                 result_ok += 1
                                 print_info('ok')
@@ -127,24 +134,18 @@ if __name__ == '__main__':
                                 print_info('failed')
                             waiting = False
 
-                # check timeout
-                elapse_time = time.time() - send_time
-                if (elapse_time > TMO_PERIOD_SEC):
-                    waiting = False
-                    result_timeout += 1
-                    print_info('timeout '+ recv_str)
-                    # clear receiving buffer
-                    while ser.in_waiting > 0:
-                        ser.read(ser.inWaiting())
-
                 time.sleep(DELAY_CHECK_SEC)
 
-            # suspend sending thread
+            # Suspend sending thread
             #time.sleep(DELAY_INTER_FRAME_SEC)  # sleep between frames
             if send_max > 0:
                 send_max -= 1
             else:
                 break
+
+            # Clear buffer
+            while ser.in_waiting > 0:
+                    ser.read( ser.inWaiting() )
 
         ser.close()
 
