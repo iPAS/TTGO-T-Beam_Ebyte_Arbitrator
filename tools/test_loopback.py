@@ -98,6 +98,8 @@ if __name__ == '__main__':
             else:
                 recv_str = bytes()
                 ser.write(send_str)
+                send_str += bytes(10)  # Fake sending over than receiving
+                # send_str = send_str[:-10]  # Fake sending less than receiving
 
             waiting = True
             send_time = time.time()
@@ -112,7 +114,7 @@ if __name__ == '__main__':
                     print_info('timeout! only {} bytes received'.format( len(recv_str) ))
 
                 # Read until endline (non blocking)
-                if ser.in_waiting > 0:
+                if ser.in_waiting > 0  or  waiting == False:
                     if isinstance(send_str,  str):
                         recv_str = recv_str + ser.read( ser.inWaiting() ).decode('ascii')  # Receiving..
                         if '\n' in recv_str:
@@ -134,7 +136,8 @@ if __name__ == '__main__':
                                 print_info('failed')
                             waiting = False
 
-                time.sleep(DELAY_CHECK_SEC)
+                if waiting:
+                    time.sleep(DELAY_CHECK_SEC)
 
             # Suspend sending thread
             #time.sleep(DELAY_INTER_FRAME_SEC)  # sleep between frames
