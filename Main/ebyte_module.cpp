@@ -32,12 +32,14 @@
 /**
  * @brief Construct a new EbyteModule::EbyteModule object
  */
-EbyteModule::EbyteModule(HardwareSerial * serial, byte auxPin, byte m0Pin, byte m1Pin, byte rxPin, byte txPin) {
+EbyteModule::EbyteModule(HardwareSerial * serial, byte auxPin, uint8_t mPin_cnt, uint8_t * mPins, byte rxPin, byte txPin) {
     this->hs = serial;
 
     this->auxPin = auxPin;
-    this->m0Pin = m0Pin;
-    this->m1Pin = m1Pin;
+    pinMode(this->auxPin, INPUT);
+
+    this->mPin_cnt = mPin_cnt;
+    this->mPins = mPins;
 
     this->rxPin = rxPin;
     this->txPin = txPin;
@@ -47,32 +49,19 @@ EbyteModule::EbyteModule(HardwareSerial * serial, byte auxPin, byte m0Pin, byte 
 
 
 /**
+ * @brief Destroy the Ebyte:: Ebyte Module object
+ */
+EbyteModule::~EbyteModule() {
+    while (q_length(&this->queueTx) > 0) {
+        q_dequeue(&this->queueTx, NULL, 0);
+    }
+}
+
+
+/**
  * @brief Begin the operation. Should be in the setup().
  */
 bool EbyteModule::begin() {
-    DEBUG_PRINTLN(EBYTE_LABEL "begin");
-
-    DEBUG_PRINT(" RX (To Ebyte TX) ---> "); DEBUG_PRINTLN(this->rxPin);
-    DEBUG_PRINT(" TX (To Ebyte RX) ---> "); DEBUG_PRINTLN(this->txPin);
-    DEBUG_PRINT(" AUX ---> "); DEBUG_PRINTLN(this->auxPin);
-    DEBUG_PRINT(" M0 ---> "); DEBUG_PRINTLN(this->m0Pin);
-    DEBUG_PRINT(" M1 ---> "); DEBUG_PRINTLN(this->m1Pin);
-
-    if (this->auxPin != -1) {
-        pinMode(this->auxPin, INPUT);
-        DEBUG_PRINTLN(" Init AUX pin!");
-    }
-    if (this->m0Pin != -1) {
-        pinMode(this->m0Pin, OUTPUT);
-        digitalWrite(this->m0Pin, HIGH);
-        DEBUG_PRINTLN(" Init M0 pin!");
-    }
-    if (this->m1Pin != -1) {
-        pinMode(this->m1Pin, OUTPUT);
-        digitalWrite(this->m1Pin, HIGH);
-        DEBUG_PRINTLN(" Init M1 pin!");
-    }
-
     this->changeBpsRate(this->bpsRate);
 
     Status status = setMode(MODE_0_FIXED);
@@ -101,37 +90,31 @@ Status EbyteModule::setMode(MODE_TYPE mode) {
     // However, most of my projects uses 10 ms, but 40ms is safer.
     this->managedDelay(EBYTE_EXTRA_WAIT);
 
-    if (this->m0Pin == -1 && this->m1Pin == -1) {
-        DEBUG_PRINTLN(F(EBYTE_LABEL "Pins: M0 & M1 are not set. Hard-wiring is required!"));
-    }
-    else {
-        DEBUG_PRINT(F(EBYTE_LABEL "Mode: "));
-
-        switch (mode) {
-            case MODE_0_FIXED:
-                // Mode 0 | normal operation
-                digitalWrite(this->m0Pin, LOW);
-                digitalWrite(this->m1Pin, LOW);
-                DEBUG_PRINTLN("FIXED FREQ!");
-                break;
-            case MODE_1_HOPPING:
-                digitalWrite(this->m0Pin, HIGH);
-                digitalWrite(this->m1Pin, LOW);
-                DEBUG_PRINTLN("HOPPING FREQ!");
-                break;
-            case MODE_2_RESERVED:
-                digitalWrite(this->m0Pin, LOW);
-                digitalWrite(this->m1Pin, HIGH);
-                DEBUG_PRINTLN("RESERVATION!");
-                break;
-            case MODE_3_SLEEP:
-                // Mode 3 | Setting operation
-                digitalWrite(this->m0Pin, HIGH);
-                digitalWrite(this->m1Pin, HIGH);
-                DEBUG_PRINTLN("PROGRAM/SLEEP!");
-                break;
-            default: return EB_ERR_INVALID_PARAM;
-        }
+    DEBUG_PRINT(F(EBYTE_LABEL "Mode: "));
+    switch (mode) {
+        case MODE_0_FIXED:
+            // Mode 0 | normal operation
+            digitalWrite(this->mPins[0], LOW);
+            digitalWrite(this->mPins[1], LOW);
+            DEBUG_PRINTLN("FIXED FREQ!");
+            break;
+        case MODE_1_HOPPING:
+            digitalWrite(this->mPins[0], HIGH);
+            digitalWrite(this->mPins[1], LOW);
+            DEBUG_PRINTLN("HOPPING FREQ!");
+            break;
+        case MODE_2_RESERVED:
+            digitalWrite(this->mPins[0], LOW);
+            digitalWrite(this->mPins[1], HIGH);
+            DEBUG_PRINTLN("RESERVATION!");
+            break;
+        case MODE_3_SLEEP:
+            // Mode 3 | Setting operation
+            digitalWrite(this->mPins[0], HIGH);
+            digitalWrite(this->mPins[1], HIGH);
+            DEBUG_PRINTLN("PROGRAM/SLEEP!");
+            break;
+        default: return EB_ERR_INVALID_PARAM;
     }
 
     // The datasheet says after 2ms later, control is returned.

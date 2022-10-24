@@ -298,12 +298,14 @@ typedef struct {
 
 
 /**
- * @brief Class Ebyte E34 Interfacing
+ * @brief Class Ebyte Interfacing
  *
  */
 class EbyteModule {
+
   public:
-    EbyteModule(HardwareSerial * serial, byte auxPin, byte m0Pin, byte m1Pin, byte rxPin = -1, byte txPin = -1);
+    EbyteModule(HardwareSerial * serial, byte auxPin, uint8_t mPin_cnt, uint8_t * mPins, byte rxPin = -1, byte txPin = -1);
+    ~EbyteModule();
 
     bool begin();
 
@@ -330,30 +332,32 @@ class EbyteModule {
     ResponseContainer       receiveMessageUntil(char delimiter = '\0');
     ResponseContainer       receiveMessageString(size_t size);
 
-    Status sendStruct(const void * structureManaged, size_t size_of_st);
-    Status receiveStruct(void * structureManaged, size_t size_of_st);
+    Status  sendStruct(const void * structureManaged, size_t size_of_st);
+    Status  receiveStruct(void * structureManaged, size_t size_of_st);
 
-    int available();
-    Status auxReady(unsigned long timeout);
+    int     available();
+    Status  auxReady(unsigned long timeout);
 
     uint32_t getBpsRate();
-    void changeBpsRate(uint32_t new_bps);
+    void    changeBpsRate(uint32_t new_bps);
 
-    void printHead(byte HEAD);
-    void printParameters(struct Configuration * cfg);
+    void    printHead(byte HEAD);
+    void    printParameters(struct Configuration * cfg);
 
-    size_t lengthMessageQueueTx();
+    size_t          lengthMessageQueueTx();
     ResponseStatus  fragmentMessageQueueTx(const void * message, size_t size);
-    size_t processMessageQueueTx();
+    size_t          processMessageQueueTx();
 
-  private:
+  protected:
     HardwareSerial * hs;
     uint32_t bpsRate = EBYTE_CONFIG_BAUD;
     uint32_t serialConfig = SERIAL_8N1;
 
     int8_t auxPin  = -1;
-    int8_t m0Pin   = -1;
-    int8_t m1Pin   = -1;
+
+    uint8_t mPin_cnt = 0;
+    uint8_t *mPins = NULL;
+
     int8_t rxPin   = -1;
     int8_t txPin   = -1;
 
