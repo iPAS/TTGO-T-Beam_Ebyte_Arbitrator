@@ -50,7 +50,7 @@ EbyteModule::EbyteModule(HardwareSerial * serial, byte auxPin, byte m0Pin, byte 
  * @brief Begin the operation. Should be in the setup().
  */
 bool EbyteModule::begin() {
-    DEBUG_PRINTLN("[E34] begin");
+    DEBUG_PRINTLN(EBYTE_LABEL "begin");
 
     DEBUG_PRINT(" RX (To Ebyte TX) ---> "); DEBUG_PRINTLN(this->rxPin);
     DEBUG_PRINT(" TX (To Ebyte RX) ---> "); DEBUG_PRINTLN(this->txPin);
@@ -102,10 +102,10 @@ Status EbyteModule::setMode(MODE_TYPE mode) {
     this->managedDelay(EBYTE_EXTRA_WAIT);
 
     if (this->m0Pin == -1 && this->m1Pin == -1) {
-        DEBUG_PRINTLN(F("[E34] Pins: M0 & M1 are not set. Hard-wiring is required!"));
+        DEBUG_PRINTLN(F(EBYTE_LABEL "Pins: M0 & M1 are not set. Hard-wiring is required!"));
     }
     else {
-        DEBUG_PRINT(F("[E34] Mode: "));
+        DEBUG_PRINT(F(EBYTE_LABEL "Mode: "));
 
         switch (mode) {
             case MODE_0_FIXED:
@@ -145,7 +145,7 @@ Status EbyteModule::setMode(MODE_TYPE mode) {
         this->mode = mode;
     }
 
-    DEBUG_PRINTLN(F("[E34] Clear Rx buf after mode change"));
+    DEBUG_PRINTLN(F(EBYTE_LABEL "Clear Rx buf after mode change"));
     this->cleanUARTBuffer();
 
     return status;
@@ -193,12 +193,12 @@ Status EbyteModule::waitCompleteResponse(unsigned long timeout, unsigned long wa
         // If you can't use aux pin, use 4K7 pullup with Arduino.
         // You may need to adjust this value if transmissions fail.
         this->managedDelay(waitNoAux);
-        DEBUG_PRINTLN(F("[E34] Wait response: no AUX pin -- just wait.."));
+        DEBUG_PRINTLN(F(EBYTE_LABEL "Wait response: no AUX pin -- just wait.."));
     }
 
     // As per data sheet, control after aux goes high is 2ms; so delay for at least that long
     this->managedDelay(EBYTE_EXTRA_WAIT);
-    DEBUG_PRINTLN(F("[E34] Wait response: complete!"));
+    DEBUG_PRINTLN(F(EBYTE_LABEL "Wait response: complete!"));
     return status;
 }
 
@@ -230,17 +230,17 @@ Status EbyteModule::auxReady(unsigned long timeout) {
             unsigned long t = millis();  // It will be overflow about every 50 days.
 
             if (is_timeout(t, t_prev, timeout)) {
-                DEBUG_PRINTLN(F("[E34] Wait AUX HIGH: timeout! AUX still LOW"));
+                DEBUG_PRINTLN(F(EBYTE_LABEL "Wait AUX HIGH: timeout! AUX still LOW"));
                 return EB_ERR_TIMEOUT;
             }
 
-            DEBUG_PRINTLN(F("[E34] Wait AUX HIGH.."));
+            DEBUG_PRINTLN(F(EBYTE_LABEL "Wait AUX HIGH.."));
             taskYIELD();
         }
-        DEBUG_PRINTLN(F("[E34] AUX HIGH!"));
+        DEBUG_PRINTLN(F(EBYTE_LABEL "AUX HIGH!"));
     }
     else {
-        DEBUG_PRINTLN(F("[E34] Wait AUX HIGH: no AUX pin"));
+        DEBUG_PRINTLN(F(EBYTE_LABEL "Wait AUX HIGH: no AUX pin"));
         return EB_ERR_NOT_IMPLEMENT;
     }
 
@@ -317,7 +317,7 @@ ResponseStructContainer EbyteModule::getConfiguration() {
     }
 
     #ifdef EBYTE_DEBUG
-    DEBUG_PRINTLN(F("[E34] Get configuration"));
+    DEBUG_PRINTLN(F(EBYTE_LABEL "Get configuration"));
     this->printHead(((Configuration *)rc.data)->HEAD);
     #endif
 
@@ -356,7 +356,7 @@ ResponseStatus EbyteModule::setConfiguration(Configuration configuration, PROGRA
     }
 
     #ifdef EBYTE_DEBUG
-    DEBUG_PRINTLN(F("[E34] Set configuration"));
+    DEBUG_PRINTLN(F(EBYTE_LABEL "Set configuration"));
     this->printHead(configuration.HEAD);
     #endif
 
@@ -398,7 +398,7 @@ ResponseStructContainer EbyteModule::getModuleInformation() {
     }
 
     #ifdef EBYTE_DEBUG
-    DEBUG_PRINTLN(F("[E34] Module information"));
+    DEBUG_PRINTLN(F(EBYTE_LABEL "Module information"));
     this->printHead(moduleInformation->HEAD);
     DEBUG_PRINT(F(" Freq. : "));    DEBUG_PRINTLN(moduleInformation->frequency, HEX);
     DEBUG_PRINT(F(" Ver.  : "));    DEBUG_PRINTLN(moduleInformation->version, HEX);
@@ -460,7 +460,7 @@ Status EbyteModule::sendStruct(const void * structureManaged, size_t size_of_st)
     }
 
     size_t len = this->hs->write((uint8_t *)structureManaged, size_of_st);
-    DEBUG_PRINTF("[E34] Send struct len:%d size:%d" ENDL, len, size_of_st);
+    DEBUG_PRINTF(EBYTE_LABEL "Send struct len:%d size:%d" ENDL, len, size_of_st);
 
     if (len != size_of_st) {
         return (len == 0)? EB_ERR_NO_RESPONSE_FROM_DEVICE : EB_ERR_DATA_SIZE_NOT_MATCH;
@@ -470,7 +470,7 @@ Status EbyteModule::sendStruct(const void * structureManaged, size_t size_of_st)
 
 Status EbyteModule::receiveStruct(void * structureManaged, size_t size_of_st) {
     size_t len = this->hs->readBytes((uint8_t *)structureManaged, size_of_st);
-    DEBUG_PRINTF("[E34] Recv struct len:%d size:%d" ENDL, len, size_of_st);
+    DEBUG_PRINTF(EBYTE_LABEL "Recv struct len:%d size:%d" ENDL, len, size_of_st);
 
     if (len != size_of_st) {
         return (len == 0)? EB_ERR_NO_RESPONSE_FROM_DEVICE : EB_ERR_DATA_SIZE_NOT_MATCH;
@@ -608,7 +608,7 @@ size_t EbyteModule::processMessageQueueTx() {
             }
         }
         else {
-            DEBUG_PRINT(F("[E34] Process queueTx error on waiting AUX HIGH, "));
+            DEBUG_PRINT(F(EBYTE_LABEL "Process queueTx error on waiting AUX HIGH, "));
             DEBUG_PRINTLN(resp_sts.desc());
         }
     }
