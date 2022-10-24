@@ -300,9 +300,9 @@ typedef struct {
  * @brief Class Ebyte E34 Interfacing
  *
  */
-class Ebyte_E34 {
+class EbyteModule {
   public:
-    Ebyte_E34(HardwareSerial * serial, byte auxPin, byte m0Pin, byte m1Pin, byte rxPin = -1, byte txPin = -1);
+    EbyteModule(HardwareSerial * serial, byte auxPin, byte m0Pin, byte m1Pin, byte rxPin = -1, byte txPin = -1);
 
     bool begin();
 
