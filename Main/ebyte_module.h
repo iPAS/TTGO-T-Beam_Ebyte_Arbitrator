@@ -65,23 +65,6 @@
 #define EBYTE_UART_BUFFER_TMO   1000
 
 
-typedef enum RESPONSE_STATUS {
-    EB_SUCCESS = 1,
-    EB_ERR_UNKNOWN, /* something shouldn't happened */
-    EB_ERR_NOT_SUPPORT,
-    EB_ERR_NOT_IMPLEMENT,
-    EB_ERR_NOT_INITIAL,
-    EB_ERR_INVALID_PARAM,
-    EB_ERR_DATA_SIZE_NOT_MATCH,
-    EB_ERR_BUF_TOO_SMALL,
-    EB_ERR_TIMEOUT,
-    EB_ERR_HARDWARE,
-    EB_ERR_HEAD_NOT_RECOGNIZED,
-    EB_ERR_NO_RESPONSE_FROM_DEVICE,
-    EB_ERR_WRONG_UART_CONFIG,
-    EB_ERR_PACKET_TOO_BIG
-} Status;
-
 enum MODE_TYPE {
     MODE_0_FIXED    = 0,
     MODE_1_HOPPING  = 1,
@@ -253,8 +236,36 @@ struct ModuleInformation {
     byte features  = 0;
 };
 
+typedef struct {
+    byte ADDH = 0;
+    byte ADDL = 0;
+    byte CHAN = 0;
+    unsigned char message[];
+} FixedStransmission;
+
+#pragma pack(pop)
+
+
 struct ResponseStatus {
+    typedef enum {
+        EB_SUCCESS = 1,
+        EB_ERR_UNKNOWN, /* something shouldn't happened */
+        EB_ERR_NOT_SUPPORT,
+        EB_ERR_NOT_IMPLEMENT,
+        EB_ERR_NOT_INITIAL,
+        EB_ERR_INVALID_PARAM,
+        EB_ERR_DATA_SIZE_NOT_MATCH,
+        EB_ERR_BUF_TOO_SMALL,
+        EB_ERR_TIMEOUT,
+        EB_ERR_HARDWARE,
+        EB_ERR_HEAD_NOT_RECOGNIZED,
+        EB_ERR_NO_RESPONSE_FROM_DEVICE,
+        EB_ERR_WRONG_UART_CONFIG,
+        EB_ERR_PACKET_TOO_BIG
+    } Status;
+
     Status code;
+
     String desc() {
         switch (this->code) {
             case EB_SUCCESS:                   return F("Success");
@@ -287,15 +298,6 @@ struct ResponseContainer {
     ResponseStatus status;
 };
 
-typedef struct {
-    byte ADDH = 0;
-    byte ADDL = 0;
-    byte CHAN = 0;
-    unsigned char message[];
-} FixedStransmission;
-
-#pragma pack(pop)
-
 
 /**
  * @brief Class Ebyte Interfacing
@@ -309,7 +311,7 @@ class EbyteModule {
 
     bool begin();
 
-    Status    setMode(MODE_TYPE mode);
+    ResponseStatus setMode(MODE_TYPE mode);
     MODE_TYPE getMode();
 
     ResponseStructContainer getConfiguration();
@@ -332,11 +334,11 @@ class EbyteModule {
     ResponseContainer       receiveMessageUntil(char delimiter = '\0');
     ResponseContainer       receiveMessageString(size_t size);
 
-    Status  sendStruct(const void * structureManaged, size_t size_of_st);
-    Status  receiveStruct(void * structureManaged, size_t size_of_st);
+    ResponseStatus sendStruct(const void * structureManaged, size_t size_of_st);
+    ResponseStatus receiveStruct(void * structureManaged, size_t size_of_st);
 
-    int     available();
-    Status  auxReady(unsigned long timeout);
+    int available();
+    ResponseStatus auxReady(unsigned long timeout);
 
     uint32_t getBpsRate();
     void    changeBpsRate(uint32_t new_bps);
@@ -361,19 +363,21 @@ class EbyteModule {
     int8_t rxPin   = -1;
     int8_t txPin   = -1;
 
-    MODE_TYPE mode = MODE_0_FIXED;
-
     queue_t queueTx;
 
-    void   managedDelay(unsigned long timeout);
-    Status waitCompleteResponse(unsigned long timeout = EBYTE_RESPONSE_TMO, unsigned long waitNoAux = EBYTE_NO_AUX_WAIT);
+
+    MODE_TYPE mode = MODE_0_FIXED;
+
+
+    void managedDelay(unsigned long timeout);
+    ResponseStatus waitCompleteResponse(unsigned long timeout = EBYTE_RESPONSE_TMO, unsigned long waitNoAux = EBYTE_NO_AUX_WAIT);
 
     void flush();
     void cleanUARTBuffer();
 
     void writeProgramCommand(PROGRAM_COMMAND cmd);
 
-    RESPONSE_STATUS checkUARTConfiguration(MODE_TYPE mode);
+    ResponseStatus checkUARTConfiguration(MODE_TYPE mode);
 };
 
 

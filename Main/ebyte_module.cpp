@@ -64,8 +64,8 @@ EbyteModule::~EbyteModule() {
 bool EbyteModule::begin() {
     this->changeBpsRate(this->bpsRate);
 
-    Status status = setMode(MODE_0_FIXED);
-    return status == EB_SUCCESS;
+    ResponseStatus status = setMode(MODE_0_FIXED);
+    return status.code == ResponseStatus::EB_SUCCESS;
 }
 
 
@@ -83,9 +83,11 @@ MODE_TYPE EbyteModule::getMode() {
  * @brief Set MODE
  *
  * @param mode
- * @return Status
+ * @return ResponseStatus
  */
-Status EbyteModule::setMode(MODE_TYPE mode) {
+ResponseStatus EbyteModule::setMode(MODE_TYPE mode) {
+    ResponseStatus status;
+
     // Datasheet claims module needs some extra time after mode setting (2ms).
     // However, most of my projects uses 10 ms, but 40ms is safer.
     this->managedDelay(EBYTE_EXTRA_WAIT);
@@ -114,7 +116,9 @@ Status EbyteModule::setMode(MODE_TYPE mode) {
             digitalWrite(this->mPins[1], HIGH);
             DEBUG_PRINTLN("PROGRAM/SLEEP!");
             break;
-        default: return EB_ERR_INVALID_PARAM;
+        default:
+            status.code = ResponseStatus::EB_ERR_INVALID_PARAM;
+            return status;
     }
 
     // The datasheet says after 2ms later, control is returned.
@@ -122,9 +126,9 @@ Status EbyteModule::setMode(MODE_TYPE mode) {
     this->managedDelay(EBYTE_EXTRA_WAIT);
 
     // Wait until AUX pin goes back to low.
-    Status status = this->waitCompleteResponse();
+    status = this->waitCompleteResponse();
 
-    if (status == EB_SUCCESS) {
+    if (status.code == ResponseStatus::EB_SUCCESS) {
         this->mode = mode;
     }
 
@@ -169,10 +173,10 @@ void EbyteModule::managedDelay(unsigned long timeout) {
  * Utility method to wait until module does not transmit.
  * The timeout is provided to avoid an infinite loop
  */
-Status EbyteModule::waitCompleteResponse(unsigned long timeout, unsigned long waitNoAux) {
-    Status status = this->auxReady(timeout);
+ResponseStatus EbyteModule::waitCompleteResponse(unsigned long timeout, unsigned long waitNoAux) {
+    ResponseStatus status = this->auxReady(timeout);
 
-    if (status == EB_ERR_NOT_IMPLEMENT) {
+    if (status.code == ResponseStatus::EB_ERR_NOT_IMPLEMENT) {
         // If you can't use aux pin, use 4K7 pullup with Arduino.
         // You may need to adjust this value if transmissions fail.
         this->managedDelay(waitNoAux);
@@ -203,8 +207,9 @@ void EbyteModule::cleanUARTBuffer() {
     }
 }
 
-Status EbyteModule::auxReady(unsigned long timeout) {
+ResponseStatus EbyteModule::auxReady(unsigned long timeout) {
     unsigned long t_prev = millis();
+    ResponseStatus status = { .code = ResponseStatus::EB_SUCCESS, };
 
     // If AUX pin was supplied, and look for HIGH state.
     // XXX: You can omit using AUX if no pins are available, but you will have to use delay() to let module finish
@@ -214,7 +219,8 @@ Status EbyteModule::auxReady(unsigned long timeout) {
 
             if (is_timeout(t, t_prev, timeout)) {
                 DEBUG_PRINTLN(F(EBYTE_LABEL "Wait AUX HIGH: timeout! AUX still LOW"));
-                return EB_ERR_TIMEOUT;
+                status.code = ResponseStatus::EB_ERR_TIMEOUT;
+                return status;
             }
 
             DEBUG_PRINTLN(F(EBYTE_LABEL "Wait AUX HIGH.."));
@@ -224,10 +230,10 @@ Status EbyteModule::auxReady(unsigned long timeout) {
     }
     else {
         DEBUG_PRINTLN(F(EBYTE_LABEL "Wait AUX HIGH: no AUX pin"));
-        return EB_ERR_NOT_IMPLEMENT;
+        status.code = ResponseStatus::EB_ERR_NOT_IMPLEMENT;
     }
 
-    return EB_SUCCESS;
+    return status;
 }
 
 uint32_t EbyteModule::getBpsRate() {
@@ -281,20 +287,20 @@ void EbyteModule::writeProgramCommand(PROGRAM_COMMAND cmd) {
 ResponseStructContainer EbyteModule::getConfiguration() {
     ResponseStructContainer rc;
 
-    rc.status.code = checkUARTConfiguration(MODE_3_PROGRAM);
-    if (rc.status.code != EB_SUCCESS) return rc;
+    rc.status = checkUARTConfiguration(MODE_3_PROGRAM);
+    if (rc.status.code != ResponseStatus::EB_SUCCESS) return rc;
 
     MODE_TYPE prevMode = this->mode;
 
-    rc.status.code = this->setMode(MODE_3_PROGRAM);
-    if (rc.status.code != EB_SUCCESS) return rc;
+    rc.status = this->setMode(MODE_3_PROGRAM);
+    if (rc.status.code != ResponseStatus::EB_SUCCESS) return rc;
 
     this->writeProgramCommand(READ_CONFIGURATION);
 
-    rc.data        = malloc(sizeof(Configuration));
-    rc.status.code = this->receiveStruct((uint8_t *)rc.data, sizeof(Configuration));
+    rc.data   = malloc(sizeof(Configuration));
+    rc.status = this->receiveStruct((uint8_t *)rc.data, sizeof(Configuration));
 
-    if (rc.status.code != EB_SUCCESS) {
+    if (rc.status.code != ResponseStatus::EB_SUCCESS) {
         this->setMode(prevMode);
         return rc;
     }
@@ -304,38 +310,46 @@ ResponseStructContainer EbyteModule::getConfiguration() {
     this->printHead(((Configuration *)rc.data)->HEAD);
     #endif
 
-    rc.status.code = this->setMode(prevMode);
-    if (rc.status.code != EB_SUCCESS) return rc;
+    rc.status = this->setMode(prevMode);
+    if (rc.status.code != ResponseStatus::EB_SUCCESS) return rc;
 
     if ((0xC0 != ((Configuration *)rc.data)->HEAD
         ) &&
         (0xC2 != ((Configuration *)rc.data)->HEAD
         )) {
-        rc.status.code = EB_ERR_HEAD_NOT_RECOGNIZED;
+        rc.status.code = ResponseStatus::EB_ERR_HEAD_NOT_RECOGNIZED;
     }
 
     return rc;
 }
 
-ResponseStatus EbyteModule::setConfiguration(Configuration configuration, PROGRAM_COMMAND saveType) {
-    ResponseStatus resp_sts;
 
-    resp_sts.code = checkUARTConfiguration(MODE_3_PROGRAM);
-    if (resp_sts.code != EB_SUCCESS) return resp_sts;
+/**
+ * @brief Set configuration
+ * 
+ * @param configuration 
+ * @param saveType 
+ * @return ResponseStatus 
+ */
+ResponseStatus EbyteModule::setConfiguration(Configuration configuration, PROGRAM_COMMAND saveType) {
+    ResponseStatus status;
+
+    status = checkUARTConfiguration(MODE_3_PROGRAM);
+    if (status.code != ResponseStatus::EB_SUCCESS) return status;
 
     MODE_TYPE prevMode = this->mode;
 
-    resp_sts.code = this->setMode(MODE_3_PROGRAM);
-    if (resp_sts.code != EB_SUCCESS) return resp_sts;
+    status = this->setMode(MODE_3_PROGRAM);
+    if (status.code != ResponseStatus::EB_SUCCESS) return status;
 
     this->writeProgramCommand(READ_CONFIGURATION);
 
     configuration.HEAD = saveType;
 
-    resp_sts.code = this->sendStruct((uint8_t *)&configuration, sizeof(Configuration));
-    if (resp_sts.code != EB_SUCCESS) {
+    status = this->sendStruct((uint8_t *)&configuration, sizeof(Configuration));
+    if (status.code != ResponseStatus::EB_SUCCESS) {
         this->setMode(prevMode);
-        return resp_sts;
+        return status;
     }
 
     #ifdef EBYTE_DEBUG
@@ -343,41 +357,41 @@ ResponseStatus EbyteModule::setConfiguration(Configuration configuration, PROGRA
     this->printHead(configuration.HEAD);
     #endif
 
-    resp_sts.code = this->setMode(prevMode);
-    if (resp_sts.code != EB_SUCCESS) return resp_sts;
+    status = this->setMode(prevMode);
+    if (status.code != ResponseStatus::EB_SUCCESS) return status;
 
     if ((0xC0 != configuration.HEAD) && (0xC2 != configuration.HEAD)) {
-        resp_sts.code = EB_ERR_HEAD_NOT_RECOGNIZED;
+        status.code = ResponseStatus::EB_ERR_HEAD_NOT_RECOGNIZED;
     }
 
-    return resp_sts;
+    return status;
 }
 
 ResponseStructContainer EbyteModule::getModuleInformation() {
     ResponseStructContainer rc;
 
-    rc.status.code = checkUARTConfiguration(MODE_3_PROGRAM);
-    if (rc.status.code != EB_SUCCESS) return rc;
+    rc.status = checkUARTConfiguration(MODE_3_PROGRAM);
+    if (rc.status.code != ResponseStatus::EB_SUCCESS) return rc;
 
     MODE_TYPE prevMode = this->mode;
 
-    rc.status.code = this->setMode(MODE_3_PROGRAM);
-    if (rc.status.code != EB_SUCCESS) return rc;
+    rc.status = this->setMode(MODE_3_PROGRAM);
+    if (rc.status.code != ResponseStatus::EB_SUCCESS) return rc;
 
     this->writeProgramCommand(READ_MODULE_VERSION);
 
     struct ModuleInformation * moduleInformation = (ModuleInformation *)malloc(sizeof(ModuleInformation));
-    rc.status.code = this->receiveStruct((uint8_t *)moduleInformation, sizeof(ModuleInformation));
-    if (rc.status.code != EB_SUCCESS) {
+    rc.status = this->receiveStruct((uint8_t *)moduleInformation, sizeof(ModuleInformation));
+    if (rc.status.code != ResponseStatus::EB_SUCCESS) {
         this->setMode(prevMode);
         return rc;
     }
 
-    rc.status.code = this->setMode(prevMode);
-    if (rc.status.code != EB_SUCCESS) return rc;
+    rc.status = this->setMode(prevMode);
+    if (rc.status.code != ResponseStatus::EB_SUCCESS) return rc;
 
     if (0xC3 != moduleInformation->HEAD) {
-        rc.status.code = EB_ERR_HEAD_NOT_RECOGNIZED;
+        rc.status.code = ResponseStatus::EB_ERR_HEAD_NOT_RECOGNIZED;
     }
 
     #ifdef EBYTE_DEBUG
@@ -393,26 +407,26 @@ ResponseStructContainer EbyteModule::getModuleInformation() {
 }
 
 ResponseStatus EbyteModule::resetModule() {
-    ResponseStatus resp_sts;
+    ResponseStatus status;
 
-    resp_sts.code = checkUARTConfiguration(MODE_3_PROGRAM);
-    if (resp_sts.code != EB_SUCCESS) return resp_sts;
+    status = checkUARTConfiguration(MODE_3_PROGRAM);
+    if (status.code != ResponseStatus::EB_SUCCESS) return status;
 
     MODE_TYPE prevMode = this->mode;
 
-    resp_sts.code = this->setMode(MODE_3_PROGRAM);
-    if (resp_sts.code != EB_SUCCESS) return resp_sts;
+    status = this->setMode(MODE_3_PROGRAM);
+    if (status.code != ResponseStatus::EB_SUCCESS) return status;
 
     this->writeProgramCommand(WRITE_RESET_MODULE);
 
-    resp_sts.code = this->waitCompleteResponse();
-    if (resp_sts.code != EB_SUCCESS) {
+    status = this->waitCompleteResponse();
+    if (status.code != ResponseStatus::EB_SUCCESS) {
         this->setMode(prevMode);
-        return resp_sts;
+        return status;
     }
 
-    resp_sts.code = this->setMode(prevMode);
-    return resp_sts;
+    status = this->setMode(prevMode);
+    return status;
 }
 
 
@@ -420,13 +434,14 @@ ResponseStatus EbyteModule::resetModule() {
  * @brief Check UART configuration for mode
  *
  * @param mode
- * @return RESPONSE_STATUS
+ * @return ResponseStatus
  */
-RESPONSE_STATUS EbyteModule::checkUARTConfiguration(MODE_TYPE mode) {
+ResponseStatus EbyteModule::checkUARTConfiguration(MODE_TYPE mode) {
+    ResponseStatus status = { .code = ResponseStatus::EB_SUCCESS, };
     if (mode == MODE_3_PROGRAM && this->bpsRate != EBYTE_CONFIG_BAUD) {
-        return EB_ERR_WRONG_UART_CONFIG;
+        status.code = ResponseStatus::EB_ERR_WRONG_UART_CONFIG;
     }
-    return EB_SUCCESS;
+    return status;
 }
 
 
@@ -437,26 +452,34 @@ RESPONSE_STATUS EbyteModule::checkUARTConfiguration(MODE_TYPE mode) {
  *
  * Put your structure definition into a .h file and include in both the sender and reciever sketches.
  */
-Status EbyteModule::sendStruct(const void * structureManaged, size_t size_of_st) {
+ResponseStatus EbyteModule::sendStruct(const void * structureManaged, size_t size_of_st) {
+    ResponseStatus status;
+    
     if (size_of_st > EBYTE_MODULE_BUFFER_SIZE) {
-        return EB_ERR_PACKET_TOO_BIG;
+        status.code = ResponseStatus::EB_ERR_PACKET_TOO_BIG;
+        return status;
     }
 
     size_t len = this->hs->write((uint8_t *)structureManaged, size_of_st);
     DEBUG_PRINTF(EBYTE_LABEL "Send struct len:%d size:%d" ENDL, len, size_of_st);
 
     if (len != size_of_st) {
-        return (len == 0)? EB_ERR_NO_RESPONSE_FROM_DEVICE : EB_ERR_DATA_SIZE_NOT_MATCH;
+        status.code = (len == 0)? ResponseStatus::EB_ERR_NO_RESPONSE_FROM_DEVICE : ResponseStatus::EB_ERR_DATA_SIZE_NOT_MATCH;
+        return status;
     }
+
     return this->waitCompleteResponse();
 }
 
-Status EbyteModule::receiveStruct(void * structureManaged, size_t size_of_st) {
+ResponseStatus EbyteModule::receiveStruct(void * structureManaged, size_t size_of_st) {
+    ResponseStatus status;
+
     size_t len = this->hs->readBytes((uint8_t *)structureManaged, size_of_st);
     DEBUG_PRINTF(EBYTE_LABEL "Recv struct len:%d size:%d" ENDL, len, size_of_st);
 
     if (len != size_of_st) {
-        return (len == 0)? EB_ERR_NO_RESPONSE_FROM_DEVICE : EB_ERR_DATA_SIZE_NOT_MATCH;
+        status.code = (len == 0)? ResponseStatus::EB_ERR_NO_RESPONSE_FROM_DEVICE : ResponseStatus::EB_ERR_DATA_SIZE_NOT_MATCH;
+        return status;
     }
     return this->waitCompleteResponse();
 }
@@ -469,7 +492,7 @@ Status EbyteModule::receiveStruct(void * structureManaged, size_t size_of_st) {
 
 ResponseContainer EbyteModule::receiveMessage() {
     ResponseContainer rc;
-    rc.status.code = EB_SUCCESS;
+    rc.status.code = ResponseStatus::EB_SUCCESS;
     rc.data        = this->hs->readString();
     // this->cleanUARTBuffer();
     return rc;
@@ -477,15 +500,15 @@ ResponseContainer EbyteModule::receiveMessage() {
 
 ResponseStructContainer EbyteModule::receiveMessageFixedSize(size_t size) {
     ResponseStructContainer rc;
-    rc.data        = malloc(size);
-    rc.status.code = this->receiveStruct(rc.data, size);
+    rc.data   = malloc(size);
+    rc.status = this->receiveStruct(rc.data, size);
     // this->cleanUARTBuffer();
     return rc;
 }
 
 ResponseContainer EbyteModule::receiveMessageUntil(char delimiter) {
     ResponseContainer rc;
-    rc.status.code = EB_SUCCESS;
+    rc.status.code = ResponseStatus::EB_SUCCESS;
     rc.data        = this->hs->readStringUntil(delimiter);
     // this->cleanUARTBuffer();  <-- no flush, keep for next time
     return rc;
@@ -493,14 +516,14 @@ ResponseContainer EbyteModule::receiveMessageUntil(char delimiter) {
 
 ResponseContainer EbyteModule::receiveMessageString(size_t size) {
     ResponseContainer rc;
-    rc.status.code = EB_SUCCESS;
+    rc.status.code = ResponseStatus::EB_SUCCESS;
     char buff[size+1];
     buff[size] = '\0';  // To be sure as a null terminated string.
     size_t len = this->hs->readBytes(buff, size);
     rc.data = buff;
 
     if (len != size) {
-        rc.status.code = (len == 0)? EB_ERR_NO_RESPONSE_FROM_DEVICE : EB_ERR_DATA_SIZE_NOT_MATCH;
+        rc.status.code = (len == 0)? ResponseStatus::EB_ERR_NO_RESPONSE_FROM_DEVICE : ResponseStatus::EB_ERR_DATA_SIZE_NOT_MATCH;
     }
     return rc;
 }
@@ -515,9 +538,8 @@ ResponseStatus EbyteModule::sendMessage(const String message) {
 }
 
 ResponseStatus EbyteModule::sendMessage(const void * message, size_t size) {
-    ResponseStatus resp_sts;
-    resp_sts.code = this->sendStruct(message, size);
-    return resp_sts;
+    ResponseStatus status = this->sendStruct(message, size);
+    return status;
 }
 
 ResponseStatus EbyteModule::sendBroadcastFixedMessage(byte CHAN, const String message) {
@@ -542,10 +564,10 @@ ResponseStatus EbyteModule::sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, co
     fixedPacket->CHAN = CHAN;
     memcpy(fixedPacket->message, message, message_size);
 
-    ResponseStatus resp_sts = this->sendMessage(fixedPacket, packet_size);
+    ResponseStatus status = this->sendMessage(fixedPacket, packet_size);
     free(fixedPacket);
 
-    return resp_sts;
+    return status;
 }
 
 
@@ -559,40 +581,39 @@ size_t EbyteModule::lengthMessageQueueTx() {
 }
 
 ResponseStatus EbyteModule::fragmentMessageQueueTx(const void * message, size_t size) {
-    ResponseStatus resp_sts;
-    resp_sts.code = EB_SUCCESS;
+    ResponseStatus status;
+    status.code = ResponseStatus::EB_SUCCESS;
 
     byte * p = (byte *)message;
     while (size > 0) {
         size_t len = (size < EBYTE_MODULE_BUFFER_SIZE)? size : EBYTE_MODULE_BUFFER_SIZE;
         size -= len;
         if (q_enqueue(&this->queueTx, p, len) == NULL) {
-            resp_sts.code = EB_ERR_BUF_TOO_SMALL;
+            status.code = ResponseStatus::EB_ERR_BUF_TOO_SMALL;
             break;
         }
         p += len; 
     }
 
-    return resp_sts;
+    return status;
 }
 
 size_t EbyteModule::processMessageQueueTx() {
     if (this->lengthMessageQueueTx() > 0) {
-        ResponseStatus resp_sts;
-        resp_sts.code = this->auxReady(EBYTE_NO_AUX_WAIT);
-        if (resp_sts.code == EB_SUCCESS)
+        ResponseStatus status = this->auxReady(EBYTE_NO_AUX_WAIT);
+        if (status.code == ResponseStatus::EB_SUCCESS)
         {
             byte * p = (byte *)q_item(&this->queueTx, 0)->data;
             size_t len = q_item(&this->queueTx, 0)->len;
-            resp_sts = this->sendMessage(p, len);
-            if (resp_sts.code == EB_SUCCESS) {
+            status = this->sendMessage(p, len);
+            if (status.code == ResponseStatus::EB_SUCCESS) {
                 q_dequeue(&this->queueTx, NULL, 0);  // Succeeded!
                 return len;
             }
         }
         else {
             DEBUG_PRINT(F(EBYTE_LABEL "Process queueTx error on waiting AUX HIGH, "));
-            DEBUG_PRINTLN(resp_sts.desc());
+            DEBUG_PRINTLN(status.desc());
         }
     }
 

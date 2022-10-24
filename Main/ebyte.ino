@@ -48,7 +48,7 @@ void ebyte_setup() {
         Configuration cfg = *((Configuration *)rc.data); // This is a memory transfer, NOT by-reference.
         rc.close();  // Clean c.data that was allocated in ::getConfiguration()
 
-        if (rc.status.code == EB_SUCCESS){
+        if (rc.status.code == ResponseStatus::EB_SUCCESS){
 
             //
             // Old configuration
@@ -78,7 +78,7 @@ void ebyte_setup() {
             cfg = *((Configuration *)rc.data); // This is a memory transfer, NOT by-reference.
             rc.close();
 
-            if (rc.status.code == EB_SUCCESS){
+            if (rc.status.code == ResponseStatus::EB_SUCCESS){
                 term_println(F("[EBYTE] New configuration"));
                 ebyte.printParameters(&cfg);
             }
@@ -122,7 +122,7 @@ void ebyte_process() {
         const char * p = rc.data.c_str();
         size_t len = rc.data.length();
 
-        if (rc.status.code != EB_SUCCESS) {
+        if (rc.status.code != ResponseStatus::EB_SUCCESS) {
             term_print("[EBYTE] E2C error, E34: ");
             term_println(rc.status.desc());
         }
@@ -151,11 +151,11 @@ void ebyte_process() {
             // Loopback
             //
             if (ebyte_loopback_flag) {
-                ResponseStatus resp_sts = ebyte.fragmentMessageQueueTx(p, len);
+                ResponseStatus status = ebyte.fragmentMessageQueueTx(p, len);
 
-                if (resp_sts.code != EB_SUCCESS) {
+                if (status.code != ResponseStatus::EB_SUCCESS) {
                     term_printf("[EBYTE] Loopback error on enqueueing %d bytes, E34:", len);
-                    term_println(resp_sts.desc());
+                    term_println(status.desc());
                 }
                 else {
                     if (system_verbose_level >= VERBOSE_INFO) {
@@ -189,20 +189,20 @@ void ebyte_process() {
     //
     else  // XXX: <-- Wait until all loopback frames are sent.
     if (computer.available()) {
-        ResponseStatus resp_sts;
-        resp_sts.code = ebyte.auxReady(EBYTE_NO_AUX_WAIT);
+        ResponseStatus status;
+        status = ebyte.auxReady(EBYTE_NO_AUX_WAIT);
 
         // Forward downlink
-        if (resp_sts.code == EB_SUCCESS)
+        if (status.code == ResponseStatus::EB_SUCCESS)
         {
             byte buf[EBYTE_MODULE_BUFFER_SIZE];
             size_t len = (computer.available() < EBYTE_MODULE_BUFFER_SIZE)? computer.available() : EBYTE_MODULE_BUFFER_SIZE;
             computer.readBytes(buf, len);
 
-            resp_sts = ebyte.sendMessage(buf, len);
-            if (resp_sts.code != EB_SUCCESS) {
+            status = ebyte.sendMessage(buf, len);
+            if (status.code != ResponseStatus::EB_SUCCESS) {
                 term_print("[EBYTE] C2E error, E34:");
-                term_println(resp_sts.desc());
+                term_println(status.desc());
             }
             else {
                 if (system_verbose_level >= VERBOSE_INFO) {
@@ -213,7 +213,7 @@ void ebyte_process() {
         }
         else {
             term_printf("[EBYTE] C2E error on waiting AUX HIGH, E34:");
-            term_println(resp_sts.desc());
+            term_println(status.desc());
         }
     }
 
@@ -272,7 +272,7 @@ ResponseStructContainer ebyte_get_config(Configuration * cfg) {
 ResponseStructContainer ebyte_set_config(EbyteSetter & setter) {
     Configuration cfg;
     ResponseStructContainer rc = ebyte_get_config(&cfg);
-    if (rc.status.code == EB_SUCCESS) {  // Setting
+    if (rc.status.code == ResponseStatus::EB_SUCCESS) {  // Setting
         setter(&cfg);
         ebyte.setConfiguration(cfg);
     }
@@ -290,7 +290,7 @@ void ebyte_set_configs(EbyteSetter & setter) {
     ResponseStructContainer rc = ebyte_set_config(setter);
 
     // Validate
-    if (rc.status.code == EB_SUCCESS) {
+    if (rc.status.code == ResponseStatus::EB_SUCCESS) {
         Configuration cfg;
         rc = ebyte_get_config(&cfg);
 

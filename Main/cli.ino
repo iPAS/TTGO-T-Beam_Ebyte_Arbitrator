@@ -214,7 +214,7 @@ static void on_cmd_ebyte_send(cmd *c) {
 
     uint8_t len = msg.length();
     ResponseStatus status = ebyte.sendMessage(msg.c_str(), len);
-    if (status.code != EB_SUCCESS) {
+    if (status.code != ResponseStatus::EB_SUCCESS) {
         term_print("[CLI] Ebyte send error, E34:");
         term_println(status.desc());
     }
@@ -236,7 +236,7 @@ void on_cmd_ebyte_get_config(cmd *c) {
                                                     // It's important get configuration pointer before all other operation.
     resp.close();  // Clean c.data that was allocated in ::getConfiguration()
 
-    if (resp.status.code == EB_SUCCESS){
+    if (resp.status.code == ResponseStatus::EB_SUCCESS){
         term_println(F("[CLI] Ebyte configuration"));
         ebyte.printParameters(&cfg);
     }
