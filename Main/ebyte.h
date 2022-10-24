@@ -2,7 +2,7 @@
 #define __EBYTE_H__
 
 
-#include "ebyte_e34.h"
+#include "ebyte_module.h"
 
 
 class EbyteSetter {

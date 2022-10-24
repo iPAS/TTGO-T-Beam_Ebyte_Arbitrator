@@ -1,12 +1,5 @@
-/*
- * AUthOR: Pasakorn Tiwatthanont (iPAS)
- *
- * The source is originated from EBYTE LoRa E32 Series
- *
- * AUTHOR:  Renzo Mischianti
- * VERSION: 1.5.6
- *
- * https://www.mischianti.org/category/my-libraries/lora-e32-devices/
+/**
+ * @author Pasakorn Tiwatthanont (iPAS)
  *
  * The MIT License (MIT)
  *
@@ -33,8 +26,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef __EBYTE_E34_H__
-#define __EBYTE_E34_H__
+#ifndef __EBYTE_MODULE_H__
+#define __EBYTE_MODULE_H__
 
 
 #include <Arduino.h>
@@ -44,7 +37,7 @@
 
 
 // Uncomment to enable printing out nice debug messages.
-// #define EBYTE_DEBUG
+#define EBYTE_DEBUG
 
 // Setup debug printing macros.
 #ifdef EBYTE_DEBUG
@@ -57,32 +50,35 @@
 #define DEBUG_PRINTF(...)
 #endif
 
-#define EBYTE_BROADCAST_ADDR 0xFF
-// #define EBYTE_E34_MAX_LEN 29
-#define EBYTE_E34_MAX_LEN 250  // 256 bytes at most
-#define EBYTE_EXTRA_WAIT 40
-#define EBYTE_NO_AUX_WAIT 100
-#define EBYTE_RESPONSE_TMO 1000
-#define EBYTE_CONFIG_BAUD 9600
 
-#define EBYTE_UART_BUFFER_SIZE 512
-#define EBYTE_UART_BUFFER_TMO 1000
+#define EBYTE_BROADCAST_ADDR 0xFF  // XXX: 0xFFFF or 0x0FFF please check
+
+#define EBYTE_MODULE_BUFFER_SIZE 250  // 256 bytes at most
+
+#define EBYTE_EXTRA_WAIT        40
+#define EBYTE_NO_AUX_WAIT       100
+#define EBYTE_RESPONSE_TMO      1000
+#define EBYTE_CONFIG_BAUD       9600
+
+#define EBYTE_UART_BUFFER_SIZE  512
+#define EBYTE_UART_BUFFER_TMO   1000
+
 
 typedef enum RESPONSE_STATUS {
-    E34_SUCCESS = 1,
-    ERR_E34_UNKNOWN, /* something shouldn't happened */
-    ERR_E34_NOT_SUPPORT,
-    ERR_E34_NOT_IMPLEMENT,
-    ERR_E34_NOT_INITIAL,
-    ERR_E34_INVALID_PARAM,
-    ERR_E34_DATA_SIZE_NOT_MATCH,
-    ERR_E34_BUF_TOO_SMALL,
-    ERR_E34_TIMEOUT,
-    ERR_E34_HARDWARE,
-    ERR_E34_HEAD_NOT_RECOGNIZED,
-    ERR_E34_NO_RESPONSE_FROM_DEVICE,
-    ERR_E34_WRONG_UART_CONFIG,
-    ERR_E34_PACKET_TOO_BIG
+    EB_SUCCESS = 1,
+    EB_ERR_UNKNOWN, /* something shouldn't happened */
+    EB_ERR_NOT_SUPPORT,
+    EB_ERR_NOT_IMPLEMENT,
+    EB_ERR_NOT_INITIAL,
+    EB_ERR_INVALID_PARAM,
+    EB_ERR_DATA_SIZE_NOT_MATCH,
+    EB_ERR_BUF_TOO_SMALL,
+    EB_ERR_TIMEOUT,
+    EB_ERR_HARDWARE,
+    EB_ERR_HEAD_NOT_RECOGNIZED,
+    EB_ERR_NO_RESPONSE_FROM_DEVICE,
+    EB_ERR_WRONG_UART_CONFIG,
+    EB_ERR_PACKET_TOO_BIG
 } Status;
 
 enum MODE_TYPE {
@@ -260,20 +256,20 @@ struct ResponseStatus {
     Status code;
     String desc() {
         switch (this->code) {
-            case E34_SUCCESS:                   return F("Success");
-            case ERR_E34_UNKNOWN:               return F("Unknown");
-            case ERR_E34_NOT_SUPPORT:           return F("Not support!");
-            case ERR_E34_NOT_IMPLEMENT:         return F("Not implement");
-            case ERR_E34_NOT_INITIAL:           return F("Not initial!");
-            case ERR_E34_INVALID_PARAM:         return F("Invalid param!");
-            case ERR_E34_DATA_SIZE_NOT_MATCH:   return F("Data size not match!");
-            case ERR_E34_BUF_TOO_SMALL:         return F("Buff too small!");
-            case ERR_E34_TIMEOUT:               return F("Timeout!!");
-            case ERR_E34_HARDWARE:              return F("Hardware error!");
-            case ERR_E34_HEAD_NOT_RECOGNIZED:   return F("Save mode returned not recognized!");
-            case ERR_E34_NO_RESPONSE_FROM_DEVICE: return F("No response from device! (Check wiring)");
-            case ERR_E34_WRONG_UART_CONFIG:     return F("Wrong UART configuration! (BPS must be " STR(EBYTE_CONFIG_BAUD) " for configuration)");
-            case ERR_E34_PACKET_TOO_BIG:        return F("Support only " STR(EBYTE_E34_MAX_LEN) " bytes of data transmission!");
+            case EB_SUCCESS:                   return F("Success");
+            case EB_ERR_UNKNOWN:               return F("Unknown");
+            case EB_ERR_NOT_SUPPORT:           return F("Not support!");
+            case EB_ERR_NOT_IMPLEMENT:         return F("Not implement");
+            case EB_ERR_NOT_INITIAL:           return F("Not initial!");
+            case EB_ERR_INVALID_PARAM:         return F("Invalid param!");
+            case EB_ERR_DATA_SIZE_NOT_MATCH:   return F("Data size not match!");
+            case EB_ERR_BUF_TOO_SMALL:         return F("Buff too small!");
+            case EB_ERR_TIMEOUT:               return F("Timeout!!");
+            case EB_ERR_HARDWARE:              return F("Hardware error!");
+            case EB_ERR_HEAD_NOT_RECOGNIZED:   return F("Save mode returned not recognized!");
+            case EB_ERR_NO_RESPONSE_FROM_DEVICE: return F("No response from device! (Check wiring)");
+            case EB_ERR_WRONG_UART_CONFIG:     return F("Wrong UART configuration! (BPS must be " STR(EBYTE_CONFIG_BAUD) " for configuration)");
+            case EB_ERR_PACKET_TOO_BIG:        return F("Support only " STR(EBYTE_MODULE_BUFFER_SIZE) " bytes of data transmission!");
             default: return F("Invalid status!");
         }
     }
@@ -376,4 +372,4 @@ class Ebyte_E34 {
 };
 
 
-#endif  // __EBYTE_E34_H__
+#endif  // __EBYTE_MODULE_H__
