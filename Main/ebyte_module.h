@@ -149,7 +149,7 @@ enum TRANSMISSION_POWER {
 
 struct Speed {
     uint8_t airDataRate : 3;    // bit 0-2
-    String airrate_desc() { 
+    String airrate_desc() {
         switch (this->airDataRate) {
             case 0:     return F("250kbps");
             case 1:     return F("1Mbps");
@@ -160,7 +160,7 @@ struct Speed {
     }
 
     uint8_t uartBaudRate : 3;   // bit 3-5
-    String baudrate_desc() { 
+    String baudrate_desc() {
         switch (this->uartBaudRate) {
             case 0:     return F("1200bps");
             case 1:     return F("2400bps");
@@ -175,7 +175,7 @@ struct Speed {
     }
 
     uint8_t uartParity : 2;     // bit 6-7
-    String parity_desc() { 
+    String parity_desc() {
         switch (this->uartParity) {
             case 0:     return F("8N1");
             case 1:     return F("8O1");
@@ -188,7 +188,7 @@ struct Speed {
 
 struct Option {
     byte   transmissionPower : 2;   // bit 0-1
-    String txpower_desc() { 
+    String txpower_desc() {
         switch (this->transmissionPower) {
             case 0:     return F("20dBm");
             case 1:     return F("14dBm");
@@ -202,7 +202,7 @@ struct Option {
     byte   wirelessWakeupTime : 3;  // bit 3-5 -- Reserved in E34
 
     byte   ioDriveMode : 1;         // bit 6
-    String io_drv_desc() { 
+    String io_drv_desc() {
         switch (this->ioDriveMode) {
             case 0:     return F("AUX Open-Collector");
             case 1:     return F("AUX Push-Pull");
@@ -211,7 +211,7 @@ struct Option {
     }
 
     byte   fixedTransmission : 1;   // bit 7
-    String fixed_tx_desc() { 
+    String fixed_tx_desc() {
         switch (this->fixedTransmission) {
             case 0:     return F("Trans");
             case 1:     return F("Fixed");
@@ -248,40 +248,40 @@ typedef struct {
 
 struct ResponseStatus {
     typedef enum {
-        EB_SUCCESS = 1,
-        EB_ERR_UNKNOWN, /* something shouldn't happened */
-        EB_ERR_NOT_SUPPORT,
-        EB_ERR_NOT_IMPLEMENT,
-        EB_ERR_NOT_INITIAL,
-        EB_ERR_INVALID_PARAM,
-        EB_ERR_DATA_SIZE_NOT_MATCH,
-        EB_ERR_BUF_TOO_SMALL,
-        EB_ERR_TIMEOUT,
-        EB_ERR_HARDWARE,
-        EB_ERR_HEAD_NOT_RECOGNIZED,
-        EB_ERR_NO_RESPONSE_FROM_DEVICE,
-        EB_ERR_WRONG_UART_CONFIG,
-        EB_ERR_PACKET_TOO_BIG
+        SUCCESS = 1,
+        ERR_UNKNOWN, /* something shouldn't happened */
+        ERR_NOT_SUPPORT,
+        ERR_NOT_IMPLEMENT,
+        ERR_NOT_INITIAL,
+        ERR_INVALID_PARAM,
+        ERR_DATA_SIZE_NOT_MATCH,
+        ERR_BUF_TOO_SMALL,
+        ERR_TIMEOUT,
+        ERR_HARDWARE,
+        ERR_HEAD_NOT_RECOGNIZED,
+        ERR_NO_RESPONSE_FROM_DEVICE,
+        ERR_WRONG_UART_CONFIG,
+        ERR_PACKET_TOO_BIG
     } Status;
 
     Status code;
 
     String desc() {
         switch (this->code) {
-            case EB_SUCCESS:                   return F("Success");
-            case EB_ERR_UNKNOWN:               return F("Unknown");
-            case EB_ERR_NOT_SUPPORT:           return F("Not support!");
-            case EB_ERR_NOT_IMPLEMENT:         return F("Not implement");
-            case EB_ERR_NOT_INITIAL:           return F("Not initial!");
-            case EB_ERR_INVALID_PARAM:         return F("Invalid param!");
-            case EB_ERR_DATA_SIZE_NOT_MATCH:   return F("Data size not match!");
-            case EB_ERR_BUF_TOO_SMALL:         return F("Buff too small!");
-            case EB_ERR_TIMEOUT:               return F("Timeout!!");
-            case EB_ERR_HARDWARE:              return F("Hardware error!");
-            case EB_ERR_HEAD_NOT_RECOGNIZED:   return F("Save mode returned not recognized!");
-            case EB_ERR_NO_RESPONSE_FROM_DEVICE: return F("No response from device! (Check wiring)");
-            case EB_ERR_WRONG_UART_CONFIG:     return F("Wrong UART configuration! (BPS must be " STR(EBYTE_CONFIG_BAUD) " for configuration)");
-            case EB_ERR_PACKET_TOO_BIG:        return F("Support only " STR(EBYTE_MODULE_BUFFER_SIZE) " bytes of data transmission!");
+            case SUCCESS:                   return F("Success");
+            case ERR_UNKNOWN:               return F("Unknown");
+            case ERR_NOT_SUPPORT:           return F("Not support!");
+            case ERR_NOT_IMPLEMENT:         return F("Not implement");
+            case ERR_NOT_INITIAL:           return F("Not initial!");
+            case ERR_INVALID_PARAM:         return F("Invalid param!");
+            case ERR_DATA_SIZE_NOT_MATCH:   return F("Data size not match!");
+            case ERR_BUF_TOO_SMALL:         return F("Buff too small!");
+            case ERR_TIMEOUT:               return F("Timeout!!");
+            case ERR_HARDWARE:              return F("Hardware error!");
+            case ERR_HEAD_NOT_RECOGNIZED:   return F("Save mode returned not recognized!");
+            case ERR_NO_RESPONSE_FROM_DEVICE: return F("No response from device! (Check wiring)");
+            case ERR_WRONG_UART_CONFIG:     return F("Wrong UART configuration! (BPS must be " STR(EBYTE_CONFIG_BAUD) " for configuration)");
+            case ERR_PACKET_TOO_BIG:        return F("Support only " STR(EBYTE_MODULE_BUFFER_SIZE) " bytes of data transmission!");
             default: return F("Invalid status!");
         }
     }

@@ -35,10 +35,11 @@
 EbyteE34::EbyteE34(HardwareSerial * serial, byte auxPin, byte m0Pin, byte m1Pin, byte rxPin, byte txPin)
         : EbyteModule(serial, auxPin, 0, NULL, rxPin, txPin) {
 
-    this->mPin_cnt = mPin_cnt;
-    this->mPins = new uint8_t[mPin_cnt];
-    for (int i = 0; i < mPin_cnt; i++) {
-        this->mPins[i] = mPins[i];
+    this->mPin_cnt = 2;
+    this->mPins = new uint8_t[ this->mPin_cnt ];
+    this->mPins[0] = m0Pin;
+    this->mPins[1] = m1Pin;
+    for (int i = 0; i < this->mPin_cnt; i++) {
         pinMode(this->mPins[i], OUTPUT);
         digitalWrite(this->mPins[i], HIGH);
     }
