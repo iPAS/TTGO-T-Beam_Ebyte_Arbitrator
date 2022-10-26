@@ -52,3 +52,8 @@ EbyteE34::EbyteE34(HardwareSerial * serial, byte auxPin, byte m0Pin, byte m1Pin,
 EbyteE34::~EbyteE34() {
     delete [] this->mPins;
 }
+
+
+EbyteMode * EbyteE34::createMode(void) const {
+    return new EbyteModeE34();
+}

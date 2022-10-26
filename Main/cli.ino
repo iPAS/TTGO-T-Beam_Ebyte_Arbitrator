@@ -228,7 +228,7 @@ void on_cmd_ebyte_get_config(cmd *c) {
     Command cmd(c);
 
     uint32_t old_baud = ebyte.getBpsRate();
-    ebyte.changeBpsRate(EBYTE_CONFIG_BAUD);
+    ebyte.setBpsRate(EBYTE_CONFIG_BAUD);
 
     ResponseStructContainer resp;
     resp = ebyte.getConfiguration();  // Get c.data from here
@@ -244,7 +244,7 @@ void on_cmd_ebyte_get_config(cmd *c) {
         term_println(resp.status.desc());  // Description of code
     }
 
-    ebyte.changeBpsRate(old_baud);
+    ebyte.setBpsRate(old_baud);
 }
 
 // ----------------------------------------------------------------------------

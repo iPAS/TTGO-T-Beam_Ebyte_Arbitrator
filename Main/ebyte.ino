@@ -66,7 +66,7 @@ void ebyte_setup() {
             cfg.OPTION.ioDriveMode          = IO_PUSH_PULL;
             cfg.OPTION.fixedTransmission    = TXMODE_TRANS;         // no special bytes leading
             cfg.SPED.airDataRate            = ebyte_airrate_level;  // AIR_DATA_RATE_2M;
-            cfg.SPED.uartBaudRate           = UART_BPS_115200;      // XXX: don't forget to ::changeBpsRate( EBYTE_BAUD )
+            cfg.SPED.uartBaudRate           = UART_BPS_115200;      // XXX: don't forget to ::setBpsRate( EBYTE_BAUD )
             cfg.SPED.uartParity             = UART_PARITY_8N1;
             ebyte.setConfiguration(cfg);
             // ebyte.setConfiguration(cfg, WRITE_CFG_PWR_DWN_SAVE);  // XXX: Save on Ebyte's EEPROM
@@ -88,7 +88,7 @@ void ebyte_setup() {
             }
 
             // Change the baudrate to data transfer rate.
-            ebyte.changeBpsRate(EBYTE_BAUD);
+            ebyte.setBpsRate(EBYTE_BAUD);
         }
         else {
             term_print(F("[EBYTE] Reading old configuration failed!, E34: "));
@@ -284,7 +284,7 @@ ResponseStructContainer ebyte_set_config(EbyteSetter & setter) {
  *
  */
 void ebyte_set_configs(EbyteSetter & setter) {
-    ebyte.changeBpsRate(EBYTE_CONFIG_BAUD);  // Change the baudrate for configuring.
+    ebyte.setBpsRate(EBYTE_CONFIG_BAUD);  // Change the baudrate for configuring.
 
     // Setting
     ResponseStructContainer rc = ebyte_set_config(setter);
@@ -306,7 +306,7 @@ void ebyte_set_configs(EbyteSetter & setter) {
         term_println(rc.status.desc());  // Description of code
     }
 
-    ebyte.changeBpsRate(EBYTE_BAUD);  // Change the baudrate for data transfer.
+    ebyte.setBpsRate(EBYTE_BAUD);  // Change the baudrate for data transfer.
 }
 
 /**

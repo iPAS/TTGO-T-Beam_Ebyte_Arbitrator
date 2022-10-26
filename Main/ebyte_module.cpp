@@ -30,7 +30,7 @@
 
 
 /**
- * @brief Construct a new EbyteModule::EbyteModule object
+ * @brief Constructor & Destructor
  */
 EbyteModule::EbyteModule(HardwareSerial * serial, byte auxPin, uint8_t mPin_cnt, uint8_t * mPins, byte rxPin, byte txPin) {
     this->hs = serial;
@@ -47,11 +47,14 @@ EbyteModule::EbyteModule(HardwareSerial * serial, byte auxPin, uint8_t mPin_cnt,
     q_init(&this->queueTx);
 }
 
-
-/**
- * @brief Destroy the Ebyte:: Ebyte Module object
- */
 EbyteModule::~EbyteModule() {
+    if (this->current_mode == NULL) {
+        DEBUG_PRINTLN(F(EBYTE_LABEL "this->current_mode still NULL"));
+    }
+    else {
+        delete this->current_mode;
+    }
+
     while (q_length(&this->queueTx) > 0) {
         q_dequeue(&this->queueTx, NULL, 0);
     }
@@ -59,139 +62,24 @@ EbyteModule::~EbyteModule() {
 
 
 /**
- * @brief Begin the operation. Should be in the setup().
+ * @brief begin() should be called in setup()
+ *
+ * @return true
+ * @return false
  */
 bool EbyteModule::begin() {
-    this->changeBpsRate(this->bpsRate);
+    this->setBpsRate(this->bpsRate);
 
-    ResponseStatus status = setMode(MODE_0_FIXED);
+    this->current_mode = this->createMode();  // Factory method
+
+    this->current_mode->setModeDefault();
+    ResponseStatus status = setMode(this->current_mode);
     return status.code == ResponseStatus::SUCCESS;
 }
 
 
 /**
- * @brief Get MODE
- *
- * @return MODE_TYPE
- */
-MODE_TYPE EbyteModule::getMode() {
-    return this->mode;
-}
-
-
-/**
- * @brief Set MODE
- *
- * @param mode
- * @return ResponseStatus
- */
-ResponseStatus EbyteModule::setMode(MODE_TYPE mode) {
-    ResponseStatus status;
-
-    // Datasheet claims module needs some extra time after mode setting (2ms).
-    // However, most of my projects uses 10 ms, but 40ms is safer.
-    this->managedDelay(EBYTE_EXTRA_WAIT);
-
-    DEBUG_PRINT(F(EBYTE_LABEL "Mode: "));
-    switch (mode) {
-        case MODE_0_FIXED:
-            // Mode 0 | normal operation
-            digitalWrite(this->mPins[0], LOW);
-            digitalWrite(this->mPins[1], LOW);
-            DEBUG_PRINTLN("FIXED FREQ!");
-            break;
-        case MODE_1_HOPPING:
-            digitalWrite(this->mPins[0], HIGH);
-            digitalWrite(this->mPins[1], LOW);
-            DEBUG_PRINTLN("HOPPING FREQ!");
-            break;
-        case MODE_2_RESERVED:
-            digitalWrite(this->mPins[0], LOW);
-            digitalWrite(this->mPins[1], HIGH);
-            DEBUG_PRINTLN("RESERVATION!");
-            break;
-        case MODE_3_SLEEP:
-            // Mode 3 | Setting operation
-            digitalWrite(this->mPins[0], HIGH);
-            digitalWrite(this->mPins[1], HIGH);
-            DEBUG_PRINTLN("PROGRAM/SLEEP!");
-            break;
-        default:
-            status.code = ResponseStatus::ERR_INVALID_PARAM;
-            return status;
-    }
-
-    // The datasheet says after 2ms later, control is returned.
-    // Let's give just a bit more time for this module to be active.
-    this->managedDelay(EBYTE_EXTRA_WAIT);
-
-    // Wait until AUX pin goes back to low.
-    status = this->waitCompleteResponse();
-
-    if (status.code == ResponseStatus::SUCCESS) {
-        this->mode = mode;
-    }
-
-    DEBUG_PRINTLN(F(EBYTE_LABEL "Clear Rx buf after mode change"));
-    this->cleanUARTBuffer();
-
-    return status;
-}
-
-
-/**
- * @brief Check whether timeout or not
- */
-static bool is_timeout(unsigned long t, unsigned long t_prev, unsigned long timeout) {
-    return (((t >= t_prev) && ((t - t_prev) >= timeout)  // Normal count up
-            ) ||
-            ((t < t_prev)  && (((unsigned long)(0-1) - (t_prev-t) + 1) >= timeout)  // Overflow
-            ))? true : false;
-}
-
-
-/**
- * Delay() in a library is not a good idea as it can stop interrupts.
- * Just poll internal time until timeout is reached.
- */
-void EbyteModule::managedDelay(unsigned long timeout) {
-    unsigned long t_prev = millis();  // It will be overflow about every 50 days.
-
-    while (1) {
-        unsigned long t = millis();
-
-        if (is_timeout(t, t_prev, timeout)) {
-            break;
-        }
-
-        taskYIELD();
-    }
-}
-
-
-/**
- * Utility method to wait until module does not transmit.
- * The timeout is provided to avoid an infinite loop
- */
-ResponseStatus EbyteModule::waitCompleteResponse(unsigned long timeout, unsigned long waitNoAux) {
-    ResponseStatus status = this->auxReady(timeout);
-
-    if (status.code == ResponseStatus::ERR_NOT_IMPLEMENT) {
-        // If you can't use aux pin, use 4K7 pullup with Arduino.
-        // You may need to adjust this value if transmissions fail.
-        this->managedDelay(waitNoAux);
-        DEBUG_PRINTLN(F(EBYTE_LABEL "Wait response: no AUX pin -- just wait.."));
-    }
-
-    // As per data sheet, control after aux goes high is 2ms; so delay for at least that long
-    this->managedDelay(EBYTE_EXTRA_WAIT);
-    DEBUG_PRINTLN(F(EBYTE_LABEL "Wait response: complete!"));
-    return status;
-}
-
-
-/**
- * Method to indicate availability & to clear the buffer
+ * Methods to indicate availability & to clear the buffer
  */
 int EbyteModule::available() {
     return this->hs->available();
@@ -207,40 +95,13 @@ void EbyteModule::cleanUARTBuffer() {
     }
 }
 
-ResponseStatus EbyteModule::auxReady(unsigned long timeout) {
-    unsigned long t_prev = millis();
-    ResponseStatus status = { .code = ResponseStatus::SUCCESS, };
 
-    // If AUX pin was supplied, and look for HIGH state.
-    // XXX: You can omit using AUX if no pins are available, but you will have to use delay() to let module finish
-    if (this->auxPin != -1) {
-        while (digitalRead(this->auxPin) == LOW) {
-            unsigned long t = millis();  // It will be overflow about every 50 days.
-
-            if (is_timeout(t, t_prev, timeout)) {
-                DEBUG_PRINTLN(F(EBYTE_LABEL "Wait AUX HIGH: timeout! AUX still LOW"));
-                status.code = ResponseStatus::ERR_TIMEOUT;
-                return status;
-            }
-
-            DEBUG_PRINTLN(F(EBYTE_LABEL "Wait AUX HIGH.."));
-            taskYIELD();
-        }
-        DEBUG_PRINTLN(F(EBYTE_LABEL "AUX HIGH!"));
-    }
-    else {
-        DEBUG_PRINTLN(F(EBYTE_LABEL "Wait AUX HIGH: no AUX pin"));
-        status.code = ResponseStatus::ERR_NOT_IMPLEMENT;
-    }
-
-    return status;
-}
-
-uint32_t EbyteModule::getBpsRate() {
-    return this->bpsRate;
-}
-
-void EbyteModule::changeBpsRate(uint32_t new_bps) {
+/**
+ * @brief Set/Get BPS
+ *
+ * @param new_bps
+ */
+void EbyteModule::setBpsRate(uint32_t new_bps) {
     this->hs->end();
     this->bpsRate = new_bps;
 
@@ -265,6 +126,139 @@ void EbyteModule::changeBpsRate(uint32_t new_bps) {
     this->hs->setTimeout(1000);  // Timeout data in the buffer, then send.
 }
 
+uint32_t EbyteModule::getBpsRate() {
+    return this->bpsRate;
+}
+
+
+/**
+ * @brief Check whether timeout or not
+ */
+bool EbyteModule::is_timeout(unsigned long t, unsigned long t_prev, unsigned long timeout) {
+    return (((t >= t_prev) && ((t - t_prev) >= timeout)  // Normal count up
+            ) ||
+            ((t < t_prev)  && (((unsigned long)(0-1) - (t_prev-t) + 1) >= timeout)  // Overflow
+            ))? true : false;
+}
+
+
+/**
+ * @brief Delay with timeout
+ *
+ * @param timeout
+ */
+void EbyteModule::managedDelay(unsigned long timeout) {
+    unsigned long t_prev = millis();  // It will be overflow about every 50 days.
+    while (1) {
+        unsigned long t = millis();
+        if (this->is_timeout(t, t_prev, timeout)) {
+            break;
+        }
+        taskYIELD();
+    }
+}
+
+
+/**
+ * @brief Is AUX pin ready?
+ *
+ * @param timeout
+ * @return ResponseStatus
+ */
+ResponseStatus EbyteModule::auxReady(unsigned long timeout) {
+    unsigned long t_prev = millis();
+    ResponseStatus status = { .code = ResponseStatus::SUCCESS, };
+
+    // If AUX pin was supplied, and look for HIGH state.
+    // XXX: You can omit using AUX if no pins are available, but you will have to use delay() to let module finish
+    while (digitalRead(this->auxPin) == LOW) {
+        unsigned long t = millis();  // It will be overflow about every 50 days.
+
+        if (is_timeout(t, t_prev, timeout)) {
+            DEBUG_PRINTLN(F(EBYTE_LABEL "Wait AUX HIGH: timeout! AUX still LOW"));
+            status.code = ResponseStatus::ERR_TIMEOUT;
+            return status;
+        }
+
+        DEBUG_PRINTLN(F(EBYTE_LABEL "Wait AUX HIGH.."));
+        taskYIELD();
+    }
+
+    DEBUG_PRINTLN(F(EBYTE_LABEL "AUX HIGH!"));
+    return status;
+}
+
+
+/**
+ * @brief Wait until module does not transmit
+ *
+ * @param timeout
+ * @param waitNoAux
+ * @return ResponseStatus
+ */
+ResponseStatus EbyteModule::waitCompleteResponse(unsigned long timeout, unsigned long waitNoAux) {
+    ResponseStatus status = this->auxReady(timeout);
+
+    if (status.code == ResponseStatus::ERR_NOT_IMPLEMENT) {
+        // If you can't use aux pin, use 4K7 pullup with Arduino.
+        // You may need to adjust this value if transmissions fail.
+        this->managedDelay(waitNoAux);
+        DEBUG_PRINTLN(F(EBYTE_LABEL "Wait response: no AUX pin -- just wait.."));
+    }
+
+    // As per data sheet, control after aux goes high is 2ms; so delay for at least that long
+    this->managedDelay(EBYTE_EXTRA_WAIT);
+    DEBUG_PRINTLN(F(EBYTE_LABEL "Wait response: complete!"));
+    return status;
+}
+
+
+/**
+ * @brief Set/Get MODE
+ *
+ * @param mode
+ * @return ResponseStatus
+ */
+ResponseStatus EbyteModule::setMode(EbyteMode * mode) {
+    ResponseStatus status;
+
+    this->managedDelay(EBYTE_EXTRA_WAIT);   // Datasheet claims module needs some extra time after mode setting (2ms).
+                                            // However, most of my projects uses 10 ms, but 40ms is safer.
+    DEBUG_PRINT(F(EBYTE_LABEL "Mode: "));
+
+    if (mode->isModeCorrect() == false) {
+        status.code = ResponseStatus::ERR_INVALID_PARAM;
+        return status;
+    }
+
+    for (uint8_t i = 0; i < this->mPin_cnt; i++) {
+        uint8_t b = ((mode->getMode() >> i) & 0x1)? HIGH : LOW;
+        digitalWrite(this->mPins[i], b);
+        DEBUG_PRINT(b);
+    }
+    DEBUG_PRINTLN(mode->description());
+
+    // The datasheet says after 2ms later, control is returned.
+    // Let's give just a bit more time for this module to be active.
+    this->managedDelay(EBYTE_EXTRA_WAIT);
+
+    // Wait until AUX pin goes back to low.
+    status = this->waitCompleteResponse();
+
+    if (status.code == ResponseStatus::SUCCESS) {
+        this->current_mode->setMode(mode->getMode());
+    }
+
+    DEBUG_PRINTLN(F(EBYTE_LABEL "Clear Rx buf after mode change"));
+    this->cleanUARTBuffer();
+
+    return status;
+}
+
+EbyteMode * EbyteModule::getMode() {
+    return this->current_mode;
+}
+
 
 /**
  * @brief Write command
@@ -286,22 +280,22 @@ void EbyteModule::writeProgramCommand(PROGRAM_COMMAND cmd) {
  */
 ResponseStructContainer EbyteModule::getConfiguration() {
     ResponseStructContainer rc;
+    uint8_t prev_code = this->current_mode->getMode();
+    this->current_mode->setModeConfig();
 
-    rc.status = checkUARTConfiguration(MODE_3_PROGRAM);
+    rc.status = checkUARTConfiguration(this->current_mode);
     if (rc.status.code != ResponseStatus::SUCCESS) return rc;
 
-    MODE_TYPE prevMode = this->mode;
-
-    rc.status = this->setMode(MODE_3_PROGRAM);
+    rc.status = this->setMode(this->current_mode);
     if (rc.status.code != ResponseStatus::SUCCESS) return rc;
 
     this->writeProgramCommand(READ_CONFIGURATION);
 
     rc.data   = malloc(sizeof(Configuration));
     rc.status = this->receiveStruct((uint8_t *)rc.data, sizeof(Configuration));
-
     if (rc.status.code != ResponseStatus::SUCCESS) {
-        this->setMode(prevMode);
+        this->current_mode->setMode(prev_code);
+        this->setMode(this->current_mode);
         return rc;
     }
 
@@ -310,13 +304,12 @@ ResponseStructContainer EbyteModule::getConfiguration() {
     this->printHead(((Configuration *)rc.data)->HEAD);
     #endif
 
-    rc.status = this->setMode(prevMode);
+    this->current_mode->setMode(prev_code);
+    rc.status = this->setMode(this->current_mode);
     if (rc.status.code != ResponseStatus::SUCCESS) return rc;
 
-    if ((0xC0 != ((Configuration *)rc.data)->HEAD
-        ) &&
-        (0xC2 != ((Configuration *)rc.data)->HEAD
-        )) {
+    if ((0xC0 != ((Configuration *)rc.data)->HEAD) &&
+        (0xC2 != ((Configuration *)rc.data)->HEAD)) {
         rc.status.code = ResponseStatus::ERR_HEAD_NOT_RECOGNIZED;
     }
 
@@ -325,57 +318,19 @@ ResponseStructContainer EbyteModule::getConfiguration() {
 
 
 /**
- * @brief Set configuration
+ * @brief Get module info.
  *
- * @param configuration
- * @param saveType
- * @return ResponseStatus
+ * @return ResponseStructContainer
  */
-ResponseStatus EbyteModule::setConfiguration(Configuration configuration, PROGRAM_COMMAND saveType) {
-    ResponseStatus status;
-
-    status = checkUARTConfiguration(MODE_3_PROGRAM);
-    if (status.code != ResponseStatus::SUCCESS) return status;
-
-    MODE_TYPE prevMode = this->mode;
-
-    status = this->setMode(MODE_3_PROGRAM);
-    if (status.code != ResponseStatus::SUCCESS) return status;
-
-    this->writeProgramCommand(READ_CONFIGURATION);
-
-    configuration.HEAD = saveType;
-
-    status = this->sendStruct((uint8_t *)&configuration, sizeof(Configuration));
-    if (status.code != ResponseStatus::SUCCESS) {
-        this->setMode(prevMode);
-        return status;
-    }
-
-    #ifdef EBYTE_DEBUG
-    DEBUG_PRINTLN(F(EBYTE_LABEL "Set configuration"));
-    this->printHead(configuration.HEAD);
-    #endif
-
-    status = this->setMode(prevMode);
-    if (status.code != ResponseStatus::SUCCESS) return status;
-
-    if ((0xC0 != configuration.HEAD) && (0xC2 != configuration.HEAD)) {
-        status.code = ResponseStatus::ERR_HEAD_NOT_RECOGNIZED;
-    }
-
-    return status;
-}
-
 ResponseStructContainer EbyteModule::getModuleInformation() {
     ResponseStructContainer rc;
+    uint8_t prev_code = this->current_mode->getMode();
+    this->current_mode->setModeConfig();
 
-    rc.status = checkUARTConfiguration(MODE_3_PROGRAM);
+    rc.status = checkUARTConfiguration(this->current_mode);
     if (rc.status.code != ResponseStatus::SUCCESS) return rc;
 
-    MODE_TYPE prevMode = this->mode;
-
-    rc.status = this->setMode(MODE_3_PROGRAM);
+    rc.status = this->setMode(this->current_mode);
     if (rc.status.code != ResponseStatus::SUCCESS) return rc;
 
     this->writeProgramCommand(READ_MODULE_VERSION);
@@ -383,11 +338,13 @@ ResponseStructContainer EbyteModule::getModuleInformation() {
     struct ModuleInformation * moduleInformation = (ModuleInformation *)malloc(sizeof(ModuleInformation));
     rc.status = this->receiveStruct((uint8_t *)moduleInformation, sizeof(ModuleInformation));
     if (rc.status.code != ResponseStatus::SUCCESS) {
-        this->setMode(prevMode);
+        this->current_mode->setMode(prev_code);
+        this->setMode(this->current_mode);
         return rc;
     }
 
-    rc.status = this->setMode(prevMode);
+    this->current_mode->setMode(prev_code);
+    rc.status = this->setMode(this->current_mode);
     if (rc.status.code != ResponseStatus::SUCCESS) return rc;
 
     if (0xC3 != moduleInformation->HEAD) {
@@ -406,26 +363,80 @@ ResponseStructContainer EbyteModule::getModuleInformation() {
     return rc;
 }
 
-ResponseStatus EbyteModule::resetModule() {
-    ResponseStatus status;
 
-    status = checkUARTConfiguration(MODE_3_PROGRAM);
+/**
+ * @brief Set configuration
+ *
+ * @param configuration
+ * @param saveType
+ * @return ResponseStatus
+ */
+ResponseStatus EbyteModule::setConfiguration(Configuration configuration, PROGRAM_COMMAND saveType) {
+    ResponseStatus status;
+    uint8_t prev_code = this->current_mode->getMode();
+    this->current_mode->setModeConfig();
+
+    status = checkUARTConfiguration(this->current_mode);
     if (status.code != ResponseStatus::SUCCESS) return status;
 
-    MODE_TYPE prevMode = this->mode;
 
-    status = this->setMode(MODE_3_PROGRAM);
+    status = this->setMode(this->current_mode);
+    if (status.code != ResponseStatus::SUCCESS) return status;
+
+    this->writeProgramCommand(READ_CONFIGURATION);
+
+    configuration.HEAD = saveType;
+    status = this->sendStruct((uint8_t *)&configuration, sizeof(Configuration));
+    if (status.code != ResponseStatus::SUCCESS) {
+        this->current_mode->setMode(prev_code);
+        this->setMode(this->current_mode);
+        return status;
+    }
+
+    #ifdef EBYTE_DEBUG
+    DEBUG_PRINTLN(F(EBYTE_LABEL "Set configuration"));
+    this->printHead(configuration.HEAD);
+    #endif
+
+    this->current_mode->setMode(prev_code);
+    status = this->setMode(this->current_mode);
+    if (status.code != ResponseStatus::SUCCESS) return status;
+
+    if ((0xC0 != configuration.HEAD) &&
+        (0xC2 != configuration.HEAD)) {
+        status.code = ResponseStatus::ERR_HEAD_NOT_RECOGNIZED;
+    }
+
+    return status;
+}
+
+
+/**
+ * @brief Reset module
+ *
+ * @return ResponseStatus
+ */
+ResponseStatus EbyteModule::resetModule() {
+    ResponseStatus status;
+    uint8_t prev_code = this->current_mode->getMode();
+    this->current_mode->setModeConfig();
+
+    status = checkUARTConfiguration(this->current_mode);
+    if (status.code != ResponseStatus::SUCCESS) return status;
+
+    status = this->setMode(this->current_mode);
     if (status.code != ResponseStatus::SUCCESS) return status;
 
     this->writeProgramCommand(WRITE_RESET_MODULE);
 
     status = this->waitCompleteResponse();
     if (status.code != ResponseStatus::SUCCESS) {
-        this->setMode(prevMode);
+        this->current_mode->setMode(prev_code);
+        this->setMode(this->current_mode);
         return status;
     }
 
-    status = this->setMode(prevMode);
+    status = this->setMode(this->current_mode);
     return status;
 }
 
@@ -436,9 +447,9 @@ ResponseStatus EbyteModule::resetModule() {
  * @param mode
  * @return ResponseStatus
  */
-ResponseStatus EbyteModule::checkUARTConfiguration(MODE_TYPE mode) {
+ResponseStatus EbyteModule::checkUARTConfiguration(EbyteMode * mode) {
     ResponseStatus status = { .code = ResponseStatus::SUCCESS, };
-    if (mode == MODE_3_PROGRAM && this->bpsRate != EBYTE_CONFIG_BAUD) {
+    if (mode->isModeConfig() && this->bpsRate != EBYTE_CONFIG_BAUD) {
         status.code = ResponseStatus::ERR_WRONG_UART_CONFIG;
     }
     return status;

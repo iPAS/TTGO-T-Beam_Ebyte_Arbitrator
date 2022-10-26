@@ -34,13 +34,39 @@
 #include "ebyte_module.h"
 
 
+/**
+ * @brief EbyteModeE34
+ *
+ */
+class EbyteModeE34 : public EbyteMode {
+    void setModeDefault()   override { this->code = 0; }
+    void setModeConfig()    override { this->code = 3; }
+    bool isModeConfig()     override { return this->code == 3; }
+    bool isModeCorrect()    override { return this->code <= 3; }
+    String description()    override {
+        switch (this->code) {
+            case 0: return F("Fixed frequency mode");
+            case 1: return F("Frequency hopping mode");
+            case 2: return F("Reservation mode");
+            case 3: return F("Sleep/Setting mode");
+        }
+        return F("Invalid mode!");
+    }
+};
+
+
+/**
+ * @brief EbyteE34
+ *
+ */
 class EbyteE34 : public EbyteModule {
 
   public:
     EbyteE34(HardwareSerial * serial, byte auxPin, byte m0Pin, byte m1Pin, byte rxPin = -1, byte txPin = -1);
     ~EbyteE34();
 
-  private:
+  protected:
+    EbyteMode * createMode(void) const override;
 };
 
 

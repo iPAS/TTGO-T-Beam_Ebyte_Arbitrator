@@ -65,15 +65,6 @@
 #define EBYTE_UART_BUFFER_TMO   1000
 
 
-enum MODE_TYPE {
-    MODE_0_FIXED    = 0,
-    MODE_1_HOPPING  = 1,
-    MODE_2_RESERVED = 2,
-    MODE_3_SLEEP    = 3,
-    MODE_3_PROGRAM  = 3,
-    MODE_INIT       = 0xFF
-};
-
 enum PROGRAM_COMMAND {
     WRITE_CFG_PWR_DWN_SAVE = 0xC0,
     READ_CONFIGURATION     = 0xC1,
@@ -282,8 +273,8 @@ struct ResponseStatus {
             case ERR_NO_RESPONSE_FROM_DEVICE: return F("No response from device! (Check wiring)");
             case ERR_WRONG_UART_CONFIG:     return F("Wrong UART configuration! (BPS must be " STR(EBYTE_CONFIG_BAUD) " for configuration)");
             case ERR_PACKET_TOO_BIG:        return F("Support only " STR(EBYTE_MODULE_BUFFER_SIZE) " bytes of data transmission!");
-            default: return F("Invalid status!");
         }
+        return F("Invalid status!");
     }
 };
 
@@ -300,19 +291,40 @@ struct ResponseContainer {
 
 
 /**
+ * @brief Class Ebyte mode setting
+ *
+ */
+class EbyteMode {
+
+  public:
+    EbyteMode(uint8_t code = 0) : code(code) {}
+
+    uint8_t getMode(void) { return this->code; }
+    void setMode(uint8_t code) { this->code = code; }
+
+    virtual void setModeDefault() = 0;  // e.g. { this->code = 0; }
+    virtual void setModeConfig() = 0;  // e.g. { this->code = 3; }
+    virtual bool isModeConfig() = 0;  // e.g. { return this->code == 3; }
+    virtual bool isModeCorrect() = 0;  // e.g. { return true; }
+    virtual String description() = 0;  // e.g. { return F(""); }
+
+  protected:
+    uint8_t code;
+};
+
+
+/**
  * @brief Class Ebyte Interfacing
  *
  */
 class EbyteModule {
 
   public:
+    EbyteModule() = delete;
     EbyteModule(HardwareSerial * serial, byte auxPin, uint8_t mPin_cnt, uint8_t * mPins, byte rxPin = -1, byte txPin = -1);
     ~EbyteModule();
 
     bool begin();
-
-    ResponseStatus setMode(MODE_TYPE mode);
-    MODE_TYPE getMode();
 
     ResponseStructContainer getConfiguration();
     ResponseStatus          setConfiguration(Configuration configuration, PROGRAM_COMMAND saveType = WRITE_CFG_PWR_DWN_LOSE);
@@ -334,14 +346,14 @@ class EbyteModule {
     ResponseContainer       receiveMessageUntil(char delimiter = '\0');
     ResponseContainer       receiveMessageString(size_t size);
 
-    ResponseStatus sendStruct(const void * structureManaged, size_t size_of_st);
-    ResponseStatus receiveStruct(void * structureManaged, size_t size_of_st);
+    ResponseStatus          sendStruct(const void * structureManaged, size_t size_of_st);
+    ResponseStatus          receiveStruct(void * structureManaged, size_t size_of_st);
 
-    int available();
     ResponseStatus auxReady(unsigned long timeout);
+    int available();
 
     uint32_t getBpsRate();
-    void    changeBpsRate(uint32_t new_bps);
+    void    setBpsRate(uint32_t new_bps);
 
     void    printHead(byte HEAD);
     void    printParameters(struct Configuration * cfg);
@@ -355,20 +367,15 @@ class EbyteModule {
     uint32_t bpsRate = EBYTE_CONFIG_BAUD;
     uint32_t serialConfig = SERIAL_8N1;
 
-    int8_t auxPin  = -1;
-
-    uint8_t mPin_cnt = 0;
-    uint8_t *mPins = NULL;
-
-    int8_t rxPin   = -1;
-    int8_t txPin   = -1;
+    int8_t    auxPin    = -1;
+    uint8_t   mPin_cnt  = 0;
+    uint8_t * mPins     = NULL;
+    int8_t    rxPin     = -1;
+    int8_t    txPin     = -1;
 
     queue_t queueTx;
 
-
-    MODE_TYPE mode = MODE_0_FIXED;
-
-
+    bool is_timeout(unsigned long t, unsigned long t_prev, unsigned long timeout);
     void managedDelay(unsigned long timeout);
     ResponseStatus waitCompleteResponse(unsigned long timeout = EBYTE_RESPONSE_TMO, unsigned long waitNoAux = EBYTE_NO_AUX_WAIT);
 
@@ -377,7 +384,12 @@ class EbyteModule {
 
     void writeProgramCommand(PROGRAM_COMMAND cmd);
 
-    ResponseStatus checkUARTConfiguration(MODE_TYPE mode);
+    EbyteMode * current_mode = NULL;
+    virtual EbyteMode * createMode(void) const = 0;
+
+    ResponseStatus setMode(EbyteMode * mode);
+    EbyteMode *    getMode();
+    ResponseStatus checkUARTConfiguration(EbyteMode * mode);
 };
 
 
