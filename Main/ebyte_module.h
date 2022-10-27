@@ -220,13 +220,6 @@ struct Configuration {
     struct Option OPTION;
 };
 
-struct ModuleInformation {
-    byte HEAD      = 0;
-    byte frequency = 0;
-    byte version   = 0;
-    byte features  = 0;
-};
-
 typedef struct {
     byte ADDH = 0;
     byte ADDL = 0;
@@ -291,6 +284,36 @@ struct ResponseContainer {
 
 
 /**
+ * @brief Class Ebyte version info.
+ *
+ */
+class EbyteVersion {
+
+  public:
+    EbyteVersion() = delete;
+    EbyteVersion(uint8_t maxlen) {
+        this->maxlen = maxlen;
+        this->data = new uint8_t[maxlen];
+        this->valid = false;
+    }
+    ~EbyteVersion() {
+        delete [] this->data;
+    }
+
+    uint8_t getLength() { return this->maxlen; }
+    uint8_t * getData() { return this->data; }
+    bool isValid() { return this->valid; }
+
+    virtual String getInfo(void) = 0;
+
+  protected:
+    bool valid;
+    uint8_t maxlen;
+    uint8_t *data;
+};
+
+
+/**
  * @brief Class Ebyte mode setting
  *
  */
@@ -329,7 +352,7 @@ class EbyteModule {
     ResponseStructContainer getConfiguration();
     ResponseStatus          setConfiguration(Configuration configuration, PROGRAM_COMMAND saveType = WRITE_CFG_PWR_DWN_LOSE);
 
-    ResponseStructContainer getModuleInformation();
+    ResponseStructContainer getVersionInfo(String & info);
     ResponseStatus          resetModule();
 
     ResponseStatus          sendMessage(const void * message, size_t size);
@@ -386,10 +409,11 @@ class EbyteModule {
 
     EbyteMode * current_mode = NULL;
     virtual EbyteMode * createMode(void) const = 0;
-
     ResponseStatus setMode(EbyteMode * mode);
     EbyteMode *    getMode();
     ResponseStatus checkUARTConfiguration(EbyteMode * mode);
+
+    virtual EbyteVersion * createVersion(void) const = 0;
 };
 
 

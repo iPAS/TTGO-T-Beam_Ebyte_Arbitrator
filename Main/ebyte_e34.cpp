@@ -57,3 +57,8 @@ EbyteE34::~EbyteE34() {
 EbyteMode * EbyteE34::createMode(void) const {
     return new EbyteModeE34();
 }
+
+
+EbyteVersion * EbyteE34::createVersion(void) const {
+    return new EbyteVersionE34();
+}

@@ -8,6 +8,7 @@
 
 SimpleCLI cli;
 Command cmd_help;
+Command cmd_ebyte_info;
 Command cmd_verbose;
 Command cmd_ebyte_airrate;
 Command cmd_ebyte_txpower;
@@ -25,6 +26,7 @@ Command cmd_print_gps;
 
 const static char *help_description[] = {
     "\thelp",
+    "\tinfo            -- get module version infomation",
     "\tverbose [level] -- show or set info level [0=none | 1=err | 2=warn | 3=info | 4=debug]",
     "\tairrate [level] -- show or set airrate level [0=250kbps | 1=1Mbps | 2=2Mbps]",
     "\ttxpower [level] -- show or set txpower level [0=20dBm | 1=14dBm | 2=8dBm | 3=2dBm]",
@@ -57,6 +59,8 @@ void cli_setup() {
     cli.setOnError(&on_error_callback); // Set error Callback
 
     cmd_help = cli.addCommand("h/elp", on_cmd_help);
+
+    cmd_ebyte_info = cli.addCommand("i/nfo", on_cmd_ebyte_info);
 
     cmd_verbose = cli.addCommand("v/erbose", on_cmd_verbose);
     cmd_verbose.addPositionalArgument("level", "");
@@ -118,6 +122,25 @@ static void on_cmd_help(cmd *c) {
     term_println("[CLI] Help:");
     for (i = 0; i < sizeof(help_description)/sizeof(help_description[0]); i++) {
         term_println(help_description[i]);
+    }
+}
+
+// ----------------------------------------------------------------------------
+void on_cmd_ebyte_info(cmd *c) {
+    Command cmd(c);
+
+    String info;
+    ResponseStructContainer resp;
+    resp = ebyte.getVersionInfo(info);
+
+    resp.close();  // Clean c.data that was allocated in ::getConfiguration()
+
+    if (resp.status.code == ResponseStatus::SUCCESS){
+        term_print(F("[CLI] Ebyte version "));
+        term_println(info);
+    }
+    else {
+        term_println(resp.status.desc());  // Description of code
     }
 }
 

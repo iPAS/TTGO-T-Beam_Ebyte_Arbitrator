@@ -320,9 +320,8 @@ ResponseStructContainer EbyteModule::getConfiguration() {
 /**
  * @brief Get module info.
  *
- * @return ResponseStructContainer
  */
-ResponseStructContainer EbyteModule::getModuleInformation() {
+ResponseStructContainer EbyteModule::getVersionInfo(String & info) {
     ResponseStructContainer rc;
     uint8_t prev_code = this->current_mode->getMode();
     this->current_mode->setModeConfig();
@@ -333,10 +332,10 @@ ResponseStructContainer EbyteModule::getModuleInformation() {
     rc.status = this->setMode(this->current_mode);
     if (rc.status.code != ResponseStatus::SUCCESS) return rc;
 
-    this->writeProgramCommand(READ_MODULE_VERSION);
+    this->writeProgramCommand(READ_MODULE_VERSION);  // Send C3 C3 C3
 
-    struct ModuleInformation * moduleInformation = (ModuleInformation *)malloc(sizeof(ModuleInformation));
-    rc.status = this->receiveStruct((uint8_t *)moduleInformation, sizeof(ModuleInformation));
+    EbyteVersion * version = this->createVersion();
+    rc.status = this->receiveStruct(version->getData(), version->getLength());
     if (rc.status.code != ResponseStatus::SUCCESS) {
         this->current_mode->setMode(prev_code);
         this->setMode(this->current_mode);
@@ -347,19 +346,19 @@ ResponseStructContainer EbyteModule::getModuleInformation() {
     rc.status = this->setMode(this->current_mode);
     if (rc.status.code != ResponseStatus::SUCCESS) return rc;
 
-    if (0xC3 != moduleInformation->HEAD) {
+    if (version->isValid() == false) {
         rc.status.code = ResponseStatus::ERR_HEAD_NOT_RECOGNIZED;
     }
 
+    info = version->getInfo();
+
     #ifdef EBYTE_DEBUG
-    DEBUG_PRINTLN(F(EBYTE_LABEL "Module information"));
-    this->printHead(moduleInformation->HEAD);
-    DEBUG_PRINT(F(" Freq. : "));    DEBUG_PRINTLN(moduleInformation->frequency, HEX);
-    DEBUG_PRINT(F(" Ver.  : "));    DEBUG_PRINTLN(moduleInformation->version, HEX);
-    DEBUG_PRINT(F(" Features : ")); DEBUG_PRINTLN(moduleInformation->features, HEX);
+    DEBUG_PRINT(F(EBYTE_LABEL "Module information: "));
+    DEBUG_PRINTLN(info);
     #endif
 
-    rc.data = moduleInformation;  // malloc(sizeof (moduleInformation));
+    rc.data = malloc(version->getLength());
+    memcpy(rc.data, version->getData(), version->getLength());
     return rc;
 }
 

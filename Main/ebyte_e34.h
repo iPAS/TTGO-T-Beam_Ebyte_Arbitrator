@@ -35,6 +35,36 @@
 
 
 /**
+ * @brief EbyteVersionE34
+ *
+ */
+class EbyteVersionE34 : public EbyteVersion {
+
+  public:
+    EbyteVersionE34() : EbyteVersion(4) {}
+    String getInfo(void) {
+        struct Version {
+            byte HEAD;
+            byte series_no;
+            byte version_no;
+            byte features;
+        } * p = (Version *)this->data;
+
+        if (p->HEAD != READ_MODULE_VERSION) {
+            this->valid = false;
+            return F("");
+        }
+
+        this->valid = true;
+        char str[30];
+        snprintf(str, sizeof(str), "series(%02X) ver(%02X) feat(%02X)",
+            p->series_no, p->version_no, p->features);
+        return String(str);
+    }
+};
+
+
+/**
  * @brief EbyteModeE34
  *
  */
@@ -67,6 +97,7 @@ class EbyteE34 : public EbyteModule {
 
   protected:
     EbyteMode * createMode(void) const override;
+    EbyteVersion * createVersion(void) const override;
 };
 
 
