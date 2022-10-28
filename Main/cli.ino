@@ -8,7 +8,7 @@
 
 SimpleCLI cli;
 Command cmd_help;
-Command cmd_ebyte_info;
+Command cmd_ebyte_version_info;
 Command cmd_verbose;
 Command cmd_ebyte_airrate;
 Command cmd_ebyte_txpower;
@@ -60,7 +60,7 @@ void cli_setup() {
 
     cmd_help = cli.addCommand("h/elp", on_cmd_help);
 
-    cmd_ebyte_info = cli.addCommand("i/nfo", on_cmd_ebyte_info);
+    cmd_ebyte_version_info = cli.addCommand("i/nfo", on_cmd_ebyte_version_info);
 
     cmd_verbose = cli.addCommand("v/erbose", on_cmd_verbose);
     cmd_verbose.addPositionalArgument("level", "");
@@ -126,22 +126,24 @@ static void on_cmd_help(cmd *c) {
 }
 
 // ----------------------------------------------------------------------------
-void on_cmd_ebyte_info(cmd *c) {
-    Command cmd(c);
+void on_cmd_ebyte_version_info(cmd *c) {
+    uint32_t old_baud = ebyte.getBpsRate();
+    ebyte.setBpsRate(EBYTE_CONFIG_BAUD);
 
     String info;
     ResponseStructContainer resp;
-    resp = ebyte.getVersionInfo(info);
-
+    resp = ebyte.getVersionInfo(info);  // Get c.data from here
     resp.close();  // Clean c.data that was allocated in ::getConfiguration()
 
+    term_print(F("[CLI] Ebyte version: "));
     if (resp.status.code == ResponseStatus::SUCCESS){
-        term_print(F("[CLI] Ebyte version "));
         term_println(info);
     }
     else {
         term_println(resp.status.desc());  // Description of code
     }
+
+    ebyte.setBpsRate(old_baud);
 }
 
 // ----------------------------------------------------------------------------
@@ -255,12 +257,12 @@ void on_cmd_ebyte_get_config(cmd *c) {
 
     ResponseStructContainer resp;
     resp = ebyte.getConfiguration();  // Get c.data from here
-    Configuration cfg = *((Configuration *)resp.data); // This is a memory transfer, NOT by-reference.
-                                                    // It's important get configuration pointer before all other operation.
+    Configuration cfg = *((Configuration *)resp.data);  // This is a memory transfer, NOT by-reference.
+                                                        // It's important get configuration pointer before all other operation.
     resp.close();  // Clean c.data that was allocated in ::getConfiguration()
 
+    term_println(F("[CLI] Ebyte configuration: "));
     if (resp.status.code == ResponseStatus::SUCCESS){
-        term_println(F("[CLI] Ebyte configuration"));
         ebyte.printParameters(cfg);
     }
     else {

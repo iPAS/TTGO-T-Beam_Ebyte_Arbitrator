@@ -297,7 +297,6 @@ class EbyteVersion {
     EbyteVersion(uint8_t maxlen) {
         this->maxlen = maxlen;
         this->data = new uint8_t[maxlen];
-        this->valid = false;
     }
     ~EbyteVersion() {
         delete [] this->data;
@@ -305,12 +304,11 @@ class EbyteVersion {
 
     uint8_t getLength() { return this->maxlen; }
     uint8_t * getData() { return this->data; }
-    bool isValid() { return this->valid; }
+    bool isValid() { return this->data[0] == READ_MODULE_VERSION; }
 
     virtual String getInfo(void) = 0;
 
   protected:
-    bool valid;
     uint8_t maxlen;
     uint8_t *data;
 };

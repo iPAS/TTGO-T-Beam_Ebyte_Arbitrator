@@ -50,15 +50,8 @@ class EbyteVersionE34 : public EbyteVersion {
             byte features;
         } * p = (Version *)this->data;
 
-        if (p->HEAD != READ_MODULE_VERSION) {
-            this->valid = false;
-            return F("");
-        }
-
-        this->valid = true;
         char str[30];
-        snprintf(str, sizeof(str), "series(%02X) ver(%02X) feat(%02X)",
-            p->series_no, p->version_no, p->features);
+        snprintf(str, sizeof(str), "series(%02X) ver(%02X) feat(%02X)", p->series_no, p->version_no, p->features);
         return String(str);
     }
 };
