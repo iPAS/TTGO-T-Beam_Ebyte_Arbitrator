@@ -261,7 +261,7 @@ void on_cmd_ebyte_get_config(cmd *c) {
 
     if (resp.status.code == ResponseStatus::SUCCESS){
         term_println(F("[CLI] Ebyte configuration"));
-        ebyte.printParameters(&cfg);
+        ebyte.printParameters(cfg);
     }
     else {
         term_println(resp.status.desc());  // Description of code

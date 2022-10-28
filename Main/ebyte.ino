@@ -54,7 +54,7 @@ void ebyte_setup() {
             // Old configuration
             //
             term_println(F("[EBYTE] Old configuration"));
-            ebyte.printParameters(&cfg);
+            ebyte.printParameters(cfg);
 
             //
             // Setup the desired mode
@@ -80,7 +80,7 @@ void ebyte_setup() {
 
             if (rc.status.code == ResponseStatus::SUCCESS){
                 term_println(F("[EBYTE] New configuration"));
-                ebyte.printParameters(&cfg);
+                ebyte.printParameters(cfg);
             }
             else {
                 term_print(F("[EBYTE] Re-checking failed!, E34: "));

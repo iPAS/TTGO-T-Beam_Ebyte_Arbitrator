@@ -65,13 +65,96 @@
 #define EBYTE_UART_BUFFER_TMO   1000
 
 
-enum PROGRAM_COMMAND {
+/**
+ * @brief Commands
+ *
+ */
+enum EBYTE_COMMAND_T {
     WRITE_CFG_PWR_DWN_SAVE = 0xC0,
     READ_CONFIGURATION     = 0xC1,
     WRITE_CFG_PWR_DWN_LOSE = 0xC2,
     READ_MODULE_VERSION    = 0xC3,
     WRITE_RESET_MODULE     = 0xC4
 };
+
+
+/**
+ * @brief Fixed tx-mode frame
+ *
+ */
+#pragma pack(push, 1)
+
+typedef struct {
+    byte addr_msb = 0;
+    byte addr_lsb = 0;
+    byte channel = 0;
+    unsigned char message[];
+} FixedTxModeFrame;
+
+#pragma pack(pop)
+
+
+/**
+ * @brief Responses
+ *
+ */
+struct ResponseStatus {
+    typedef enum {
+        SUCCESS = 1,
+        ERR_UNKNOWN, /* something shouldn't happened */
+        ERR_NOT_SUPPORT,
+        ERR_NOT_IMPLEMENT,
+        ERR_NOT_INITIAL,
+        ERR_INVALID_PARAM,
+        ERR_DATA_SIZE_NOT_MATCH,
+        ERR_BUF_TOO_SMALL,
+        ERR_TIMEOUT,
+        ERR_HARDWARE,
+        ERR_HEAD_NOT_RECOGNIZED,
+        ERR_NO_RESPONSE_FROM_DEVICE,
+        ERR_WRONG_UART_CONFIG,
+        ERR_PACKET_TOO_BIG
+    } Status;
+
+    Status code;
+
+    String desc() {
+        switch (this->code) {
+            case SUCCESS:                   return F("Success");
+            case ERR_UNKNOWN:               return F("Unknown");
+            case ERR_NOT_SUPPORT:           return F("Not support!");
+            case ERR_NOT_IMPLEMENT:         return F("Not implement");
+            case ERR_NOT_INITIAL:           return F("Not initial!");
+            case ERR_INVALID_PARAM:         return F("Invalid param!");
+            case ERR_DATA_SIZE_NOT_MATCH:   return F("Data size not match!");
+            case ERR_BUF_TOO_SMALL:         return F("Buff too small!");
+            case ERR_TIMEOUT:               return F("Timeout!!");
+            case ERR_HARDWARE:              return F("Hardware error!");
+            case ERR_HEAD_NOT_RECOGNIZED:   return F("Save mode returned not recognized!");
+            case ERR_NO_RESPONSE_FROM_DEVICE: return F("No response from device! (Check wiring)");
+            case ERR_WRONG_UART_CONFIG:     return F("Wrong UART configuration! (BPS must be " STR(EBYTE_CONFIG_BAUD) " for configuration)");
+            case ERR_PACKET_TOO_BIG:        return F("Support only " STR(EBYTE_MODULE_BUFFER_SIZE) " bytes of data transmission!");
+        }
+        return F("Invalid status!");
+    }
+};
+
+struct ResponseStructContainer {
+    void *         data;
+    ResponseStatus status;
+    void           close() { free(this->data); }
+};
+
+struct ResponseContainer {
+    String         data;
+    ResponseStatus status;
+};
+
+
+/**
+ * @brief Class Ebyte configuration
+ *
+ */
 
 enum UART_PARITY {
     UART_PARITY_8N1 = 0b00,
@@ -204,79 +287,6 @@ struct Configuration {
 
 
 /**
- * @brief Fixed tx-mode frame
- * 
- */
-#pragma pack(push, 1)
-
-typedef struct {
-    byte ADDH = 0;
-    byte ADDL = 0;
-    byte CHAN = 0;
-    unsigned char message[];
-} FixedTxModeFrame;
-
-#pragma pack(pop)
-
-
-/**
- * @brief Responses
- * 
- */
-struct ResponseStatus {
-    typedef enum {
-        SUCCESS = 1,
-        ERR_UNKNOWN, /* something shouldn't happened */
-        ERR_NOT_SUPPORT,
-        ERR_NOT_IMPLEMENT,
-        ERR_NOT_INITIAL,
-        ERR_INVALID_PARAM,
-        ERR_DATA_SIZE_NOT_MATCH,
-        ERR_BUF_TOO_SMALL,
-        ERR_TIMEOUT,
-        ERR_HARDWARE,
-        ERR_HEAD_NOT_RECOGNIZED,
-        ERR_NO_RESPONSE_FROM_DEVICE,
-        ERR_WRONG_UART_CONFIG,
-        ERR_PACKET_TOO_BIG
-    } Status;
-
-    Status code;
-
-    String desc() {
-        switch (this->code) {
-            case SUCCESS:                   return F("Success");
-            case ERR_UNKNOWN:               return F("Unknown");
-            case ERR_NOT_SUPPORT:           return F("Not support!");
-            case ERR_NOT_IMPLEMENT:         return F("Not implement");
-            case ERR_NOT_INITIAL:           return F("Not initial!");
-            case ERR_INVALID_PARAM:         return F("Invalid param!");
-            case ERR_DATA_SIZE_NOT_MATCH:   return F("Data size not match!");
-            case ERR_BUF_TOO_SMALL:         return F("Buff too small!");
-            case ERR_TIMEOUT:               return F("Timeout!!");
-            case ERR_HARDWARE:              return F("Hardware error!");
-            case ERR_HEAD_NOT_RECOGNIZED:   return F("Save mode returned not recognized!");
-            case ERR_NO_RESPONSE_FROM_DEVICE: return F("No response from device! (Check wiring)");
-            case ERR_WRONG_UART_CONFIG:     return F("Wrong UART configuration! (BPS must be " STR(EBYTE_CONFIG_BAUD) " for configuration)");
-            case ERR_PACKET_TOO_BIG:        return F("Support only " STR(EBYTE_MODULE_BUFFER_SIZE) " bytes of data transmission!");
-        }
-        return F("Invalid status!");
-    }
-};
-
-struct ResponseStructContainer {
-    void *         data;
-    ResponseStatus status;
-    void           close() { free(this->data); }
-};
-
-struct ResponseContainer {
-    String         data;
-    ResponseStatus status;
-};
-
-
-/**
  * @brief Class Ebyte version info.
  *
  */
@@ -343,7 +353,7 @@ class EbyteModule {
     bool begin();
 
     ResponseStructContainer getConfiguration();
-    ResponseStatus          setConfiguration(Configuration configuration, PROGRAM_COMMAND saveType = WRITE_CFG_PWR_DWN_LOSE);
+    ResponseStatus          setConfiguration(Configuration & config, EBYTE_COMMAND_T saveType = WRITE_CFG_PWR_DWN_LOSE);
 
     ResponseStructContainer getVersionInfo(String & info);
     ResponseStatus          resetModule();
@@ -351,10 +361,10 @@ class EbyteModule {
     ResponseStatus          sendMessage(const void * message, size_t size);
     ResponseStatus          sendMessage(const String message);
 
-    ResponseStatus          sendFixedTxModeMessage(byte ADDH, byte ADDL, byte CHAN, const void * message, size_t size);
-    ResponseStatus          sendFixedTxModeMessage(byte ADDH, byte ADDL, byte CHAN, const String message);
-    ResponseStatus          sendFixedTxModeMessage(byte CHAN, const void * message, size_t size);  // Broadcast
-    ResponseStatus          sendFixedTxModeMessage(byte CHAN, const String message);  // Broadcast
+    ResponseStatus          sendFixedTxModeMessage(byte addh, byte addl, byte chan, const void * message, size_t size);
+    ResponseStatus          sendFixedTxModeMessage(byte addh, byte addl, byte chan, const String message);
+    ResponseStatus          sendFixedTxModeMessage(byte chan, const void * message, size_t size);  // Broadcast
+    ResponseStatus          sendFixedTxModeMessage(byte chan, const String message);  // Broadcast
 
     ResponseContainer       receiveMessage();
     ResponseStructContainer receiveMessageFixedSize(size_t size);
@@ -370,8 +380,8 @@ class EbyteModule {
     uint32_t getBpsRate();
     void    setBpsRate(uint32_t new_bps);
 
-    void    printHead(byte HEAD);
-    void    printParameters(struct Configuration * cfg);
+    void    printHead(byte head);
+    void    printParameters(Configuration & config);
 
     size_t          lengthMessageQueueTx();
     ResponseStatus  fragmentMessageQueueTx(const void * message, size_t size);
@@ -397,7 +407,7 @@ class EbyteModule {
     void flush();
     void cleanUARTBuffer();
 
-    void writeProgramCommand(PROGRAM_COMMAND cmd);
+    void writeProgramCommand(EBYTE_COMMAND_T cmd);
 
     EbyteMode * current_mode = NULL;
     virtual EbyteMode * createMode(void) const = 0;

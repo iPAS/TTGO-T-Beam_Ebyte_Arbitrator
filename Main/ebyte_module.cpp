@@ -265,7 +265,7 @@ EbyteMode * EbyteModule::getMode() {
  *
  * @param cmd
  */
-void EbyteModule::writeProgramCommand(PROGRAM_COMMAND cmd) {
+void EbyteModule::writeProgramCommand(EBYTE_COMMAND_T cmd) {
     uint8_t CMD[3] = {cmd, cmd, cmd};
     // uint8_t size =
     this->hs->write(CMD, 3);
@@ -283,7 +283,7 @@ ResponseStructContainer EbyteModule::getConfiguration() {
     uint8_t prev_code = this->current_mode->getMode();
     this->current_mode->setModeConfig();
 
-    rc.status = checkUARTConfiguration(this->current_mode);
+    rc.status = this->checkUARTConfiguration(this->current_mode);
     if (rc.status.code != ResponseStatus::SUCCESS) return rc;
 
     rc.status = this->setMode(this->current_mode);
@@ -326,7 +326,7 @@ ResponseStructContainer EbyteModule::getVersionInfo(String & info) {
     uint8_t prev_code = this->current_mode->getMode();
     this->current_mode->setModeConfig();
 
-    rc.status = checkUARTConfiguration(this->current_mode);
+    rc.status = this->checkUARTConfiguration(this->current_mode);
     if (rc.status.code != ResponseStatus::SUCCESS) return rc;
 
     rc.status = this->setMode(this->current_mode);
@@ -370,22 +370,21 @@ ResponseStructContainer EbyteModule::getVersionInfo(String & info) {
  * @param saveType
  * @return ResponseStatus
  */
-ResponseStatus EbyteModule::setConfiguration(Configuration configuration, PROGRAM_COMMAND saveType) {
+ResponseStatus EbyteModule::setConfiguration(Configuration & config, EBYTE_COMMAND_T saveType) {
     ResponseStatus status;
     uint8_t prev_code = this->current_mode->getMode();
     this->current_mode->setModeConfig();
 
-    status = checkUARTConfiguration(this->current_mode);
+    status = this->checkUARTConfiguration(this->current_mode);
     if (status.code != ResponseStatus::SUCCESS) return status;
-
 
     status = this->setMode(this->current_mode);
     if (status.code != ResponseStatus::SUCCESS) return status;
 
     this->writeProgramCommand(READ_CONFIGURATION);
 
-    configuration.HEAD = saveType;
-    status = this->sendStruct((uint8_t *)&configuration, sizeof(Configuration));
+    config.HEAD = saveType;
+    status = this->sendStruct((uint8_t *)&config, sizeof(Configuration));
     if (status.code != ResponseStatus::SUCCESS) {
         this->current_mode->setMode(prev_code);
         this->setMode(this->current_mode);
@@ -394,15 +393,15 @@ ResponseStatus EbyteModule::setConfiguration(Configuration configuration, PROGRA
 
     #ifdef EBYTE_DEBUG
     DEBUG_PRINTLN(F(EBYTE_LABEL "Set configuration"));
-    this->printHead(configuration.HEAD);
+    this->printHead(config.HEAD);
     #endif
 
     this->current_mode->setMode(prev_code);
     status = this->setMode(this->current_mode);
     if (status.code != ResponseStatus::SUCCESS) return status;
 
-    if ((0xC0 != configuration.HEAD) &&
-        (0xC2 != configuration.HEAD)) {
+    if ((0xC0 != config.HEAD) &&
+        (0xC2 != config.HEAD)) {
         status.code = ResponseStatus::ERR_HEAD_NOT_RECOGNIZED;
     }
 
@@ -420,7 +419,7 @@ ResponseStatus EbyteModule::resetModule() {
     uint8_t prev_code = this->current_mode->getMode();
     this->current_mode->setModeConfig();
 
-    status = checkUARTConfiguration(this->current_mode);
+    status = this->checkUARTConfiguration(this->current_mode);
     if (status.code != ResponseStatus::SUCCESS) return status;
 
     status = this->setMode(this->current_mode);
@@ -552,26 +551,26 @@ ResponseStatus EbyteModule::sendMessage(const void * message, size_t size) {
     return status;
 }
 
-ResponseStatus EbyteModule::sendFixedTxModeMessage(byte CHAN, const String message) {
-    return this->sendFixedTxModeMessage(EBYTE_BROADCAST_ADDR, EBYTE_BROADCAST_ADDR, CHAN, message);
+ResponseStatus EbyteModule::sendFixedTxModeMessage(byte chan, const String message) {
+    return this->sendFixedTxModeMessage(EBYTE_BROADCAST_ADDR, EBYTE_BROADCAST_ADDR, chan, message);
 }
 
-ResponseStatus EbyteModule::sendFixedTxModeMessage(byte ADDH, byte ADDL, byte CHAN, const String message) {
-    return this->sendFixedTxModeMessage(ADDH, ADDL, CHAN, message.c_str(), message.length());
+ResponseStatus EbyteModule::sendFixedTxModeMessage(byte addh, byte addl, byte chan, const String message) {
+    return this->sendFixedTxModeMessage(addh, addl, chan, message.c_str(), message.length());
 }
 
-ResponseStatus EbyteModule::sendFixedTxModeMessage(byte CHAN, const void * message, size_t size) {
-    return this->sendFixedTxModeMessage(EBYTE_BROADCAST_ADDR, EBYTE_BROADCAST_ADDR, CHAN, message, size);
+ResponseStatus EbyteModule::sendFixedTxModeMessage(byte chan, const void * message, size_t size) {
+    return this->sendFixedTxModeMessage(EBYTE_BROADCAST_ADDR, EBYTE_BROADCAST_ADDR, chan, message, size);
 }
 
-ResponseStatus EbyteModule::sendFixedTxModeMessage(byte ADDH, byte ADDL, byte CHAN, const void * message, size_t size) {
+ResponseStatus EbyteModule::sendFixedTxModeMessage(byte addh, byte addl, byte chan, const void * message, size_t size) {
     size_t message_size = sizeof(* FixedTxModeFrame::message) * size;
     size_t packet_size = sizeof(FixedTxModeFrame) + message_size;  // sizeof(FixedStransmission) neglect ::message !
     FixedTxModeFrame * packet = (FixedTxModeFrame *)malloc(packet_size);
 
-    packet->ADDH = ADDH;
-    packet->ADDL = ADDL;
-    packet->CHAN = CHAN;
+    packet->addr_msb = addh;
+    packet->addr_lsb = addl;
+    packet->channel = chan;
     memcpy(packet->message, message, message_size);
 
     ResponseStatus status = this->sendMessage(packet, packet_size);
@@ -636,27 +635,27 @@ size_t EbyteModule::processMessageQueueTx() {
  *
  */
 
-void EbyteModule::printHead(byte HEAD) {
+void EbyteModule::printHead(byte head) {
     term_print(F(" HEAD : "));
-    term_print(HEAD, BIN); term_print(" ");
-    term_print(HEAD, DEC); term_print(" ");
-    term_println(HEAD, HEX);
+    term_print(head, BIN); term_print(" ");
+    term_print(head, DEC); term_print(" ");
+    term_println(head, HEX);
 }
 
-void EbyteModule::printParameters(struct Configuration * cfg) {
-    this->printHead(cfg->HEAD);
+void EbyteModule::printParameters(Configuration & config) {
+    this->printHead(config.HEAD);
 
-    term_print(F(" AddH   : ")); term_println(cfg->ADDH, DEC);
-    term_print(F(" AddL   : ")); term_println(cfg->ADDL, DEC);
-    term_print(F(" Chan   : ")); term_println(cfg->CHAN, DEC);
+    term_print(F(" AddH   : ")); term_println(config.ADDH, DEC);
+    term_print(F(" AddL   : ")); term_println(config.ADDL, DEC);
+    term_print(F(" Chan   : ")); term_println(config.CHAN, DEC);
 
-    term_print(F(" Parity : ")); term_print(cfg->SPED.uartParity, BIN);   term_print(" -> "); term_println(cfg->SPED.parity_desc());
-    term_print(F(" Baud   : ")); term_print(cfg->SPED.uartBaudRate, BIN); term_print(" -> "); term_println(cfg->SPED.baudrate_desc());
-    term_print(F(" AirRate: ")); term_print(cfg->SPED.airDataRate, BIN);  term_print(" -> "); term_println(cfg->SPED.airrate_desc());
+    term_print(F(" Parity : ")); term_print(config.SPED.uartParity, BIN);   term_print(" -> "); term_println(config.SPED.parity_desc());
+    term_print(F(" Baud   : ")); term_print(config.SPED.uartBaudRate, BIN); term_print(" -> "); term_println(config.SPED.baudrate_desc());
+    term_print(F(" AirRate: ")); term_print(config.SPED.airDataRate, BIN);  term_print(" -> "); term_println(config.SPED.airrate_desc());
 
-    term_print(F(" OpTxMod: ")); term_print(cfg->OPTION.fixedTransmission, BIN); term_print(" -> "); term_println(cfg->OPTION.fixed_tx_desc());
-    term_print(F(" OpPlup : ")); term_print(cfg->OPTION.ioDriveMode, BIN);       term_print(" -> "); term_println(cfg->OPTION.io_drv_desc());
-    term_print(F(" OpTxPow: ")); term_print(cfg->OPTION.transmissionPower, BIN); term_print(" -> "); term_println(cfg->OPTION.txpower_desc());
+    term_print(F(" OpTxMod: ")); term_print(config.OPTION.fixedTransmission, BIN); term_print(" -> "); term_println(config.OPTION.fixed_tx_desc());
+    term_print(F(" OpPlup : ")); term_print(config.OPTION.ioDriveMode, BIN);       term_print(" -> "); term_println(config.OPTION.io_drv_desc());
+    term_print(F(" OpTxPow: ")); term_print(config.OPTION.transmissionPower, BIN); term_print(" -> "); term_println(config.OPTION.txpower_desc());
 
     term_println();
 }
