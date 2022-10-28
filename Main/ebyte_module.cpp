@@ -552,30 +552,30 @@ ResponseStatus EbyteModule::sendMessage(const void * message, size_t size) {
     return status;
 }
 
-ResponseStatus EbyteModule::sendBroadcastFixedMessage(byte CHAN, const String message) {
-    return this->sendFixedMessage(EBYTE_BROADCAST_ADDR, EBYTE_BROADCAST_ADDR, CHAN, message);
+ResponseStatus EbyteModule::sendFixedTxModeMessage(byte CHAN, const String message) {
+    return this->sendFixedTxModeMessage(EBYTE_BROADCAST_ADDR, EBYTE_BROADCAST_ADDR, CHAN, message);
 }
 
-ResponseStatus EbyteModule::sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, const String message) {
-    return this->sendFixedMessage(ADDH, ADDL, CHAN, message.c_str(), message.length());
+ResponseStatus EbyteModule::sendFixedTxModeMessage(byte ADDH, byte ADDL, byte CHAN, const String message) {
+    return this->sendFixedTxModeMessage(ADDH, ADDL, CHAN, message.c_str(), message.length());
 }
 
-ResponseStatus EbyteModule::sendBroadcastFixedMessage(byte CHAN, const void * message, size_t size) {
-    return this->sendFixedMessage(EBYTE_BROADCAST_ADDR, EBYTE_BROADCAST_ADDR, CHAN, message, size);
+ResponseStatus EbyteModule::sendFixedTxModeMessage(byte CHAN, const void * message, size_t size) {
+    return this->sendFixedTxModeMessage(EBYTE_BROADCAST_ADDR, EBYTE_BROADCAST_ADDR, CHAN, message, size);
 }
 
-ResponseStatus EbyteModule::sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, const void * message, size_t size) {
-    size_t message_size = sizeof(* FixedStransmission::message) * size;
-    size_t packet_size = sizeof(FixedStransmission) + message_size;  // sizeof(FixedStransmission) neglect ::message !
-    FixedStransmission * fixedPacket = (FixedStransmission *)malloc(packet_size);
+ResponseStatus EbyteModule::sendFixedTxModeMessage(byte ADDH, byte ADDL, byte CHAN, const void * message, size_t size) {
+    size_t message_size = sizeof(* FixedTxModeFrame::message) * size;
+    size_t packet_size = sizeof(FixedTxModeFrame) + message_size;  // sizeof(FixedStransmission) neglect ::message !
+    FixedTxModeFrame * packet = (FixedTxModeFrame *)malloc(packet_size);
 
-    fixedPacket->ADDH = ADDH;
-    fixedPacket->ADDL = ADDL;
-    fixedPacket->CHAN = CHAN;
-    memcpy(fixedPacket->message, message, message_size);
+    packet->ADDH = ADDH;
+    packet->ADDL = ADDL;
+    packet->CHAN = CHAN;
+    memcpy(packet->message, message, message_size);
 
-    ResponseStatus status = this->sendMessage(fixedPacket, packet_size);
-    free(fixedPacket);
+    ResponseStatus status = this->sendMessage(packet, packet_size);
+    free(packet);
 
     return status;
 }

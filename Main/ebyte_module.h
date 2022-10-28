@@ -96,10 +96,6 @@ enum AIR_DATA_RATE {
     AIR_DATA_RATE_1M    = 0b001,
     AIR_DATA_RATE_2M    = 0b010,
     AIR_DATA_RATE_2M_   = 0b011,
-    // AIR_DATA_RATE_ = 0b100,
-    // AIR_DATA_RATE_ = 0b101,
-    // AIR_DATA_RATE_ = 0b110,
-    // AIR_DATA_RATE_ = 0b111
 };
 
 enum TRANSMISSION_MODE {
@@ -111,22 +107,6 @@ enum IO_DRIVE_MODE {
     IO_OPEN_COLLECTOR = 0b0,
     IO_PUSH_PULL = 0b1
 };
-
-// enum WIRELESS_WAKE_UP_TIME {
-//     WAKE_UP_250  = 0b000,
-//     WAKE_UP_500  = 0b001,
-//     WAKE_UP_750  = 0b010,
-//     WAKE_UP_1000 = 0b011,
-//     WAKE_UP_1250 = 0b100,
-//     WAKE_UP_1500 = 0b101,
-//     WAKE_UP_1750 = 0b110,
-//     WAKE_UP_2000 = 0b111
-// };
-
-// enum FORWARD_ERROR_CORRECTION_SWITCH {
-//     FEC_0_OFF = 0b0,
-//     FEC_1_ON = 0b1
-// };
 
 enum TRANSMISSION_POWER {
     TXPOWER_20    = 0b00,
@@ -220,16 +200,29 @@ struct Configuration {
     struct Option OPTION;
 };
 
+#pragma pack(pop)
+
+
+/**
+ * @brief Fixed tx-mode frame
+ * 
+ */
+#pragma pack(push, 1)
+
 typedef struct {
     byte ADDH = 0;
     byte ADDL = 0;
     byte CHAN = 0;
     unsigned char message[];
-} FixedStransmission;
+} FixedTxModeFrame;
 
 #pragma pack(pop)
 
 
+/**
+ * @brief Responses
+ * 
+ */
 struct ResponseStatus {
     typedef enum {
         SUCCESS = 1,
@@ -358,11 +351,10 @@ class EbyteModule {
     ResponseStatus          sendMessage(const void * message, size_t size);
     ResponseStatus          sendMessage(const String message);
 
-    ResponseStatus          sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, const void * message, size_t size);
-    ResponseStatus          sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, const String message);
-
-    ResponseStatus          sendBroadcastFixedMessage(byte CHAN, const void * message, size_t size);
-    ResponseStatus          sendBroadcastFixedMessage(byte CHAN, const String message);
+    ResponseStatus          sendFixedTxModeMessage(byte ADDH, byte ADDL, byte CHAN, const void * message, size_t size);
+    ResponseStatus          sendFixedTxModeMessage(byte ADDH, byte ADDL, byte CHAN, const String message);
+    ResponseStatus          sendFixedTxModeMessage(byte CHAN, const void * message, size_t size);  // Broadcast
+    ResponseStatus          sendFixedTxModeMessage(byte CHAN, const String message);  // Broadcast
 
     ResponseContainer       receiveMessage();
     ResponseStructContainer receiveMessageFixedSize(size_t size);
