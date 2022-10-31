@@ -156,49 +156,6 @@ struct ResponseContainer {
  *
  */
 
-enum UART_PARITY {
-    UART_PARITY_8N1 = 0b00,
-    UART_PARITY_8O1 = 0b01,
-    UART_PARITY_8E1 = 0b10,
-    UART_PARITY_8N1_ = 0b11
-};
-
-enum UART_BPS_RATE {
-    UART_BPS_1200   = 0b000,
-    UART_BPS_2400   = 0b001,
-    UART_BPS_4800   = 0b010,
-    UART_BPS_9600   = 0b011,
-    UART_BPS_19200  = 0b100,
-    UART_BPS_38400  = 0b101,
-    UART_BPS_57600  = 0b110,
-    UART_BPS_115200 = 0b111
-};
-
-enum AIR_DATA_RATE {
-    AIR_DATA_RATE_250   = 0b000,
-    AIR_DATA_RATE_1M    = 0b001,
-    AIR_DATA_RATE_2M    = 0b010,
-    AIR_DATA_RATE_2M_   = 0b011,
-};
-
-enum TRANSMISSION_MODE {
-    TXMODE_TRANS = 0b0,
-    TXMODE_FIXED = 0b1
-};
-
-enum IO_DRIVE_MODE {
-    IO_OPEN_COLLECTOR = 0b0,
-    IO_PUSH_PULL = 0b1
-};
-
-enum TRANSMISSION_POWER {
-    TXPOWER_20    = 0b00,
-    TXPOWER_14    = 0b01,
-    TXPOWER_8     = 0b10,
-    TXPOWER_2     = 0b11
-};
-
-
 #pragma pack(push, 1)
 
 struct Speed {
@@ -280,11 +237,11 @@ struct Configuration {
     byte   addr_msb = 0;
     byte   addr_lsb = 0;
 
-    Speed  SPED;
+    Speed  speed;
 
     byte   channel = 0;
 
-    Option OPTION;
+    Option option;
 
     byte getHead() const { return this->head; }
     void setHead(uint8_t h) { this->head = h; } 

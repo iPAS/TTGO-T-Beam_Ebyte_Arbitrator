@@ -2,7 +2,7 @@
 #define __VERSION_H__
 
 
-#define __GIT_SHA1_ID__ ", heads/re-design-0-gf3d09f4"
+#define __GIT_SHA1_ID__ ", heads/re-design-0-gf44a560"
 
 
 #endif  // __GIT_SHA1_ID__
