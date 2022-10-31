@@ -275,12 +275,19 @@ struct Option {
 };
 
 struct Configuration {
-    byte          HEAD = 0;
-    byte          ADDH = 0;
-    byte          ADDL = 0;
-    struct Speed  SPED;
-    byte          CHAN = 0;
-    struct Option OPTION;
+    byte   head = 0;
+
+    byte   addr_msb = 0;
+    byte   addr_lsb = 0;
+
+    Speed  SPED;
+
+    byte   channel = 0;
+
+    Option OPTION;
+
+    byte getHead() const { return this->head; }
+    void setHead(uint8_t h) { this->head = h; } 
 };
 
 #pragma pack(pop)
@@ -351,7 +358,7 @@ class EbyteModule {
     bool begin();
 
     ResponseStructContainer getConfiguration();
-    ResponseStatus          setConfiguration(Configuration & config, EBYTE_COMMAND_T saveType = WRITE_CFG_PWR_DWN_LOSE);
+    ResponseStatus          setConfiguration(Configuration & config, EBYTE_COMMAND_T save_type = WRITE_CFG_PWR_DWN_LOSE);
 
     ResponseStructContainer getVersionInfo(String & info);
     ResponseStatus          resetModule();

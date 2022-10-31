@@ -59,9 +59,9 @@ void ebyte_setup() {
             //
             // Setup the desired mode
             //
-            cfg.ADDH = EBYTE_BROADCAST_ADDR & 0x0F;  // No re-sending
-            cfg.ADDL = EBYTE_BROADCAST_ADDR;
-            cfg.CHAN = ebyte_channel;  // ch6 = 2.508 GHz -- out of WiFi channels
+            cfg.addr_msb = EBYTE_BROADCAST_ADDR & 0x0F;  // No re-sending
+            cfg.addr_lsb = EBYTE_BROADCAST_ADDR;
+            cfg.channel = ebyte_channel;  // ch6 = 2.508 GHz -- out of WiFi channels
             cfg.OPTION.transmissionPower    = ebyte_txpower_level;  // TXPOWER_20;
             cfg.OPTION.ioDriveMode          = IO_PUSH_PULL;
             cfg.OPTION.fixedTransmission    = TXMODE_TRANS;         // no special bytes leading
@@ -321,14 +321,14 @@ void ebyte_apply_configs() {
         void operator ()(Configuration * cfg) {
             cfg->SPED.airDataRate = ebyte_airrate_level;
             cfg->OPTION.transmissionPower = ebyte_txpower_level;
-            cfg->CHAN = ebyte_channel;
+            cfg->channel = ebyte_channel;
             ebyte.setConfiguration(*cfg);
         };
 
         bool validate(Configuration * cfg) {
             return (cfg->SPED.airDataRate         == ebyte_airrate_level  &&
                     cfg->OPTION.transmissionPower == ebyte_txpower_level  &&
-                    cfg->CHAN                     == ebyte_channel
+                    cfg->channel                     == ebyte_channel
                     )? true : false;
         };
     } setter(0);
@@ -390,12 +390,12 @@ void ebyte_set_channel(uint8_t ch) {
         Setter(uint8_t param): EbyteSetter(param) {};
 
         void operator ()(Configuration * cfg) {
-            cfg->CHAN = this->byte_param;
+            cfg->channel = this->byte_param;
             ebyte.setConfiguration(*cfg);
         };
 
         bool validate(Configuration * cfg) {
-            return (cfg->CHAN == this->byte_param)? true : false;
+            return (cfg->channel == this->byte_param)? true : false;
         };
     } setter(ch);
 

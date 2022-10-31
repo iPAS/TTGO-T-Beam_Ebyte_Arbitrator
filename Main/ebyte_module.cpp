@@ -301,15 +301,15 @@ ResponseStructContainer EbyteModule::getConfiguration() {
 
     #ifdef EBYTE_DEBUG
     DEBUG_PRINTLN(F(EBYTE_LABEL "Get configuration"));
-    this->printHead(((Configuration *)rc.data)->HEAD);
+    this->printHead(((Configuration *)rc.data)->getHead());
     #endif
 
     this->current_mode->setMode(prev_code);
     rc.status = this->setMode(this->current_mode);
     if (rc.status.code != ResponseStatus::SUCCESS) return rc;
 
-    if ((0xC0 != ((Configuration *)rc.data)->HEAD) &&
-        (0xC2 != ((Configuration *)rc.data)->HEAD)) {
+    if ((0xC0 != ((Configuration *)rc.data)->getHead()) &&
+        (0xC2 != ((Configuration *)rc.data)->getHead())) {
         rc.status.code = ResponseStatus::ERR_HEAD_NOT_RECOGNIZED;
     }
 
@@ -367,10 +367,10 @@ ResponseStructContainer EbyteModule::getVersionInfo(String & info) {
  * @brief Set configuration
  *
  * @param configuration
- * @param saveType
+ * @param save_type
  * @return ResponseStatus
  */
-ResponseStatus EbyteModule::setConfiguration(Configuration & config, EBYTE_COMMAND_T saveType) {
+ResponseStatus EbyteModule::setConfiguration(Configuration & config, EBYTE_COMMAND_T save_type) {
     ResponseStatus status;
     uint8_t prev_code = this->current_mode->getMode();
     this->current_mode->setModeConfig();
@@ -383,7 +383,7 @@ ResponseStatus EbyteModule::setConfiguration(Configuration & config, EBYTE_COMMA
 
     this->writeProgramCommand(READ_CONFIGURATION);
 
-    config.HEAD = saveType;
+    config.setHead(save_type);
     status = this->sendStruct((uint8_t *)&config, sizeof(Configuration));
     if (status.code != ResponseStatus::SUCCESS) {
         this->current_mode->setMode(prev_code);
@@ -393,15 +393,15 @@ ResponseStatus EbyteModule::setConfiguration(Configuration & config, EBYTE_COMMA
 
     #ifdef EBYTE_DEBUG
     DEBUG_PRINTLN(F(EBYTE_LABEL "Set configuration"));
-    this->printHead(config.HEAD);
+    this->printHead(config.getHead());
     #endif
 
     this->current_mode->setMode(prev_code);
     status = this->setMode(this->current_mode);
     if (status.code != ResponseStatus::SUCCESS) return status;
 
-    if ((0xC0 != config.HEAD) &&
-        (0xC2 != config.HEAD)) {
+    if ((0xC0 != config.getHead()) &&
+        (0xC2 != config.getHead())) {
         status.code = ResponseStatus::ERR_HEAD_NOT_RECOGNIZED;
     }
 
@@ -643,11 +643,11 @@ void EbyteModule::printHead(byte head) {
 }
 
 void EbyteModule::printParameters(Configuration & config) {
-    this->printHead(config.HEAD);
+    this->printHead(config.getHead());
 
-    term_print(F(" AddH   : ")); term_println(config.ADDH, DEC);
-    term_print(F(" AddL   : ")); term_println(config.ADDL, DEC);
-    term_print(F(" Chan   : ")); term_println(config.CHAN, DEC);
+    term_print(F(" AddH   : ")); term_println(config.addr_msb, DEC);
+    term_print(F(" AddL   : ")); term_println(config.addr_lsb, DEC);
+    term_print(F(" Chan   : ")); term_println(config.channel, DEC);
 
     term_print(F(" Parity : ")); term_print(config.SPED.uartParity, BIN);   term_print(" -> "); term_println(config.SPED.parity_desc());
     term_print(F(" Baud   : ")); term_print(config.SPED.uartBaudRate, BIN); term_print(" -> "); term_println(config.SPED.baudrate_desc());
