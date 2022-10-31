@@ -8,6 +8,7 @@
 
 SimpleCLI cli;
 Command cmd_help;
+Command cmd_reset;
 Command cmd_ebyte_version_info;
 Command cmd_verbose;
 Command cmd_ebyte_airrate;
@@ -26,6 +27,7 @@ Command cmd_print_gps;
 
 const static char *help_description[] = {
     "\thelp",
+    "\treset           -- reset",
     "\tinfo            -- get module version infomation",
     "\tverbose [level] -- show or set info level [0=none | 1=err | 2=warn | 3=info | 4=debug]",
     "\tairrate [level] -- show or set airrate level [0=250kbps | 1=1Mbps | 2=2Mbps]",
@@ -59,6 +61,8 @@ void cli_setup() {
     cli.setOnError(&on_error_callback); // Set error Callback
 
     cmd_help = cli.addCommand("h/elp", on_cmd_help);
+
+    cmd_help = cli.addCommand("re/set", on_cmd_reset);
 
     cmd_ebyte_version_info = cli.addCommand("i/nfo", on_cmd_ebyte_version_info);
 
@@ -123,6 +127,12 @@ static void on_cmd_help(cmd *c) {
     for (i = 0; i < sizeof(help_description)/sizeof(help_description[0]); i++) {
         term_println(help_description[i]);
     }
+}
+
+// ----------------------------------------------------------------------------
+static void on_cmd_reset(cmd *c) {
+    term_println("[CLI] Reset... bye");
+    ESP.restart();
 }
 
 // ----------------------------------------------------------------------------
