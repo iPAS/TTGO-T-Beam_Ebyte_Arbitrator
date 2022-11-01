@@ -8,6 +8,8 @@
 
 SimpleCLI cli;
 Command cmd_help;
+Command cmd_reset;
+Command cmd_ebyte_version_info;
 Command cmd_verbose;
 Command cmd_ebyte_airrate;
 Command cmd_ebyte_txpower;
@@ -25,6 +27,8 @@ Command cmd_print_gps;
 
 const static char *help_description[] = {
     "\thelp",
+    "\treset           -- reset",
+    "\tinfo            -- get module version infomation",
     "\tverbose [level] -- show or set info level [0=none | 1=err | 2=warn | 3=info | 4=debug]",
     "\tairrate [level] -- show or set airrate level [0=250kbps | 1=1Mbps | 2=2Mbps]",
     "\ttxpower [level] -- show or set txpower level [0=20dBm | 1=14dBm | 2=8dBm | 3=2dBm]",
@@ -57,6 +61,10 @@ void cli_setup() {
     cli.setOnError(&on_error_callback); // Set error Callback
 
     cmd_help = cli.addCommand("h/elp", on_cmd_help);
+
+    cmd_help = cli.addCommand("re/set", on_cmd_reset);
+
+    cmd_ebyte_version_info = cli.addCommand("i/nfo", on_cmd_ebyte_version_info);
 
     cmd_verbose = cli.addCommand("v/erbose", on_cmd_verbose);
     cmd_verbose.addPositionalArgument("level", "");
@@ -119,6 +127,33 @@ static void on_cmd_help(cmd *c) {
     for (i = 0; i < sizeof(help_description)/sizeof(help_description[0]); i++) {
         term_println(help_description[i]);
     }
+}
+
+// ----------------------------------------------------------------------------
+static void on_cmd_reset(cmd *c) {
+    term_println("[CLI] Reset... bye");
+    ESP.restart();
+}
+
+// ----------------------------------------------------------------------------
+void on_cmd_ebyte_version_info(cmd *c) {
+    uint32_t old_baud = ebyte.getBpsRate();
+    ebyte.setBpsRate(EBYTE_CONFIG_BAUD);
+
+    String info;
+    ResponseStructContainer resp;
+    resp = ebyte.getVersionInfo(info);  // Get c.data from here
+    resp.close();  // Clean c.data that was allocated in ::getConfiguration()
+
+    term_print(F("[CLI] Ebyte version: "));
+    if (resp.status.code == ResponseStatus::SUCCESS){
+        term_println(info);
+    }
+    else {
+        term_println(resp.status.desc());  // Description of code
+    }
+
+    ebyte.setBpsRate(old_baud);
 }
 
 // ----------------------------------------------------------------------------
@@ -214,7 +249,7 @@ static void on_cmd_ebyte_send(cmd *c) {
 
     uint8_t len = msg.length();
     ResponseStatus status = ebyte.sendMessage(msg.c_str(), len);
-    if (status.code != E34_SUCCESS) {
+    if (status.code != ResponseStatus::SUCCESS) {
         term_print("[CLI] Ebyte send error, E34:");
         term_println(status.desc());
     }
@@ -228,23 +263,23 @@ void on_cmd_ebyte_get_config(cmd *c) {
     Command cmd(c);
 
     uint32_t old_baud = ebyte.getBpsRate();
-    ebyte.changeBpsRate(EBYTE_CONFIG_BAUD);
+    ebyte.setBpsRate(EBYTE_CONFIG_BAUD);
 
     ResponseStructContainer resp;
     resp = ebyte.getConfiguration();  // Get c.data from here
-    Configuration cfg = *((Configuration *)resp.data); // This is a memory transfer, NOT by-reference.
-                                                    // It's important get configuration pointer before all other operation.
+    Configuration cfg = *((Configuration *)resp.data);  // This is a memory transfer, NOT by-reference.
+                                                        // It's important get configuration pointer before all other operation.
     resp.close();  // Clean c.data that was allocated in ::getConfiguration()
 
-    if (resp.status.code == E34_SUCCESS){
-        term_println(F("[CLI] Ebyte configuration"));
-        ebyte.printParameters(&cfg);
+    term_println(F("[CLI] Ebyte configuration: "));
+    if (resp.status.code == ResponseStatus::SUCCESS){
+        ebyte.printParameters(cfg);
     }
     else {
         term_println(resp.status.desc());  // Description of code
     }
 
-    ebyte.changeBpsRate(old_baud);
+    ebyte.setBpsRate(old_baud);
 }
 
 // ----------------------------------------------------------------------------

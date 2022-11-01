@@ -1,12 +1,5 @@
-/*
- * AUthOR: Pasakorn Tiwatthanont (iPAS)
- *
- * The source is originated from EBYTE LoRa E32 Series
- *
- * AUTHOR:  Renzo Mischianti
- * VERSION: 1.5.6
- *
- * https://www.mischianti.org/category/my-libraries/lora-e32-devices/
+/**
+ * @author Pasakorn Tiwatthanont (iPAS)
  *
  * The MIT License (MIT)
  *
@@ -37,89 +30,214 @@
 #define __EBYTE_E34_H__
 
 
-#if ARDUINO >= 100
-#include "Arduino.h"
-#else
-#include "WProgram.h"
-#endif
-
-#include "ebyte_e34_def.h"
-#include "queue.h"
+#include <Arduino.h>
+#include "ebyte_module.h"
 
 
 /**
- * @brief Class Ebyte E34 Interfacing
+ * @brief Class Ebyte configuration
  *
  */
-class Ebyte_E34 {
+
+enum UART_PARITY {
+    UART_PARITY_8N1 = 0b00,
+    UART_PARITY_8O1 = 0b01,
+    UART_PARITY_8E1 = 0b10,
+    UART_PARITY_8N1_ = 0b11
+};
+
+enum UART_BPS_RATE {
+    UART_BPS_1200   = 0b000,
+    UART_BPS_2400   = 0b001,
+    UART_BPS_4800   = 0b010,
+    UART_BPS_9600   = 0b011,
+    UART_BPS_19200  = 0b100,
+    UART_BPS_38400  = 0b101,
+    UART_BPS_57600  = 0b110,
+    UART_BPS_115200 = 0b111
+};
+
+enum AIR_DATA_RATE {
+    AIR_DATA_RATE_250   = 0b000,
+    AIR_DATA_RATE_1M    = 0b001,
+    AIR_DATA_RATE_2M    = 0b010,
+    AIR_DATA_RATE_2M_   = 0b011,
+};
+
+enum TRANSMISSION_MODE {
+    TXMODE_TRANS = 0b0,
+    TXMODE_FIXED = 0b1
+};
+
+enum IO_DRIVE_MODE {
+    IO_OPEN_COLLECTOR = 0b0,
+    IO_PUSH_PULL = 0b1
+};
+
+enum TRANSMISSION_POWER {
+    TXPOWER_20    = 0b00,
+    TXPOWER_14    = 0b01,
+    TXPOWER_8     = 0b10,
+    TXPOWER_2     = 0b11
+};
+
+
+#pragma pack(push, 1)
+
+struct Speed {
+    uint8_t airDataRate : 3;    // bit 0-2
+    String airrate_desc() {
+        switch (this->airDataRate) {
+            case 0:     return F("250kbps");
+            case 1:     return F("1Mbps");
+            case 2:     return F("2Mbps");
+            case 3:     return F("2Mbps");
+            default:    return F("N/A");
+        }
+    }
+
+    uint8_t uartBaudRate : 3;   // bit 3-5
+    String baudrate_desc() {
+        switch (this->uartBaudRate) {
+            case 0:     return F("1200bps");
+            case 1:     return F("2400bps");
+            case 2:     return F("4800bps");
+            case 3:     return F("9600bps");
+            case 4:     return F("19200bps");
+            case 5:     return F("38400bps");
+            case 6:     return F("57600bps");
+            case 7:     return F("115200bps");
+            default:    return F("N/A");
+        }
+    }
+
+    uint8_t uartParity : 2;     // bit 6-7
+    String parity_desc() {
+        switch (this->uartParity) {
+            case 0:     return F("8N1");
+            case 1:     return F("8O1");
+            case 2:     return F("8E1");
+            case 3:     return F("8N1");
+            default:    return F("N/A");
+        }
+    }
+};
+
+
+struct Option {
+    byte   transmissionPower : 2;   // bit 0-1
+    String txpower_desc() {
+        switch (this->transmissionPower) {
+            case 0:     return F("20dBm");
+            case 1:     return F("14dBm");
+            case 2:     return F("8dBm");
+            case 3:     return F("2dBm");
+            default:    return F("N/A");
+        }
+    }
+
+    byte   fec : 1;                 // bit 2 -- Reserevd in E34
+    byte   wirelessWakeupTime : 3;  // bit 3-5 -- Reserved in E34
+
+    byte   ioDriveMode : 1;         // bit 6
+    String io_drv_desc() {
+        switch (this->ioDriveMode) {
+            case 0:     return F("AUX Open-Collector");
+            case 1:     return F("AUX Push-Pull");
+            default:    return F("N/A");
+        }
+    }
+
+    byte   fixedTransmission : 1;   // bit 7
+    String fixed_tx_desc() {
+        switch (this->fixedTransmission) {
+            case 0:     return F("Trans");
+            case 1:     return F("Fixed");
+            default:    return F("N/A");
+        }
+    }
+};
+
+#pragma pack(pop)
+
+
+/**
+ * @brief EbyteVersionE34
+ *
+ */
+class EbyteVersionE34 : public EbyteVersion {
+
   public:
-    Ebyte_E34(HardwareSerial * serial, byte auxPin, byte m0Pin, byte m1Pin, byte rxPin = -1, byte txPin = -1);
+    EbyteVersionE34() : EbyteVersion(4) {}
+    String getInfo(void) {
+        struct Version {
+            byte HEAD;
+            byte series_no;
+            byte version_no;
+            byte features;
+        } * p = (Version *)this->data;
 
-    bool begin();
+        char str[30];
+        snprintf(str, sizeof(str), "series(%02X) ver(%02X) feat(%02X)", p->series_no, p->version_no, p->features);
+        return String(str);
+    }
+};
 
-    Status    setMode(MODE_TYPE mode);
-    MODE_TYPE getMode();
 
-    ResponseStructContainer getConfiguration();
-    ResponseStatus          setConfiguration(Configuration configuration, PROGRAM_COMMAND saveType = WRITE_CFG_PWR_DWN_LOSE);
+/**
+ * @brief EbyteModeE34
+ *
+ */
+class EbyteModeE34 : public EbyteMode {
+    void setModeDefault()   override { this->code = 0; }
+    void setModeConfig()    override { this->code = 3; }
+    bool isModeConfig()     override { return this->code == 3; }
+    bool isModeCorrect()    override { return this->code <= 3; }
+    String description()    override {
+        switch (this->code) {
+            case 0: return F("Fixed frequency mode");
+            case 1: return F("Frequency hopping mode");
+            case 2: return F("Reservation mode");
+            case 3: return F("Sleep/Setting mode");
+        }
+        return F("Invalid mode!");
+    }
+};
 
-    ResponseStructContainer getModuleInformation();
-    ResponseStatus          resetModule();
 
-    ResponseStatus          sendMessage(const void * message, size_t size);
-    ResponseStatus          sendMessage(const String message);
+/**
+ * @brief EbyteE34
+ *
+ */
+class EbyteE34 : public EbyteModule {
 
-    ResponseStatus          sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, const void * message, size_t size);
-    ResponseStatus          sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, const String message);
+  public:
+    EbyteE34(HardwareSerial * serial, byte auxPin, byte m0Pin, byte m1Pin, byte rxPin = -1, byte txPin = -1);
+    ~EbyteE34();
 
-    ResponseStatus          sendBroadcastFixedMessage(byte CHAN, const void * message, size_t size);
-    ResponseStatus          sendBroadcastFixedMessage(byte CHAN, const String message);
+    bool addrChanToConfig(  Configuration & config,
+                            bool changed,           // Whether comparing only or setting
+                            int32_t addr = -1,      // 4-bit MSB -- retry count
+                            int8_t chan = -1        // ch6 = 2.508 GHz -- out of WiFi channels
+                            ) const override;
+    bool speedToConfig(     Configuration & config,
+                            bool changed,           // Whether comparing only or setting
+                            int8_t air_baud = -1,   // AIR_DATA_RATE_2M
+                            int8_t uart_baud = -1,  // UART_BPS_115200
+                            int8_t uart_parity = -1 // UART_PARITY_8N1
+                            ) const override;
+    bool optionToConfig(    Configuration & config,
+                            bool changed,           // Whether comparing only or setting
+                            int8_t tx_pow = -1,     // TXPOWER_20
+                            int8_t tx_mode = -1,    // TXMODE_TRANS
+                            int8_t io_mode = -1     // IO_PUSH_PULL
+                            ) const override;
 
-    ResponseContainer       receiveMessage();
-    ResponseStructContainer receiveMessageFixedSize(size_t size);
-    ResponseContainer       receiveMessageUntil(char delimiter = '\0');
-    ResponseContainer       receiveMessageString(size_t size);
+    void printParameters(Configuration & config) const override;
 
-    Status sendStruct(const void * structureManaged, size_t size_of_st);
-    Status receiveStruct(void * structureManaged, size_t size_of_st);
-
-    int available();
-    Status auxReady(unsigned long timeout);
-
-    uint32_t getBpsRate();
-    void changeBpsRate(uint32_t new_bps);
-
-    void printHead(byte HEAD);
-    void printParameters(struct Configuration * cfg);
-
-    size_t lengthMessageQueueTx();
-    ResponseStatus  fragmentMessageQueueTx(const void * message, size_t size);
-    size_t processMessageQueueTx();
-
-  private:
-    HardwareSerial * hs;
-    uint32_t bpsRate = EBYTE_CONFIG_BAUD;
-    uint32_t serialConfig = SERIAL_8N1;
-
-    int8_t auxPin  = -1;
-    int8_t m0Pin   = -1;
-    int8_t m1Pin   = -1;
-    int8_t rxPin   = -1;
-    int8_t txPin   = -1;
-
-    MODE_TYPE mode = MODE_0_FIXED;
-
-    queue_t queueTx;
-
-    void   managedDelay(unsigned long timeout);
-    Status waitCompleteResponse(unsigned long timeout = EBYTE_RESPONSE_TMO, unsigned long waitNoAux = EBYTE_NO_AUX_WAIT);
-
-    void flush();
-    void cleanUARTBuffer();
-
-    void writeProgramCommand(PROGRAM_COMMAND cmd);
-
-    RESPONSE_STATUS checkUARTConfiguration(MODE_TYPE mode);
+  protected:
+    EbyteMode * createMode(void) const override;
+    EbyteVersion * createVersion(void) const override;
 };
 
 
