@@ -27,8 +27,8 @@ ESPTOOL_PY="${ESP32_PATH}/tools/esptool.py"
 BOOT_LOADER="${ESP32_PATH}/tools/sdk/esp32/bin/bootloader_dio_80m.bin"
 BOOT_APP0="${ESP32_PATH}/tools/partitions/boot_app0.bin"
 
-MAIN_INO="$(currentpos)/../src/.tmp/Main.ino.bin"
-MAIN_PARTITIONS_INO="$(currentpos)/../src/.tmp/Main.ino.partitions.bin"
+MAIN_INO="$(currentpos)/../src/build/Main.ino.bin"
+MAIN_PARTITIONS_INO="$(currentpos)/../src/build/Main.ino.partitions.bin"
 
 
 function flash {
