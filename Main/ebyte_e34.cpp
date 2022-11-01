@@ -53,12 +53,96 @@ EbyteE34::~EbyteE34() {
     delete [] this->mPins;
 }
 
-
 EbyteMode * EbyteE34::createMode(void) const {
     return new EbyteModeE34();
 }
 
-
 EbyteVersion * EbyteE34::createVersion(void) const {
     return new EbyteVersionE34();
+}
+
+
+/**
+ * @brief Print debug
+ */
+
+void EbyteE34::printParameters(Configuration & config) const {
+    this->printHead(config.getHead());
+
+    term_print(F(" AddH   : ")); term_println(config.addr_msb, DEC);
+    term_print(F(" AddL   : ")); term_println(config.addr_lsb, DEC);
+    term_print(F(" Chan   : ")); term_println(config.channel, DEC);
+
+    Speed * spd = (Speed *)&config.speed;
+
+    term_print(F(" Parity : ")); term_print(spd->uartParity, BIN);   term_print(" -> "); term_println(spd->parity_desc());
+    term_print(F(" Baud   : ")); term_print(spd->uartBaudRate, BIN); term_print(" -> "); term_println(spd->baudrate_desc());
+    term_print(F(" AirRate: ")); term_print(spd->airDataRate, BIN);  term_print(" -> "); term_println(spd->airrate_desc());
+
+    Option * opt = (Option *)&config.option;
+
+    term_print(F(" OpTxMod: ")); term_print(opt->fixedTransmission, BIN); term_print(" -> "); term_println(opt->fixed_tx_desc());
+    term_print(F(" OpPlup : ")); term_print(opt->ioDriveMode, BIN);       term_print(" -> "); term_println(opt->io_drv_desc());
+    term_print(F(" OpTxPow: ")); term_print(opt->transmissionPower, BIN); term_print(" -> "); term_println(opt->txpower_desc());
+
+    term_println();
+}
+
+
+/**
+ * @brief
+ */
+
+bool EbyteE34::addrChanToConfig(Configuration & config, bool changed, int32_t addr, int8_t chan) const {
+    if (!changed) {  // No change, just comparing
+        return (addr < 0  ||  ((config.addr_msb << 8) | config.addr_lsb) == addr
+        )  &&  (chan < 0  ||  config.channel == chan
+        );
+    }
+
+    if (addr >= 0) {
+        config.addr_msb = (addr & 0x0000FFFF) >> 8;
+        config.addr_lsb = (addr & 0x000000FF);
+    }
+    if (chan >= 0)
+        config.channel = chan;
+    return true;
+}
+
+bool EbyteE34::speedToConfig(Configuration & config, bool changed, int8_t air_baud, int8_t uart_baud, int8_t uart_parity) const {
+    Speed *spd = (Speed *)&config.speed;
+
+    if (!changed) {  // No change, just comparing
+        return (air_baud    < 0  ||  spd->airDataRate == air_baud
+        )  &&  (uart_baud   < 0  ||  spd->uartBaudRate == uart_baud
+        )  &&  (uart_parity < 0  ||  spd->uartParity == uart_parity
+        );
+    }
+
+    if (air_baud >= 0)
+        spd->airDataRate = air_baud;
+    if (uart_baud >= 0)
+        spd->uartBaudRate = uart_baud;
+    if (uart_parity >= 0)
+        spd->uartParity = uart_parity;
+    return true;
+}
+
+bool EbyteE34::optionToConfig(Configuration & config, bool changed, int8_t tx_pow, int8_t tx_mode, int8_t io_mode) const {
+    Option *opt = (Option *)&config.option;
+
+    if (!changed) {  // No change, just comparing
+        return (tx_pow  < 0  ||  opt->transmissionPower == tx_pow
+        )  &&  (tx_mode < 0  ||  opt->fixedTransmission == tx_mode
+        )  &&  (io_mode < 0  ||  opt->ioDriveMode == io_mode
+        );
+    }
+
+    if (tx_pow >= 0)
+        opt->transmissionPower = tx_pow;
+    if (tx_mode >= 0)
+        opt->fixedTransmission = tx_mode;
+    if (io_mode >= 0)
+        opt->ioDriveMode = io_mode;
+    return true;
 }

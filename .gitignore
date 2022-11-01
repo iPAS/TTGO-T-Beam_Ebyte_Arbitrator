@@ -1,5 +1,5 @@
 tools/esp32
-Main/tmp
+Main/build
 Main/.tmp
 Main/.vscode/*
 !Main/.vscode/arduino.json

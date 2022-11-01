@@ -32,6 +32,7 @@
 /**
  * @brief Constructor & Destructor
  */
+
 EbyteModule::EbyteModule(HardwareSerial * serial, byte auxPin, uint8_t mPin_cnt, uint8_t * mPins, byte rxPin, byte txPin) {
     this->hs = serial;
 
@@ -60,13 +61,6 @@ EbyteModule::~EbyteModule() {
     }
 }
 
-
-/**
- * @brief begin() should be called in setup()
- *
- * @return true
- * @return false
- */
 bool EbyteModule::begin() {
     this->setBpsRate(this->bpsRate);
 
@@ -81,15 +75,16 @@ bool EbyteModule::begin() {
 /**
  * Methods to indicate availability & to clear the buffer
  */
+
 int EbyteModule::available() {
     return this->hs->available();
 }
 
-void EbyteModule::flush() {
+void EbyteModule::waitTxBuffer() {  // Waiting UART Tx buffer complete
     this->hs->flush();
 }
 
-void EbyteModule::cleanUARTBuffer() {
+void EbyteModule::clearRxBuffer() {  // Clear UART Rx buffer
     while (this->available()) {
         this->hs->read();
     }
@@ -98,9 +93,8 @@ void EbyteModule::cleanUARTBuffer() {
 
 /**
  * @brief Set/Get BPS
- *
- * @param new_bps
  */
+
 void EbyteModule::setBpsRate(uint32_t new_bps) {
     this->hs->end();
     this->bpsRate = new_bps;
@@ -132,39 +126,27 @@ uint32_t EbyteModule::getBpsRate() {
 
 
 /**
- * @brief Check whether timeout or not
+ * @brief Auxiliary functions
  */
-bool EbyteModule::is_timeout(unsigned long t, unsigned long t_prev, unsigned long timeout) {
+
+bool EbyteModule::isTimeout(unsigned long t, unsigned long t_prev, unsigned long timeout) {
     return (((t >= t_prev) && ((t - t_prev) >= timeout)  // Normal count up
             ) ||
             ((t < t_prev)  && (((unsigned long)(0-1) - (t_prev-t) + 1) >= timeout)  // Overflow
             ))? true : false;
 }
 
-
-/**
- * @brief Delay with timeout
- *
- * @param timeout
- */
 void EbyteModule::managedDelay(unsigned long timeout) {
     unsigned long t_prev = millis();  // It will be overflow about every 50 days.
     while (1) {
         unsigned long t = millis();
-        if (this->is_timeout(t, t_prev, timeout)) {
+        if (this->isTimeout(t, t_prev, timeout)) {
             break;
         }
         taskYIELD();
     }
 }
 
-
-/**
- * @brief Is AUX pin ready?
- *
- * @param timeout
- * @return ResponseStatus
- */
 ResponseStatus EbyteModule::auxReady(unsigned long timeout) {
     unsigned long t_prev = millis();
     ResponseStatus status = { .code = ResponseStatus::SUCCESS, };
@@ -174,7 +156,7 @@ ResponseStatus EbyteModule::auxReady(unsigned long timeout) {
     while (digitalRead(this->auxPin) == LOW) {
         unsigned long t = millis();  // It will be overflow about every 50 days.
 
-        if (is_timeout(t, t_prev, timeout)) {
+        if (isTimeout(t, t_prev, timeout)) {
             DEBUG_PRINTLN(F(EBYTE_LABEL "Wait AUX HIGH: timeout! AUX still LOW"));
             status.code = ResponseStatus::ERR_TIMEOUT;
             return status;
@@ -188,14 +170,6 @@ ResponseStatus EbyteModule::auxReady(unsigned long timeout) {
     return status;
 }
 
-
-/**
- * @brief Wait until module does not transmit
- *
- * @param timeout
- * @param waitNoAux
- * @return ResponseStatus
- */
 ResponseStatus EbyteModule::waitCompleteResponse(unsigned long timeout, unsigned long waitNoAux) {
     ResponseStatus status = this->auxReady(timeout);
 
@@ -215,10 +189,8 @@ ResponseStatus EbyteModule::waitCompleteResponse(unsigned long timeout, unsigned
 
 /**
  * @brief Set/Get MODE
- *
- * @param mode
- * @return ResponseStatus
  */
+
 ResponseStatus EbyteModule::setMode(EbyteMode * mode) {
     ResponseStatus status;
 
@@ -250,7 +222,7 @@ ResponseStatus EbyteModule::setMode(EbyteMode * mode) {
     }
 
     DEBUG_PRINTLN(F(EBYTE_LABEL "Clear Rx buf after mode change"));
-    this->cleanUARTBuffer();
+    this->clearRxBuffer();
 
     return status;
 }
@@ -455,7 +427,7 @@ ResponseStatus EbyteModule::checkUARTConfiguration(EbyteMode * mode) {
 
 
 /**
- * Method to send or receive a chunk of data provided in the struct.
+ * @brief Method to send or receive a chunk of data provided in the struct.
  * They are my personal favorites.
  * You need not parse or worry about sprintf() inability to handle floats.
  *
@@ -496,14 +468,13 @@ ResponseStatus EbyteModule::receiveStruct(void * structureManaged, size_t size_o
 
 /**
  * @brief Receiving
- *
  */
 
 ResponseContainer EbyteModule::receiveMessage() {
     ResponseContainer rc;
     rc.status.code = ResponseStatus::SUCCESS;
     rc.data        = this->hs->readString();
-    // this->cleanUARTBuffer();
+    // this->clearRxBuffer();
     return rc;
 }
 
@@ -511,7 +482,7 @@ ResponseStructContainer EbyteModule::receiveMessageFixedSize(size_t size) {
     ResponseStructContainer rc;
     rc.data   = malloc(size);
     rc.status = this->receiveStruct(rc.data, size);
-    // this->cleanUARTBuffer();
+    // this->clearRxBuffer();
     return rc;
 }
 
@@ -519,7 +490,7 @@ ResponseContainer EbyteModule::receiveMessageUntil(char delimiter) {
     ResponseContainer rc;
     rc.status.code = ResponseStatus::SUCCESS;
     rc.data        = this->hs->readStringUntil(delimiter);
-    // this->cleanUARTBuffer();  <-- no flush, keep for next time
+    // this->clearRxBuffer();  <-- no flush, keep for next time
     return rc;
 }
 
@@ -582,7 +553,6 @@ ResponseStatus EbyteModule::sendFixedTxModeMessage(byte addh, byte addl, byte ch
 
 /**
  * @brief Queue sending
- *
  */
 
 size_t EbyteModule::lengthMessageQueueTx() {
@@ -632,30 +602,11 @@ size_t EbyteModule::processMessageQueueTx() {
 
 /**
  * @brief Print debug
- *
  */
 
-void EbyteModule::printHead(byte head) {
+void EbyteModule::printHead(byte head) const {
     term_print(F(" HEAD : "));
     term_print(head, BIN); term_print(" ");
     term_print(head, DEC); term_print(" ");
     term_println(head, HEX);
-}
-
-void EbyteModule::printParameters(Configuration & config) {
-    this->printHead(config.getHead());
-
-    term_print(F(" AddH   : ")); term_println(config.addr_msb, DEC);
-    term_print(F(" AddL   : ")); term_println(config.addr_lsb, DEC);
-    term_print(F(" Chan   : ")); term_println(config.channel, DEC);
-
-    term_print(F(" Parity : ")); term_print(config.speed.uartParity, BIN);   term_print(" -> "); term_println(config.speed.parity_desc());
-    term_print(F(" Baud   : ")); term_print(config.speed.uartBaudRate, BIN); term_print(" -> "); term_println(config.speed.baudrate_desc());
-    term_print(F(" AirRate: ")); term_print(config.speed.airDataRate, BIN);  term_print(" -> "); term_println(config.speed.airrate_desc());
-
-    term_print(F(" OpTxMod: ")); term_print(config.option.fixedTransmission, BIN); term_print(" -> "); term_println(config.option.fixed_tx_desc());
-    term_print(F(" OpPlup : ")); term_print(config.option.ioDriveMode, BIN);       term_print(" -> "); term_println(config.option.io_drv_desc());
-    term_print(F(" OpTxPow: ")); term_print(config.option.transmissionPower, BIN); term_print(" -> "); term_println(config.option.txpower_desc());
-
-    term_println();
 }

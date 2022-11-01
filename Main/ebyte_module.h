@@ -158,90 +158,13 @@ struct ResponseContainer {
 
 #pragma pack(push, 1)
 
-struct Speed {
-    uint8_t airDataRate : 3;    // bit 0-2
-    String airrate_desc() {
-        switch (this->airDataRate) {
-            case 0:     return F("250kbps");
-            case 1:     return F("1Mbps");
-            case 2:     return F("2Mbps");
-            case 3:     return F("2Mbps");
-            default:    return F("N/A");
-        }
-    }
-
-    uint8_t uartBaudRate : 3;   // bit 3-5
-    String baudrate_desc() {
-        switch (this->uartBaudRate) {
-            case 0:     return F("1200bps");
-            case 1:     return F("2400bps");
-            case 2:     return F("4800bps");
-            case 3:     return F("9600bps");
-            case 4:     return F("19200bps");
-            case 5:     return F("38400bps");
-            case 6:     return F("57600bps");
-            case 7:     return F("115200bps");
-            default:    return F("N/A");
-        }
-    }
-
-    uint8_t uartParity : 2;     // bit 6-7
-    String parity_desc() {
-        switch (this->uartParity) {
-            case 0:     return F("8N1");
-            case 1:     return F("8O1");
-            case 2:     return F("8E1");
-            case 3:     return F("8N1");
-            default:    return F("N/A");
-        }
-    }
-};
-
-struct Option {
-    byte   transmissionPower : 2;   // bit 0-1
-    String txpower_desc() {
-        switch (this->transmissionPower) {
-            case 0:     return F("20dBm");
-            case 1:     return F("14dBm");
-            case 2:     return F("8dBm");
-            case 3:     return F("2dBm");
-            default:    return F("N/A");
-        }
-    }
-
-    byte   fec : 1;                 // bit 2 -- Reserevd in E34
-    byte   wirelessWakeupTime : 3;  // bit 3-5 -- Reserved in E34
-
-    byte   ioDriveMode : 1;         // bit 6
-    String io_drv_desc() {
-        switch (this->ioDriveMode) {
-            case 0:     return F("AUX Open-Collector");
-            case 1:     return F("AUX Push-Pull");
-            default:    return F("N/A");
-        }
-    }
-
-    byte   fixedTransmission : 1;   // bit 7
-    String fixed_tx_desc() {
-        switch (this->fixedTransmission) {
-            case 0:     return F("Trans");
-            case 1:     return F("Fixed");
-            default:    return F("N/A");
-        }
-    }
-};
-
 struct Configuration {
-    byte   head = 0;
-
-    byte   addr_msb = 0;
-    byte   addr_lsb = 0;
-
-    Speed  speed;
-
-    byte   channel = 0;
-
-    Option option;
+    byte head;
+    byte addr_msb;
+    byte addr_lsb;
+    byte speed;
+    byte channel;
+    byte option;
 
     byte getHead() const { return this->head; }
     void setHead(uint8_t h) { this->head = h; } 
@@ -314,6 +237,10 @@ class EbyteModule {
 
     bool begin();
 
+    virtual bool addrChanToConfig(  Configuration & config, bool changed, int32_t addr,    int8_t chan) const = 0;
+    virtual bool speedToConfig(     Configuration & config, bool changed, int8_t air_baud, int8_t uart_baud, int8_t uart_parity) const = 0;
+    virtual bool optionToConfig(    Configuration & config, bool changed, int8_t tx_pow ,  int8_t tx_mode,   int8_t io_mode) const = 0;
+
     ResponseStructContainer getConfiguration();
     ResponseStatus          setConfiguration(Configuration & config, EBYTE_COMMAND_T save_type = WRITE_CFG_PWR_DWN_LOSE);
 
@@ -336,14 +263,15 @@ class EbyteModule {
     ResponseStatus          sendStruct(const void * structureManaged, size_t size_of_st);
     ResponseStatus          receiveStruct(void * structureManaged, size_t size_of_st);
 
-    ResponseStatus auxReady(unsigned long timeout);
-    int available();
+    ResponseStatus  auxReady(unsigned long timeout);
+    int             available();
+    void            waitTxBuffer();
+    void            clearRxBuffer();
+    uint32_t        getBpsRate();
+    void            setBpsRate(uint32_t new_bps);
 
-    uint32_t getBpsRate();
-    void    setBpsRate(uint32_t new_bps);
-
-    void    printHead(byte head);
-    void    printParameters(Configuration & config);
+    void            printHead(byte head) const;
+    virtual void    printParameters(Configuration & config) const = 0;
 
     size_t          lengthMessageQueueTx();
     ResponseStatus  fragmentMessageQueueTx(const void * message, size_t size);
@@ -362,20 +290,17 @@ class EbyteModule {
 
     queue_t queueTx;
 
-    bool is_timeout(unsigned long t, unsigned long t_prev, unsigned long timeout);
-    void managedDelay(unsigned long timeout);
-    ResponseStatus waitCompleteResponse(unsigned long timeout = EBYTE_RESPONSE_TMO, unsigned long waitNoAux = EBYTE_NO_AUX_WAIT);
-
-    void flush();
-    void cleanUARTBuffer();
+    bool            isTimeout(unsigned long t, unsigned long t_prev, unsigned long timeout);
+    void            managedDelay(unsigned long timeout);
+    ResponseStatus  waitCompleteResponse(unsigned long timeout = EBYTE_RESPONSE_TMO, unsigned long waitNoAux = EBYTE_NO_AUX_WAIT);
 
     void writeProgramCommand(EBYTE_COMMAND_T cmd);
 
     EbyteMode * current_mode = NULL;
     virtual EbyteMode * createMode(void) const = 0;
-    ResponseStatus setMode(EbyteMode * mode);
-    EbyteMode *    getMode();
-    ResponseStatus checkUARTConfiguration(EbyteMode * mode);
+    ResponseStatus      setMode(EbyteMode * mode);
+    EbyteMode *         getMode();
+    ResponseStatus      checkUARTConfiguration(EbyteMode * mode);
 
     virtual EbyteVersion * createVersion(void) const = 0;
 };

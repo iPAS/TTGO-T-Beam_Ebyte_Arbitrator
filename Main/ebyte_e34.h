@@ -82,6 +82,85 @@ enum TRANSMISSION_POWER {
 };
 
 
+#pragma pack(push, 1)
+
+struct Speed {
+    uint8_t airDataRate : 3;    // bit 0-2
+    String airrate_desc() {
+        switch (this->airDataRate) {
+            case 0:     return F("250kbps");
+            case 1:     return F("1Mbps");
+            case 2:     return F("2Mbps");
+            case 3:     return F("2Mbps");
+            default:    return F("N/A");
+        }
+    }
+
+    uint8_t uartBaudRate : 3;   // bit 3-5
+    String baudrate_desc() {
+        switch (this->uartBaudRate) {
+            case 0:     return F("1200bps");
+            case 1:     return F("2400bps");
+            case 2:     return F("4800bps");
+            case 3:     return F("9600bps");
+            case 4:     return F("19200bps");
+            case 5:     return F("38400bps");
+            case 6:     return F("57600bps");
+            case 7:     return F("115200bps");
+            default:    return F("N/A");
+        }
+    }
+
+    uint8_t uartParity : 2;     // bit 6-7
+    String parity_desc() {
+        switch (this->uartParity) {
+            case 0:     return F("8N1");
+            case 1:     return F("8O1");
+            case 2:     return F("8E1");
+            case 3:     return F("8N1");
+            default:    return F("N/A");
+        }
+    }
+};
+
+
+struct Option {
+    byte   transmissionPower : 2;   // bit 0-1
+    String txpower_desc() {
+        switch (this->transmissionPower) {
+            case 0:     return F("20dBm");
+            case 1:     return F("14dBm");
+            case 2:     return F("8dBm");
+            case 3:     return F("2dBm");
+            default:    return F("N/A");
+        }
+    }
+
+    byte   fec : 1;                 // bit 2 -- Reserevd in E34
+    byte   wirelessWakeupTime : 3;  // bit 3-5 -- Reserved in E34
+
+    byte   ioDriveMode : 1;         // bit 6
+    String io_drv_desc() {
+        switch (this->ioDriveMode) {
+            case 0:     return F("AUX Open-Collector");
+            case 1:     return F("AUX Push-Pull");
+            default:    return F("N/A");
+        }
+    }
+
+    byte   fixedTransmission : 1;   // bit 7
+    String fixed_tx_desc() {
+        switch (this->fixedTransmission) {
+            case 0:     return F("Trans");
+            case 1:     return F("Fixed");
+            default:    return F("N/A");
+        }
+    }
+};
+
+#pragma pack(pop)
+
+
 /**
  * @brief EbyteVersionE34
  *
@@ -135,6 +214,26 @@ class EbyteE34 : public EbyteModule {
   public:
     EbyteE34(HardwareSerial * serial, byte auxPin, byte m0Pin, byte m1Pin, byte rxPin = -1, byte txPin = -1);
     ~EbyteE34();
+
+    bool addrChanToConfig(  Configuration & config,
+                            bool changed,           // Whether comparing only or setting
+                            int32_t addr = -1,      // 4-bit MSB -- retry count
+                            int8_t chan = -1        // ch6 = 2.508 GHz -- out of WiFi channels
+                            ) const override;
+    bool speedToConfig(     Configuration & config,
+                            bool changed,           // Whether comparing only or setting
+                            int8_t air_baud = -1,   // AIR_DATA_RATE_2M
+                            int8_t uart_baud = -1,  // UART_BPS_115200
+                            int8_t uart_parity = -1 // UART_PARITY_8N1
+                            ) const override;
+    bool optionToConfig(    Configuration & config,
+                            bool changed,           // Whether comparing only or setting
+                            int8_t tx_pow = -1,     // TXPOWER_20
+                            int8_t tx_mode = -1,    // TXMODE_TRANS
+                            int8_t io_mode = -1     // IO_PUSH_PULL
+                            ) const override;
+
+    void printParameters(Configuration & config) const override;
 
   protected:
     EbyteMode * createMode(void) const override;
