@@ -71,18 +71,18 @@ void EbyteE34::printParameters(Configuration & config) const {
 
     term_print(F(" AddH   : ")); term_println(config.addr_msb, DEC);
     term_print(F(" AddL   : ")); term_println(config.addr_lsb, DEC);
-    term_print(F(" Chan   : ")); term_println(config.channel, DEC);
+    term_print(F(" Chan   : ")); term_println(config.channel,  DEC);
 
     Speed * spd = (Speed *)&config.speed;
 
-    term_print(F(" Parity : ")); term_print(spd->uartParity, BIN);   term_print(" -> "); term_println(spd->parity_desc());
+    term_print(F(" Parity : ")); term_print(spd->uartParity,   BIN); term_print(" -> "); term_println(spd->parity_desc());
     term_print(F(" Baud   : ")); term_print(spd->uartBaudRate, BIN); term_print(" -> "); term_println(spd->baudrate_desc());
-    term_print(F(" AirRate: ")); term_print(spd->airDataRate, BIN);  term_print(" -> "); term_println(spd->airrate_desc());
+    term_print(F(" AirRate: ")); term_print(spd->airDataRate,  BIN); term_print(" -> "); term_println(spd->airrate_desc());
 
     Option * opt = (Option *)&config.option;
 
     term_print(F(" OpTxMod: ")); term_print(opt->fixedTransmission, BIN); term_print(" -> "); term_println(opt->fixed_tx_desc());
-    term_print(F(" OpPlup : ")); term_print(opt->ioDriveMode, BIN);       term_print(" -> "); term_println(opt->io_drv_desc());
+    term_print(F(" OpPlup : ")); term_print(opt->ioDriveMode,       BIN); term_print(" -> "); term_println(opt->io_drv_desc());
     term_print(F(" OpTxPow: ")); term_print(opt->transmissionPower, BIN); term_print(" -> "); term_println(opt->txpower_desc());
 
     term_println();
