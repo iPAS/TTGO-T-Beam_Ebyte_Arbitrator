@@ -202,9 +202,10 @@ ResponseStatus EbyteModule::setMode(EbyteMode * mode) {
         return status;
     }
 
-    this->managedDelay(EBYTE_EXTRA_WAIT);   // Datasheet claims module needs some extra time after mode setting (2ms).
-    DEBUG_PRINT(F(EBYTE_LABEL "Mode: "));
+    this->managedDelay(EBYTE_EXTRA_WAIT);  // Datasheet claims module needs some extra time after mode setting (2ms).
 
+    // Set M* pins
+    DEBUG_PRINT(F(EBYTE_LABEL "Mode: "));
     for (int i = this->mPin_cnt-1; i >= 0; i--) {
         uint8_t b = ((mode->getMode() >> i) & 0x1)? HIGH : LOW;
         digitalWrite(this->mPins[i], b);
@@ -354,8 +355,6 @@ ResponseStatus EbyteModule::setConfiguration(Configuration & config, EBYTE_COMMA
 
     status = this->setMode(this->current_mode);
     if (status.code != ResponseStatus::SUCCESS) return status;
-
-    this->writeProgramCommand(READ_CONFIGURATION);
 
     config.setHead(save_type);
     status = this->sendStruct((uint8_t *)&config, sizeof(Configuration));
