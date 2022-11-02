@@ -32,8 +32,6 @@ extern EbyteE28 ebyte;
 
 
 class EbyteSetter {
-  protected:
-    uint8_t byte_param;
 
   public:
     EbyteSetter() = delete;
@@ -42,6 +40,9 @@ class EbyteSetter {
     };
     virtual void operator () (Configuration &) = 0;
     virtual bool validate(Configuration &) = 0;
+
+  protected:
+    uint8_t byte_param;
 };
 
 

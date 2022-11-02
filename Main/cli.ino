@@ -26,19 +26,19 @@ Command cmd_print_gps;
 #define DEFAULT_PRINT_GPS_COUNT 1
 
 const static char *help_description[] = {
-    "\thelp",
-    "\treset           -- reset",
-    "\tinfo            -- get module version infomation",
-    "\tverbose [level] -- show or set info level [0=none | 1=err | 2=warn | 3=info | 4=debug]",
-    "\tairrate [level] -- show or set airrate level [0=250kbps | 1=1Mbps | 2=2Mbps]",
-    "\ttxpower [level] -- show or set txpower level [0=20dBm | 1=14dBm | 2=8dBm | 3=2dBm]",
-    "\tchannel [ch]    -- show or set channel [0-11]",
-    "\tsend [message]  -- send [def. \"" DEFAULT_SEND_MESSAGE "\"]",
-    "\tconfig          -- get configuration from Ebyte directly",
-    "\tpref [0]        -- save or reset preferences. 0:reset null:save",
-    "\treport [n]      -- show report n times. 0:dis -1:always [def. \"" STR(DEFAULT_REPORT_COUNT) "\"]",
-    "\tloopback [1|0]  -- show or set the 'send-back' mode",
-    "\tgps [n]         -- print GPS n times. 0:dis -1:always [def. \"" STR(DEFAULT_PRINT_GPS_COUNT) "\"]",
+    "\th|elp",
+    "\tre|set           -- reset",
+    "\ti|nfo            -- get module version infomation",
+    "\tv|erbose [level] -- show or set info level [0=none | 1=err | 2=warn | 3=info | 4=debug]",
+    "\ta|irrate [level] -- show or set airrate level [0=250kbps | 1=1Mbps | 2=2Mbps]",
+    "\tt|xpower [level] -- show or set txpower level [0=20dBm | 1=14dBm | 2=8dBm | 3=2dBm]",
+    "\tch|annel [ch]    -- show or set channel [0-11]",
+    "\ts|end [message]  -- send [def. \"" DEFAULT_SEND_MESSAGE "\"]",
+    "\tc|onfig          -- get configuration from Ebyte directly",
+    "\tp|ref [0]        -- save or reset preferences. 0:reset null:save",
+    "\tr|eport [n]      -- show report n times. 0:dis -1:always [def. \"" STR(DEFAULT_REPORT_COUNT) "\"]",
+    "\tl|oopback [1|0]  -- show or set the 'send-back' mode",
+    "\tg|ps [n]         -- print GPS n times. 0:dis -1:always [def. \"" STR(DEFAULT_PRINT_GPS_COUNT) "\"]",
 };
 
 
@@ -132,6 +132,7 @@ static void on_cmd_help(cmd *c) {
 // ----------------------------------------------------------------------------
 static void on_cmd_reset(cmd *c) {
     term_println("[CLI] Reset... bye");
+    ebyte.resetModule();
     ESP.restart();
 }
 
@@ -188,10 +189,10 @@ static void on_cmd_ebyte_airrate(cmd *c) {
         }
     }
     else {
-        if (0 <= level && level <= 2) {
+        // if (0 <= level && level <= 2) {
             ebyte_airrate_level = level;
             ebyte_set_airrate(level);
-        }
+        // }
     }
 
     term_printf("[CLI] Ebyte airrate level=%d" ENDL, ebyte_airrate_level);
@@ -210,10 +211,10 @@ static void on_cmd_ebyte_txpower(cmd *c) {
         }
     }
     else {
-        if (0 <= level && level <= 3) {
+        // if (0 <= level && level <= 3) {
             ebyte_txpower_level = level;
             ebyte_set_txpower(level);
-        }
+        // }
     }
 
     term_printf("[CLI] Ebyte txpower level=%d" ENDL, ebyte_txpower_level);
@@ -232,10 +233,10 @@ static void on_cmd_ebyte_channel(cmd *c) {
         }
     }
     else {
-        if (0 <= ch && ch <= 11) {
+        // if (0 <= ch && ch <= 11) {
             ebyte_channel = ch;
             ebyte_set_channel(ebyte_channel);
-        }
+        // }
     }
 
     term_printf("[CLI] Ebyte channel=%d" ENDL, ebyte_channel);

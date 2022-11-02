@@ -89,7 +89,7 @@ enum TRANSMISSION_POWER {
 #pragma pack(push, 1)
 
 struct Speed {
-    uint8_t airDataRate : 3;    // bit 0-2
+    uint8_t airDataRate : 3;  // bit 0-2
     String airrate_desc() {
         switch (this->airDataRate) {
             case 0: return F("auto");
@@ -104,7 +104,7 @@ struct Speed {
         }
     }
 
-    uint8_t uartBaudRate : 3;   // bit 3-5
+    uint8_t uartBaudRate : 3;  // bit 3-5
     String baudrate_desc() {
         switch (this->uartBaudRate) {
             case 0: return F("1200bps");
@@ -119,7 +119,7 @@ struct Speed {
         }
     }
 
-    uint8_t uartParity : 2;     // bit 6-7
+    uint8_t uartParity : 2;  // bit 6-7
     String parity_desc() {
         switch (this->uartParity) {
             case 0: return F("8N1");
@@ -154,6 +154,14 @@ struct Option {
     }
 
     byte   switchLBT : 1;           // bit 3
+    String switch_lbt_desc() {
+        switch (this->switchLBT) {
+            case 0: return F("Slave");
+            case 1: return F("Master");
+            default: return F("N/A");
+        }
+    }
+
     byte   _reserved : 3;           // bit 4-6
 
     byte   fixedTransmission : 1;   // bit 7
@@ -176,17 +184,19 @@ struct Option {
 class EbyteVersionE28 : public EbyteVersion {
 
   public:
-    EbyteVersionE28() : EbyteVersion(4) {}
+    EbyteVersionE28() : EbyteVersion(8) {}
     String getInfo(void) {
         struct Version {
             byte HEAD;
-            byte series_no;
+            uint16_t series_no;
             byte version_no;
-            byte features;
+            byte power;
+            byte features[3];
         } * p = (Version *)this->data;
 
-        char str[30];
-        snprintf(str, sizeof(str), "series(%02X) ver(%02X) feat(%02X)", p->series_no, p->version_no, p->features);
+        char str[50];
+        snprintf(str, sizeof(str), "series(%04X) ver(%02X) power(%02X) feat(%02X %02X %02X)",
+            p->series_no, p->version_no, p->power, p->features[0], p->features[1], p->features[2]);
         return String(str);
     }
 };
@@ -197,7 +207,7 @@ class EbyteVersionE28 : public EbyteVersion {
  *
  */
 class EbyteModeE28 : public EbyteMode {
-    void setModeDefault()   override { this->code = 0+4; }
+    void setModeDefault()   override { this->code = 0+4; }  // +4, M2=1, not low-power mode
     void setModeConfig()    override { this->code = 3+4; }
     bool isModeConfig()     override { return this->code == 3+4; }
     bool isModeCorrect()    override { return this->code <= 3+4; }
