@@ -26,20 +26,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef __EBYTE_E34_H__
-#define __EBYTE_E34_H__
+#ifndef __EBYTE_E28_H__
+#define __EBYTE_E28_H__
 
 
 #include <Arduino.h>
 #include "ebyte_module.h"
 
 
-namespace E34 {
-
-enum REVISION {
-    D20 = 0,
-    D27
-};
+namespace E28 {
 
 enum UART_PARITY {
     UART_PARITY_8N1  = 0b00,
@@ -50,20 +45,24 @@ enum UART_PARITY {
 
 enum UART_BPS_RATE {
     UART_BPS_1200   = 0b000,
-    UART_BPS_2400   = 0b001,
-    UART_BPS_4800   = 0b010,
-    UART_BPS_9600   = 0b011,
-    UART_BPS_19200  = 0b100,
-    UART_BPS_38400  = 0b101,
-    UART_BPS_57600  = 0b110,
-    UART_BPS_115200 = 0b111
+    UART_BPS_4800   = 0b001,
+    UART_BPS_9600   = 0b010,
+    UART_BPS_19200  = 0b011,
+    UART_BPS_57600  = 0b100,
+    UART_BPS_115200 = 0b101,
+    UART_BPS_460800 = 0b110,
+    UART_BPS_921600 = 0b111
 };
 
 enum AIR_DATA_RATE {
-    AIR_RATE_250 = 0b000,
-    AIR_RATE_1M  = 0b001,
-    AIR_RATE_2M  = 0b010,
-    AIR_RATE_2M_ = 0b011,
+    AIR_RATE_AUTO = 0b000,
+    AIR_RATE_1K   = 0b001,
+    AIR_RATE_5K   = 0b010,
+    AIR_RATE_10K  = 0b011,
+    AIR_RATE_50K  = 0b100,
+    AIR_RATE_100K = 0b101,
+    AIR_RATE_1M   = 0b110,
+    AIR_RATE_2M   = 0b111,
 };
 
 enum TRANSMISSION_MODE {
@@ -77,50 +76,47 @@ enum IO_DRIVE_MODE {
 };
 
 enum TRANSMISSION_POWER {
-    TXPOWER_20 = 0b00,
-    TXPOWER_14 = 0b01,
-    TXPOWER_8  = 0b10,
-    TXPOWER_2  = 0b11
-};
-
-enum TRANSMISSION_POWER_D27 {
-    TXPOWER_27 = 0b00,
-    TXPOWER_21 = 0b01,
-    TXPOWER_15 = 0b10,
-    TXPOWER_9  = 0b11
+    TXPOWER_12 = 0b00,
+    TXPOWER_10 = 0b01,
+    TXPOWER_7  = 0b10,
+    TXPOWER_4  = 0b11
 };
 
 
 #pragma pack(push, 1)
 
 struct Speed {
-    uint8_t airDataRate : 3;    // bit 0-2
+    uint8_t airDataRate : 3;  // bit 0-2
     String airrate_desc() {
         switch (this->airDataRate) {
-            case 0: return F("250kbps");
-            case 1: return F("1Mbps");
-            case 2: return F("2Mbps");
-            case 3: return F("2Mbps");
+            case 0: return F("auto");
+            case 1: return F("1kbps");
+            case 2: return F("5kbps");
+            case 3: return F("10kbps");
+            case 4: return F("50kbps");
+            case 5: return F("100kbps");
+            case 6: return F("1Mbps");
+            case 7: return F("2Mbps");
             default: return F("N/A");
         }
     }
 
-    uint8_t uartBaudRate : 3;   // bit 3-5
+    uint8_t uartBaudRate : 3;  // bit 3-5
     String baudrate_desc() {
         switch (this->uartBaudRate) {
             case 0: return F("1200bps");
-            case 1: return F("2400bps");
-            case 2: return F("4800bps");
-            case 3: return F("9600bps");
-            case 4: return F("19200bps");
-            case 5: return F("38400bps");
-            case 6: return F("57600bps");
-            case 7: return F("115200bps");
+            case 1: return F("4800bps");
+            case 2: return F("9600bps");
+            case 3: return F("19200bps");
+            case 4: return F("57600bps");
+            case 5: return F("115200bps");
+            case 6: return F("460800bps");
+            case 7: return F("921600bps");
             default: return F("N/A");
         }
     }
 
-    uint8_t uartParity : 2;     // bit 6-7
+    uint8_t uartParity : 2;  // bit 6-7
     String parity_desc() {
         switch (this->uartParity) {
             case 0: return F("8N1");
@@ -137,26 +133,15 @@ struct Option {
     byte   transmissionPower : 2;   // bit 0-1
     String txpower_desc() {
         switch (this->transmissionPower) {
-            case 0: return F("20dBm");
-            case 1: return F("14dBm");
-            case 2: return F("8dBm");
-            case 3: return F("2dBm");
-            default: return F("N/A");
-        }
-    }
-    String txpower_desc_d27() {
-        switch (this->transmissionPower) {
-            case 0: return F("27dBm");
-            case 1: return F("21dBm");
-            case 2: return F("15dBm");
-            case 3: return F("9dBm");
+            case 0: return F("12dBm");
+            case 1: return F("10dBm");
+            case 2: return F("7dBm");
+            case 3: return F("4dBm");
             default: return F("N/A");
         }
     }
 
-    byte   _reserved : 4;  // bit 2-5 -- Reserved in E34
-
-    byte   ioDriveMode : 1;         // bit 6
+    byte   ioDriveMode : 1;         // bit 2
     String io_drv_desc() {
         switch (this->ioDriveMode) {
             case 0: return F("AUX Open-Collector");
@@ -164,6 +149,17 @@ struct Option {
             default: return F("N/A");
         }
     }
+
+    byte   switchLBT : 1;           // bit 3
+    String switch_lbt_desc() {
+        switch (this->switchLBT) {
+            case 0: return F("Slave");
+            case 1: return F("Master");
+            default: return F("N/A");
+        }
+    }
+
+    byte   _reserved : 3;           // bit 4-6
 
     byte   fixedTransmission : 1;   // bit 7
     String fixed_tx_desc() {
@@ -177,47 +173,50 @@ struct Option {
 
 #pragma pack(pop)
 
-}  // namespace E34
+}  // namespace E28
 
 
 /**
- * @brief EbyteVersionE34
+ * @brief EbyteVersionE28
  *
  */
-class EbyteVersionE34 : public EbyteVersion {
+class EbyteVersionE28 : public EbyteVersion {
 
   public:
-    EbyteVersionE34() : EbyteVersion(4) {}
+    EbyteVersionE28() : EbyteVersion(8) {}
     String getInfo(void) {
         struct Version {
             byte HEAD;
-            byte series_no;
+            uint16_t series_no;
             byte version_no;
-            byte features;
+            byte power;
+            byte features[3];
         } * p = (Version *)this->data;
 
-        char str[30];
-        snprintf(str, sizeof(str), "series(%02X) ver(%02X) feat(%02X)", p->series_no, p->version_no, p->features);
+        char str[50];
+        snprintf(str, sizeof(str), "series(%04X) ver(%02X) power(%02X) feat(%02X %02X %02X)",
+            p->series_no, p->version_no, p->power, p->features[0], p->features[1], p->features[2]);
         return String(str);
     }
 };
 
 
 /**
- * @brief EbyteModeE34
+ * @brief EbyteModeE28
  *
  */
-class EbyteModeE34 : public EbyteMode {
-    void setModeDefault()   override { this->code = 0; }
-    void setModeConfig()    override { this->code = 3; }
-    bool isModeConfig()     override { return this->code == 3; }
-    bool isModeCorrect()    override { return this->code <= 3; }
+class EbyteModeE28 : public EbyteMode {
+    void setModeDefault()   override { this->code = 0+4; }  // +4, M2=1, not low-power mode
+    void setModeConfig()    override { this->code = 3+4; }
+    bool isModeConfig()     override { return this->code == 3+4; }
+    bool isModeCorrect()    override { return this->code <= 3+4; }
     String description()    override {
         switch (this->code) {
-            case 0: return F("Fixed frequency mode");
-            case 1: return F("Frequency hopping mode");
-            case 2: return F("Reservation mode");
-            case 3: return F("Sleep/Setting mode");
+            case 0+4: return F("Transmission mode");
+            case 1+4: return F("RSSI mode");
+            case 2+4: return F("Reservation mode");
+            case 3+4: return F("Sleep/Setting mode");
+            case 0: return F("Low-power mode");
         }
         return F("Invalid mode!");
     }
@@ -225,15 +224,14 @@ class EbyteModeE34 : public EbyteMode {
 
 
 /**
- * @brief EbyteE34
+ * @brief EbyteE28
  *
  */
-class EbyteE34 : public EbyteModule {
+class EbyteE28 : public EbyteModule {
 
   public:
-    EbyteE34(HardwareSerial * serial, byte auxPin, byte m0Pin, byte m1Pin, byte rxPin = -1, byte txPin = -1,
-             E34::REVISION rev=E34::D20);
-    ~EbyteE34();
+    EbyteE28(HardwareSerial * serial, byte auxPin, byte m0Pin, byte m1Pin, byte m2Pin, byte rxPin = -1, byte txPin = -1);
+    ~EbyteE28();
 
     bool addrChanToConfig(  Configuration & config,
                             bool changed,           // Whether comparing only or setting
@@ -256,10 +254,9 @@ class EbyteE34 : public EbyteModule {
     void printParameters(Configuration & config) const override;
 
   protected:
-    E34::REVISION revision;
     EbyteMode * createMode(void) const override;
     EbyteVersion * createVersion(void) const override;
 };
 
 
-#endif  // __EBYTE_E34_H__
+#endif  // __EBYTE_E28_H__

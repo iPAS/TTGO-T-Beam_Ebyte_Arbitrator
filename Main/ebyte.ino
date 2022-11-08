@@ -4,29 +4,58 @@
 // Computer config
 #define computer        EBYTE_FC_SERIAL
 #define EBYTE_FC_SERIAL Serial1
+
+#if EBYTE_MODULE == EBYTE_E28
+// #define EBYTE_FC_BAUD   921600
 #define EBYTE_FC_BAUD   115200
+#else
+#define EBYTE_FC_BAUD   115200
+#endif
+
 #define EBYTE_FC_PIN_RX 4   // 15
 #define EBYTE_FC_PIN_TX 23  // 12
+
 #define EBYTE_FC_RX_BUFFER_SIZE 512
 #define EBYTE_FC_UART_TMO 1000
 
+
 // Ebyte config
 #define EBYTE_SERIAL    Serial2
+
+#if EBYTE_MODULE == EBYTE_E28
+// #define EBYTE_BAUD      921600
 #define EBYTE_BAUD      115200
-#define EBYTE_PIN_E34_RX 13 // RX to Ebyte TX
-#define EBYTE_PIN_E34_TX 2  // TX to Ebyte RX
+#define EBYTE_PIN_M2    9   // Low-power '0' pin
+#else
+#define EBYTE_BAUD      115200
+#endif
+
+#define EBYTE_PIN_RX    13  // RX to Ebyte TX
+#define EBYTE_PIN_TX    2   // TX to Ebyte RX
 #define EBYTE_PIN_AUX   34
 #define EBYTE_PIN_M0    25
 #define EBYTE_PIN_M1    14
 
-EbyteE34 ebyte(&EBYTE_SERIAL, EBYTE_PIN_AUX, EBYTE_PIN_M0, EBYTE_PIN_M1, EBYTE_PIN_E34_RX, EBYTE_PIN_E34_TX);
+
+#if EBYTE_MODULE == EBYTE_E34
+EbyteE34 ebyte(&EBYTE_SERIAL, EBYTE_PIN_AUX, EBYTE_PIN_M0, EBYTE_PIN_M1, EBYTE_PIN_RX, EBYTE_PIN_TX);
+
+#elif EBYTE_MODULE == EBYTE_E34D27
+EbyteE34 ebyte(&EBYTE_SERIAL, EBYTE_PIN_AUX, EBYTE_PIN_M0, EBYTE_PIN_M1, EBYTE_PIN_RX, EBYTE_PIN_TX, E34::D27);
+
+#elif EBYTE_MODULE == EBYTE_E28
+EbyteE28 ebyte(&EBYTE_SERIAL, EBYTE_PIN_AUX, EBYTE_PIN_M0, EBYTE_PIN_M1, EBYTE_PIN_M2, EBYTE_PIN_RX, EBYTE_PIN_TX);
+
+#endif
+
 
 #define EBYTE_REPORT_PERIOD_MS 10000
 int ebyte_show_report_count = 0;  // 0 is 'disable', -1 is 'forever', other +n will be counted down to zero.
 bool ebyte_loopback_flag = false;
-uint8_t ebyte_airrate_level = 2;  // 0=250kbps | 1=1Mbps | 2=2Mbps
-uint8_t ebyte_txpower_level = 0;  // 0=20dBm | 1=14dBm | 2=8dBm | 3=2dBm
-uint8_t ebyte_channel = 6;  // 0-11 where ch6 = 2.508 GHz -- out of WiFi channels
+
+uint8_t ebyte_airrate_level = EB::AIR_RATE_2M;
+uint8_t ebyte_txpower_level = 0;  // Maximum
+uint8_t ebyte_channel = 6;
 
 
 // ----------------------------------------------------------------------------
@@ -59,9 +88,15 @@ void ebyte_setup() {
             //
             // Setup the desired mode
             //
+            #if EBYTE_MODULE == EBYTE_E28
+            ebyte.addrChanToConfig( cfg, true, 0xFFFF, ebyte_channel);
+            // ebyte.speedToConfig(    cfg, true, ebyte_airrate_level, EB::UART_BPS_921600, EB::UART_PARITY_8N1);
+            ebyte.speedToConfig(    cfg, true, ebyte_airrate_level, EB::UART_BPS_115200, EB::UART_PARITY_8N1);
+            #else
             ebyte.addrChanToConfig( cfg, true, 0x0FFF, ebyte_channel);
-            ebyte.speedToConfig(    cfg, true, ebyte_airrate_level, UART_BPS_115200, UART_PARITY_8N1);
-            ebyte.optionToConfig(   cfg, true, ebyte_txpower_level, TXMODE_TRANS, IO_PUSH_PULL);
+            ebyte.speedToConfig(    cfg, true, ebyte_airrate_level, EB::UART_BPS_115200, EB::UART_PARITY_8N1);
+            #endif
+            ebyte.optionToConfig(   cfg, true, ebyte_txpower_level, EB::TXMODE_TRANS, EB::IO_PUSH_PULL);
             ebyte.setConfiguration(cfg);
             // ebyte.setConfiguration(cfg, WRITE_CFG_PWR_DWN_SAVE);  // XXX: Save on Ebyte's EEPROM
 

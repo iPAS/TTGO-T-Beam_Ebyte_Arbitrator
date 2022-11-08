@@ -65,9 +65,8 @@ bool EbyteModule::begin() {
     this->setBpsRate(this->bpsRate);
 
     this->current_mode = this->createMode();  // Factory method
-
     this->current_mode->setModeDefault();
-    ResponseStatus status = setMode(this->current_mode);
+    ResponseStatus status = this->setMode(this->current_mode);
     return status.code == ResponseStatus::SUCCESS;
 }
 
@@ -150,6 +149,7 @@ void EbyteModule::managedDelay(unsigned long timeout) {
 ResponseStatus EbyteModule::auxReady(unsigned long timeout) {
     unsigned long t_prev = millis();
     ResponseStatus status = { .code = ResponseStatus::SUCCESS, };
+    bool printed_aux_waiting = false;
 
     // If AUX pin was supplied, and look for HIGH state.
     // XXX: You can omit using AUX if no pins are available, but you will have to use delay() to let module finish
@@ -162,7 +162,10 @@ ResponseStatus EbyteModule::auxReady(unsigned long timeout) {
             return status;
         }
 
-        DEBUG_PRINTLN(F(EBYTE_LABEL "Wait AUX HIGH.."));
+        if (printed_aux_waiting == false) {
+            DEBUG_PRINTLN(F(EBYTE_LABEL "Wait AUX HIGH.."));
+            printed_aux_waiting = true;
+        }
         taskYIELD();
     }
 
@@ -194,21 +197,21 @@ ResponseStatus EbyteModule::waitCompleteResponse(unsigned long timeout, unsigned
 ResponseStatus EbyteModule::setMode(EbyteMode * mode) {
     ResponseStatus status;
 
-    this->managedDelay(EBYTE_EXTRA_WAIT);   // Datasheet claims module needs some extra time after mode setting (2ms).
-                                            // However, most of my projects uses 10 ms, but 40ms is safer.
-    DEBUG_PRINT(F(EBYTE_LABEL "Mode: "));
-
     if (mode->isModeCorrect() == false) {
         status.code = ResponseStatus::ERR_INVALID_PARAM;
         return status;
     }
 
-    for (uint8_t i = 0; i < this->mPin_cnt; i++) {
+    this->managedDelay(EBYTE_EXTRA_WAIT);  // Datasheet claims module needs some extra time after mode setting (2ms).
+
+    // Set M* pins
+    DEBUG_PRINT(F(EBYTE_LABEL "Mode: "));
+    for (int i = this->mPin_cnt-1; i >= 0; i--) {
         uint8_t b = ((mode->getMode() >> i) & 0x1)? HIGH : LOW;
         digitalWrite(this->mPins[i], b);
         DEBUG_PRINT(b);
     }
-    DEBUG_PRINTLN(mode->description());
+    DEBUG_PRINTLN(" \"" + mode->description() + "\"");
 
     // The datasheet says after 2ms later, control is returned.
     // Let's give just a bit more time for this module to be active.
@@ -280,8 +283,8 @@ ResponseStructContainer EbyteModule::getConfiguration() {
     rc.status = this->setMode(this->current_mode);
     if (rc.status.code != ResponseStatus::SUCCESS) return rc;
 
-    if ((0xC0 != ((Configuration *)rc.data)->getHead()) &&
-        (0xC2 != ((Configuration *)rc.data)->getHead())) {
+    if (((Configuration *)rc.data)->getHead() != 0xC0  &&
+        ((Configuration *)rc.data)->getHead() != 0xC2) {
         rc.status.code = ResponseStatus::ERR_HEAD_NOT_RECOGNIZED;
     }
 
@@ -353,8 +356,6 @@ ResponseStatus EbyteModule::setConfiguration(Configuration & config, EBYTE_COMMA
     status = this->setMode(this->current_mode);
     if (status.code != ResponseStatus::SUCCESS) return status;
 
-    this->writeProgramCommand(READ_CONFIGURATION);
-
     config.setHead(save_type);
     status = this->sendStruct((uint8_t *)&config, sizeof(Configuration));
     if (status.code != ResponseStatus::SUCCESS) {
@@ -372,8 +373,7 @@ ResponseStatus EbyteModule::setConfiguration(Configuration & config, EBYTE_COMMA
     status = this->setMode(this->current_mode);
     if (status.code != ResponseStatus::SUCCESS) return status;
 
-    if ((0xC0 != config.getHead()) &&
-        (0xC2 != config.getHead())) {
+    if (config.getHead() != 0xC0  &&  config.getHead() != 0xC2) {
         status.code = ResponseStatus::ERR_HEAD_NOT_RECOGNIZED;
     }
 

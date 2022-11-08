@@ -26,44 +26,43 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include "ebyte_e34.h"
+#include "ebyte_e28.h"
 
 
-#define EB E34
+#define EB E28
 
 
 /**
  * @brief Constructor
  */
-EbyteE34::EbyteE34(HardwareSerial * serial, byte auxPin, byte m0Pin, byte m1Pin, byte rxPin, byte txPin,  E34::REVISION rev)
+EbyteE28::EbyteE28(HardwareSerial * serial, byte auxPin, byte m0Pin, byte m1Pin, byte m2Pin, byte rxPin, byte txPin)
         : EbyteModule(serial, auxPin, 0, NULL, rxPin, txPin) {
 
-    this->mPin_cnt = 2;
+    this->mPin_cnt = 3;
     this->mPins = new uint8_t[ this->mPin_cnt ];
     this->mPins[0] = m0Pin;
     this->mPins[1] = m1Pin;
+    this->mPins[2] = m2Pin;
     for (int i = 0; i < this->mPin_cnt; i++) {
         pinMode(this->mPins[i], OUTPUT);
         digitalWrite(this->mPins[i], HIGH);
     }
-
-    this->revision = rev;
 }
 
 
 /**
  * @brief Destroy the Ebyte E 3 4:: Ebyte E 3 4 object
  */
-EbyteE34::~EbyteE34() {
+EbyteE28::~EbyteE28() {
     delete [] this->mPins;
 }
 
-EbyteMode * EbyteE34::createMode(void) const {
-    return new EbyteModeE34();
+EbyteMode * EbyteE28::createMode(void) const {
+    return new EbyteModeE28();
 }
 
-EbyteVersion * EbyteE34::createVersion(void) const {
-    return new EbyteVersionE34();
+EbyteVersion * EbyteE28::createVersion(void) const {
+    return new EbyteVersionE28();
 }
 
 
@@ -71,7 +70,7 @@ EbyteVersion * EbyteE34::createVersion(void) const {
  * @brief Print debug
  */
 
-void EbyteE34::printParameters(Configuration & config) const {
+void EbyteE28::printParameters(Configuration & config) const {
     this->printHead(config.getHead());
 
     term_print(F(" AddH   : ")); term_println(config.addr_msb, DEC);
@@ -88,7 +87,7 @@ void EbyteE34::printParameters(Configuration & config) const {
 
     term_print(F(" OpTxMod: ")); term_print(opt->fixedTransmission, BIN); term_print(" -> "); term_println(opt->fixed_tx_desc());
     term_print(F(" OpPlup : ")); term_print(opt->ioDriveMode,       BIN); term_print(" -> "); term_println(opt->io_drv_desc());
-    term_print(F(" OpTxPow: ")); term_print(opt->transmissionPower, BIN); term_print(" -> "); term_println((this->revision == E34::D20)? opt->txpower_desc() : opt->txpower_desc_d27());
+    term_print(F(" OpTxPow: ")); term_print(opt->transmissionPower, BIN); term_print(" -> "); term_println(opt->txpower_desc());
 
     term_println();
 }
@@ -98,7 +97,7 @@ void EbyteE34::printParameters(Configuration & config) const {
  * @brief
  */
 
-bool EbyteE34::addrChanToConfig(Configuration & config, bool changed, int32_t addr, int8_t chan) const {
+bool EbyteE28::addrChanToConfig(Configuration & config, bool changed, int32_t addr, int8_t chan) const {
     if (!changed) {  // No change, just comparing
         return (addr < 0  ||  ((config.addr_msb << 8) | config.addr_lsb) == addr
         )  &&  (chan < 0  ||  config.channel == chan
@@ -114,7 +113,7 @@ bool EbyteE34::addrChanToConfig(Configuration & config, bool changed, int32_t ad
     return true;
 }
 
-bool EbyteE34::speedToConfig(Configuration & config, bool changed, int8_t air_baud, int8_t uart_baud, int8_t uart_parity) const {
+bool EbyteE28::speedToConfig(Configuration & config, bool changed, int8_t air_baud, int8_t uart_baud, int8_t uart_parity) const {
     EB::Speed *spd = (EB::Speed *)&config.speed;
 
     if (!changed) {  // No change, just comparing
@@ -133,7 +132,7 @@ bool EbyteE34::speedToConfig(Configuration & config, bool changed, int8_t air_ba
     return true;
 }
 
-bool EbyteE34::optionToConfig(Configuration & config, bool changed, int8_t tx_pow, int8_t tx_mode, int8_t io_mode) const {
+bool EbyteE28::optionToConfig(Configuration & config, bool changed, int8_t tx_pow, int8_t tx_mode, int8_t io_mode) const {
     EB::Option *opt = (EB::Option *)&config.option;
 
     if (!changed) {  // No change, just comparing
