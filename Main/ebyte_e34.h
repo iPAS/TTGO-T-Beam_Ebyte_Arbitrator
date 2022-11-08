@@ -36,7 +36,11 @@
 
 #ifndef EBYTE_MODULE
 #define EBYTE_MODULE EBYTE_E34
+// #define EBYTE_MODULE EBYTE_E34D27
 #endif
+
+
+namespace E34 {
 
 
 /**
@@ -172,6 +176,9 @@ struct Option {
 };
 
 #pragma pack(pop)
+
+
+}  // namespace E34
 
 
 /**

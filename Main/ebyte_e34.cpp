@@ -29,6 +29,9 @@
 #include "ebyte_e34.h"
 
 
+#define EB E34
+
+
 /**
  * @brief Constructor
  */
@@ -73,13 +76,13 @@ void EbyteE34::printParameters(Configuration & config) const {
     term_print(F(" AddL   : ")); term_println(config.addr_lsb, DEC);
     term_print(F(" Chan   : ")); term_println(config.channel,  DEC);
 
-    Speed * spd = (Speed *)&config.speed;
+    EB::Speed * spd = (EB::Speed *)&config.speed;
 
     term_print(F(" Parity : ")); term_print(spd->uartParity,   BIN); term_print(" -> "); term_println(spd->parity_desc());
     term_print(F(" Baud   : ")); term_print(spd->uartBaudRate, BIN); term_print(" -> "); term_println(spd->baudrate_desc());
     term_print(F(" AirRate: ")); term_print(spd->airDataRate,  BIN); term_print(" -> "); term_println(spd->airrate_desc());
 
-    Option * opt = (Option *)&config.option;
+    EB::Option * opt = (EB::Option *)&config.option;
 
     term_print(F(" OpTxMod: ")); term_print(opt->fixedTransmission, BIN); term_print(" -> "); term_println(opt->fixed_tx_desc());
     term_print(F(" OpPlup : ")); term_print(opt->ioDriveMode,       BIN); term_print(" -> "); term_println(opt->io_drv_desc());
@@ -110,7 +113,7 @@ bool EbyteE34::addrChanToConfig(Configuration & config, bool changed, int32_t ad
 }
 
 bool EbyteE34::speedToConfig(Configuration & config, bool changed, int8_t air_baud, int8_t uart_baud, int8_t uart_parity) const {
-    Speed *spd = (Speed *)&config.speed;
+    EB::Speed *spd = (EB::Speed *)&config.speed;
 
     if (!changed) {  // No change, just comparing
         return (air_baud    < 0  ||  spd->airDataRate == air_baud
@@ -129,7 +132,7 @@ bool EbyteE34::speedToConfig(Configuration & config, bool changed, int8_t air_ba
 }
 
 bool EbyteE34::optionToConfig(Configuration & config, bool changed, int8_t tx_pow, int8_t tx_mode, int8_t io_mode) const {
-    Option *opt = (Option *)&config.option;
+    EB::Option *opt = (EB::Option *)&config.option;
 
     if (!changed) {  // No change, just comparing
         return (tx_pow  < 0  ||  opt->transmissionPower == tx_pow

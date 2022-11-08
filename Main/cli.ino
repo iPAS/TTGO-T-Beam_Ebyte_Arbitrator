@@ -25,7 +25,7 @@ Command cmd_print_gps;
 #define DEFAULT_REPORT_COUNT 1
 #define DEFAULT_PRINT_GPS_COUNT 1
 
-const static char *help_description[] = {
+const static char *help_description[] = {  // TODO: runtime configurable E34 or E28
     "\th|elp",
     "\tre|set           -- reset",
     "\ti|nfo            -- get module version infomation",

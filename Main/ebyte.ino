@@ -53,7 +53,7 @@ EbyteE28 ebyte(&EBYTE_SERIAL, EBYTE_PIN_AUX, EBYTE_PIN_M0, EBYTE_PIN_M1, EBYTE_P
 int ebyte_show_report_count = 0;  // 0 is 'disable', -1 is 'forever', other +n will be counted down to zero.
 bool ebyte_loopback_flag = false;
 
-uint8_t ebyte_airrate_level = AIR_RATE_2M;
+uint8_t ebyte_airrate_level = EB::AIR_RATE_2M;
 uint8_t ebyte_txpower_level = 0;  // Maximum
 uint8_t ebyte_channel = 6;
 
@@ -90,13 +90,13 @@ void ebyte_setup() {
             //
             #if EBYTE_MODULE == EBYTE_E28
             ebyte.addrChanToConfig( cfg, true, 0xFFFF, ebyte_channel);
-            // ebyte.speedToConfig(    cfg, true, ebyte_airrate_level, UART_BPS_921600, UART_PARITY_8N1);
-            ebyte.speedToConfig(    cfg, true, ebyte_airrate_level, UART_BPS_115200, UART_PARITY_8N1);
+            // ebyte.speedToConfig(    cfg, true, ebyte_airrate_level, EB::UART_BPS_921600, EB::UART_PARITY_8N1);
+            ebyte.speedToConfig(    cfg, true, ebyte_airrate_level, EB::UART_BPS_115200, EB::UART_PARITY_8N1);
             #else
             ebyte.addrChanToConfig( cfg, true, 0x0FFF, ebyte_channel);
-            ebyte.speedToConfig(    cfg, true, ebyte_airrate_level, UART_BPS_115200, UART_PARITY_8N1);
+            ebyte.speedToConfig(    cfg, true, ebyte_airrate_level, EB::UART_BPS_115200, EB::UART_PARITY_8N1);
             #endif
-            ebyte.optionToConfig(   cfg, true, ebyte_txpower_level, TXMODE_TRANS, IO_PUSH_PULL);
+            ebyte.optionToConfig(   cfg, true, ebyte_txpower_level, EB::TXMODE_TRANS, EB::IO_PUSH_PULL);
             ebyte.setConfiguration(cfg);
             // ebyte.setConfiguration(cfg, WRITE_CFG_PWR_DWN_SAVE);  // XXX: Save on Ebyte's EEPROM
 

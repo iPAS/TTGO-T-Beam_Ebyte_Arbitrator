@@ -16,14 +16,17 @@
 
 #if EBYTE_MODULE == EBYTE_E34
 #include "ebyte_e34.h"
+#define EB E34
 extern EbyteE34 ebyte;
 
 #elif EBYTE_MODULE == EBYTE_E34D27
 #include "ebyte_e34.h"
+#define EB E34
 extern EbyteE34 ebyte;
 
 #elif EBYTE_MODULE == EBYTE_E28
 #include "ebyte_e28.h"
+#define EB E28
 extern EbyteE28 ebyte;
 
 #else

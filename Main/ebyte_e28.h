@@ -34,6 +34,9 @@
 #include "ebyte_module.h"
 
 
+namespace E28 {
+
+
 /**
  * @brief Class Ebyte configuration
  *
@@ -175,6 +178,9 @@ struct Option {
 };
 
 #pragma pack(pop)
+
+
+}  // namespace E28
 
 
 /**
