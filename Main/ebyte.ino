@@ -25,8 +25,7 @@
 #if EBYTE_MODULE == EBYTE_E28
 // #define EBYTE_BAUD      921600
 #define EBYTE_BAUD      115200
-#define EBYTE_PIN_M2    33  // Low-power '0' pin
-                            // FIXME: Still NOT work!? Just pull-up high for now.
+#define EBYTE_PIN_M2    9   // Low-power '0' pin
 #else
 #define EBYTE_BAUD      115200
 #endif
