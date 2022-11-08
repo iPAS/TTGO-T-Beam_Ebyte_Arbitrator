@@ -30,8 +30,23 @@ const static char *help_description[] = {  // TODO: runtime configurable E34 or 
     "\tre|set           -- reset",
     "\ti|nfo            -- get module version infomation",
     "\tv|erbose [level] -- show or set info level [0=none | 1=err | 2=warn | 3=info | 4=debug]",
-    "\ta|irrate [level] -- show or set airrate level [0=250kbps | 1=1Mbps | 2=2Mbps]",
-    "\tt|xpower [level] -- show or set txpower level [0=20dBm | 1=14dBm | 2=8dBm | 3=2dBm]",
+
+    "\ta|irrate [level] -- show or set airrate level"
+        #if EBYTE_MODULE == EBYTE_E28
+        " [0=auto | 1=1kbps | 2=5kbps | 3=10kbps | 4=50kbps | 5=100kbps | 6=1M(FLRC) | 7=2M(FSK)]",
+        #else
+        " [0=250kbps | 1=1Mbps | 2=2Mbps]",
+        #endif
+
+    "\tt|xpower [level] -- show or set txpower level"
+        #if EBYTE_MODULE == EBYTE_E34
+        " [0=20dBm | 1=14dBm | 2=8dBm | 3=2dBm]",
+        #elif EBYTE_MODULE == EBYTE_E34D27
+        " [0=27dBm | 1=21dBm | 2=15dBm | 3=9dBm]",
+        #elif EBYTE_MODULE == EBYTE_E28
+        " [0=12dBm | 1=10dBm | 2=7dBm | 3=4dBm]",
+        #endif
+
     "\tch|annel [ch]    -- show or set channel [0-11]",
     "\ts|end [message]  -- send [def. \"" DEFAULT_SEND_MESSAGE "\"]",
     "\tc|onfig          -- get configuration from Ebyte directly",

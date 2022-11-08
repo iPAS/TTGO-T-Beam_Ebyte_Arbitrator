@@ -83,12 +83,21 @@ enum IO_DRIVE_MODE {
     IO_PUSH_PULL      = 0b1
 };
 
+#if EBYTE_MODULE == EBYTE_E34
 enum TRANSMISSION_POWER {
     TXPOWER_20 = 0b00,
     TXPOWER_14 = 0b01,
     TXPOWER_8  = 0b10,
     TXPOWER_2  = 0b11
 };
+#elif EBYTE_MODULE == EBYTE_E34D27
+enum TRANSMISSION_POWER {
+    TXPOWER_27 = 0b00,
+    TXPOWER_21 = 0b01,
+    TXPOWER_15 = 0b10,
+    TXPOWER_9  = 0b11
+};
+#endif
 
 
 #pragma pack(push, 1)
