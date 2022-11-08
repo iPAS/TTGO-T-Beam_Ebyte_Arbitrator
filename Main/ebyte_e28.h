@@ -36,12 +36,6 @@
 
 namespace E28 {
 
-
-/**
- * @brief Class Ebyte configuration
- *
- */
-
 enum UART_PARITY {
     UART_PARITY_8N1  = 0b00,
     UART_PARITY_8O1  = 0b01,
@@ -178,7 +172,6 @@ struct Option {
 };
 
 #pragma pack(pop)
-
 
 }  // namespace E28
 

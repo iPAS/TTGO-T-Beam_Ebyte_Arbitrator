@@ -35,7 +35,7 @@
 /**
  * @brief Constructor
  */
-EbyteE34::EbyteE34(HardwareSerial * serial, byte auxPin, byte m0Pin, byte m1Pin, byte rxPin, byte txPin)
+EbyteE34::EbyteE34(HardwareSerial * serial, byte auxPin, byte m0Pin, byte m1Pin, byte rxPin, byte txPin,  E34::REVISION rev)
         : EbyteModule(serial, auxPin, 0, NULL, rxPin, txPin) {
 
     this->mPin_cnt = 2;
@@ -46,6 +46,8 @@ EbyteE34::EbyteE34(HardwareSerial * serial, byte auxPin, byte m0Pin, byte m1Pin,
         pinMode(this->mPins[i], OUTPUT);
         digitalWrite(this->mPins[i], HIGH);
     }
+
+    this->revision = rev;
 }
 
 
@@ -86,7 +88,7 @@ void EbyteE34::printParameters(Configuration & config) const {
 
     term_print(F(" OpTxMod: ")); term_print(opt->fixedTransmission, BIN); term_print(" -> "); term_println(opt->fixed_tx_desc());
     term_print(F(" OpPlup : ")); term_print(opt->ioDriveMode,       BIN); term_print(" -> "); term_println(opt->io_drv_desc());
-    term_print(F(" OpTxPow: ")); term_print(opt->transmissionPower, BIN); term_print(" -> "); term_println(opt->txpower_desc());
+    term_print(F(" OpTxPow: ")); term_print(opt->transmissionPower, BIN); term_print(" -> "); term_println((this->revision == E34::D20)? opt->txpower_desc() : opt->txpower_desc_d27());
 
     term_println();
 }

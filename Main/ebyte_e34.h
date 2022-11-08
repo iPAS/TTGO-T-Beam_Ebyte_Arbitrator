@@ -34,19 +34,12 @@
 #include "ebyte_module.h"
 
 
-#ifndef EBYTE_MODULE
-#define EBYTE_MODULE EBYTE_E34
-// #define EBYTE_MODULE EBYTE_E34D27
-#endif
-
-
 namespace E34 {
 
-
-/**
- * @brief Class Ebyte configuration
- *
- */
+enum REVISION {
+    D20 = 0,
+    D27
+};
 
 enum UART_PARITY {
     UART_PARITY_8N1  = 0b00,
@@ -83,21 +76,19 @@ enum IO_DRIVE_MODE {
     IO_PUSH_PULL      = 0b1
 };
 
-#if EBYTE_MODULE == EBYTE_E34
 enum TRANSMISSION_POWER {
     TXPOWER_20 = 0b00,
     TXPOWER_14 = 0b01,
     TXPOWER_8  = 0b10,
     TXPOWER_2  = 0b11
 };
-#elif EBYTE_MODULE == EBYTE_E34D27
-enum TRANSMISSION_POWER {
+
+enum TRANSMISSION_POWER_D27 {
     TXPOWER_27 = 0b00,
     TXPOWER_21 = 0b01,
     TXPOWER_15 = 0b10,
     TXPOWER_9  = 0b11
 };
-#endif
 
 
 #pragma pack(push, 1)
@@ -146,19 +137,19 @@ struct Option {
     byte   transmissionPower : 2;   // bit 0-1
     String txpower_desc() {
         switch (this->transmissionPower) {
-            #if EBYTE_MODULE == EBYTE_E34
             case 0: return F("20dBm");
             case 1: return F("14dBm");
             case 2: return F("8dBm");
             case 3: return F("2dBm");
-
-            #elif EBYTE_MODULE == EBYTE_E34D27
+            default: return F("N/A");
+        }
+    }
+    String txpower_desc_d27() {
+        switch (this->transmissionPower) {
             case 0: return F("27dBm");
             case 1: return F("21dBm");
             case 2: return F("15dBm");
             case 3: return F("9dBm");
-            #endif
-
             default: return F("N/A");
         }
     }
@@ -185,7 +176,6 @@ struct Option {
 };
 
 #pragma pack(pop)
-
 
 }  // namespace E34
 
@@ -241,7 +231,8 @@ class EbyteModeE34 : public EbyteMode {
 class EbyteE34 : public EbyteModule {
 
   public:
-    EbyteE34(HardwareSerial * serial, byte auxPin, byte m0Pin, byte m1Pin, byte rxPin = -1, byte txPin = -1);
+    EbyteE34(HardwareSerial * serial, byte auxPin, byte m0Pin, byte m1Pin, byte rxPin = -1, byte txPin = -1,
+             E34::REVISION rev=E34::D20);
     ~EbyteE34();
 
     bool addrChanToConfig(  Configuration & config,
@@ -265,6 +256,7 @@ class EbyteE34 : public EbyteModule {
     void printParameters(Configuration & config) const override;
 
   protected:
+    E34::REVISION revision;
     EbyteMode * createMode(void) const override;
     EbyteVersion * createVersion(void) const override;
 };
