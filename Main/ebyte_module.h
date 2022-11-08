@@ -37,7 +37,7 @@
 
 
 // Uncomment to enable printing out nice debug messages.
-#define EBYTE_DEBUG
+// #define EBYTE_DEBUG
 #define EBYTE_LABEL "[EB] "
 
 // Setup debug printing macros.

@@ -112,7 +112,7 @@ void ebyte_setup() {
                 ebyte.printParameters(cfg);
             }
             else {
-                term_print(F("[EBYTE] Re-checking failed!, E34: "));
+                term_print(F("[EBYTE] Re-checking failed!, "));
                 term_println(rc.status.desc());  // Description of code
             }
 
@@ -120,7 +120,7 @@ void ebyte_setup() {
             ebyte.setBpsRate(EBYTE_BAUD);
         }
         else {
-            term_print(F("[EBYTE] Reading old configuration failed!, E34: "));
+            term_print(F("[EBYTE] Reading old configuration failed!, "));
             term_println(rc.status.desc());  // Description of code
         }
     }
@@ -152,7 +152,7 @@ void ebyte_process() {
         size_t len = rc.data.length();
 
         if (rc.status.code != ResponseStatus::SUCCESS) {
-            term_print("[EBYTE] E2C error, E34: ");
+            term_print("[EBYTE] E2C error!, ");
             term_println(rc.status.desc());
         }
         else {
@@ -165,7 +165,7 @@ void ebyte_process() {
             }
             else {
                 if (system_verbose_level >= VERBOSE_INFO) {
-                    term_printf("[EBYTE] Recv fm E34: %3d bytes", len);
+                    term_printf("[EBYTE] Recv: %3d bytes", len);
                     if (system_verbose_level >= VERBOSE_DEBUG) {
                         term_println(" >> " + hex_stream(p, len));
                     }
@@ -183,7 +183,7 @@ void ebyte_process() {
                 ResponseStatus status = ebyte.fragmentMessageQueueTx(p, len);
 
                 if (status.code != ResponseStatus::SUCCESS) {
-                    term_printf("[EBYTE] Loopback error on enqueueing %d bytes, E34:", len);
+                    term_printf("[EBYTE] Loopback error on enqueueing %d bytes, ", len);
                     term_println(status.desc());
                 }
                 else {
@@ -230,18 +230,18 @@ void ebyte_process() {
 
             status = ebyte.sendMessage(buf, len);
             if (status.code != ResponseStatus::SUCCESS) {
-                term_print("[EBYTE] C2E error, E34:");
+                term_print("[EBYTE] C2E error, ");
                 term_println(status.desc());
             }
             else {
                 if (system_verbose_level >= VERBOSE_INFO) {
-                    term_printf("[EBYTE] Send to E34: %3d bytes" ENDL, len);
+                    term_printf("[EBYTE] Send: %3d bytes" ENDL, len);
                 }
                 downlink_byte_sum += len;  // Keep stat
             }
         }
         else {
-            term_printf("[EBYTE] C2E error on waiting AUX HIGH, E34:");
+            term_printf("[EBYTE] C2E error on waiting AUX HIGH, ");
             term_println(status.desc());
         }
     }
@@ -325,7 +325,7 @@ void ebyte_set_configs(EbyteSetter & setter) {
         }
     }
     else {
-        term_print(F("[EBYTE] ebyte_set_config() failed!, E34: "));
+        term_print(F("[EBYTE] ebyte_set_config() failed!, "));
         term_println(rc.status.desc());  // Description of code
     }
 
