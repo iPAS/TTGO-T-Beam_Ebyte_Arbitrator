@@ -54,7 +54,8 @@
 
 #define EBYTE_BROADCAST_ADDR 0xFF  // XXX: 0xFFFF or 0x0FFF please check
 
-#define EBYTE_MODULE_BUFFER_SIZE 250  // 256 bytes at most
+// #define EBYTE_MODULE_BUFFER_SIZE 250  // 256 bytes at most
+#define EBYTE_MODULE_BUFFER_SIZE 220  // 256 bytes at most
 
 #define EBYTE_EXTRA_WAIT        40
 #define EBYTE_NO_AUX_WAIT       100
