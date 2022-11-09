@@ -6,7 +6,7 @@
 #define EBYTE_E34D27 1
 #define EBYTE_E28    2
 
-#define EBYTE_MODULE EBYTE_E28  // XXX: module selection is here! OR put it in the Vscode's JSON configuration file.
+// #define EBYTE_MODULE EBYTE_E28  // XXX: module selection is here! OR put it in the Vscode's JSON configuration file.
 // #define EBYTE_MODULE EBYTE_E34D27
 
 #ifndef EBYTE_MODULE

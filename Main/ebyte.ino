@@ -25,7 +25,7 @@
 #if EBYTE_MODULE == EBYTE_E28
 // #define EBYTE_BAUD      921600
 #define EBYTE_BAUD      115200
-#define EBYTE_PIN_M2    9   // Low-power '0' pin
+#define EBYTE_PIN_M2    9   // FIXME: this pin 'RST' is needed to be input for resetting only.
 #else
 #define EBYTE_BAUD      115200
 #endif
