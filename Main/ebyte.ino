@@ -70,7 +70,7 @@ void ebyte_setup() {
 
     // Ebyte setup
     if (ebyte.begin()) {  // Start communication with Ebyte module: config & etc.
-        term_println(F(ENDL "[EBYTE] Initialized successfully"));
+        term_printf(ENDL "[EBYTE] Initialized successfully for %s" ENDL, STR(EB));
 
         ResponseStructContainer rc;
         rc = ebyte.getConfiguration();  // Get c.data from here
