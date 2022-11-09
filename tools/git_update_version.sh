@@ -18,7 +18,7 @@ function currentpos() {
 }
 
 function make_version () {
-    echo "$(git describe --tags), $(git describe --all --long)"
+    echo "$(git describe --tags 2>/dev/null), $(git describe --all --long)"
 }
 
 version_file="$(currentpos)/../Main/version.h"
