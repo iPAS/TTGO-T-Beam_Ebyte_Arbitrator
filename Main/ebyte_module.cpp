@@ -144,6 +144,10 @@ void EbyteModule::managedDelay(unsigned long timeout) {
     }
 }
 
+bool EbyteModule::auxIsActive() {
+    return digitalRead(this->auxPin) == LOW;
+}
+
 ResponseStatus EbyteModule::auxReady(unsigned long timeout) {
     unsigned long t_prev = millis();
     ResponseStatus status = { .code = ResponseStatus::SUCCESS, };
@@ -151,7 +155,7 @@ ResponseStatus EbyteModule::auxReady(unsigned long timeout) {
 
     // If AUX pin was supplied, and look for HIGH state.
     // XXX: You can omit using AUX if no pins are available, but you will have to use delay() to let module finish
-    while (digitalRead(this->auxPin) == LOW) {
+    while (this->auxIsActive()) {
         unsigned long t = millis();  // It will be overflow about every 50 days.
 
         if (isTimeout(t, t_prev, timeout)) {

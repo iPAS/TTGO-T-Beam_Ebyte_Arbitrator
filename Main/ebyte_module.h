@@ -264,6 +264,7 @@ class EbyteModule {
     ResponseStatus          sendStruct(const void * structureManaged, size_t size_of_st);
     ResponseStatus          receiveStruct(void * structureManaged, size_t size_of_st);
 
+    bool            auxIsActive();
     ResponseStatus  auxReady(unsigned long timeout);
     int             available();
     void            waitTxBuffer();
