@@ -111,12 +111,10 @@ void EbyteModule::setBpsRate(uint32_t new_bps) {
             this->hs->begin(this->bpsRate, this->serialConfig);
         }
 
-        this->hs->setTimeout(EBYTE_UART_BUFFER_TMO);
-
         while (!this->hs) taskYIELD();  // wait for serial port to connect. Needed for native USB
     }
 
-    this->hs->setTimeout(1000);  // Timeout data in the buffer, then send.
+    this->hs->setTimeout(EBYTE_UART_BUFFER_TMO);  // Timeout data in the buffer, then send.
 }
 
 uint32_t EbyteModule::getBpsRate() {

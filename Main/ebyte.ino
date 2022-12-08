@@ -15,8 +15,8 @@
 #define EBYTE_FC_PIN_RX 4   // 15
 #define EBYTE_FC_PIN_TX 23  // 12
 
-#define EBYTE_FC_RX_BUFFER_SIZE 512
-#define EBYTE_FC_UART_TMO 1000
+#define EBYTE_FC_RX_BUFFER_SIZE EBYTE_UART_BUFFER_SIZE
+#define EBYTE_FC_UART_TMO       EBYTE_UART_BUFFER_TMO
 
 
 // Ebyte config
@@ -25,7 +25,7 @@
 #if EBYTE_MODULE == EBYTE_E28
 // #define EBYTE_BAUD      921600
 #define EBYTE_BAUD      115200
-#define EBYTE_PIN_M2    9   // FIXME: this pin 'RST' is needed to be input for resetting only.
+#define EBYTE_PIN_M2    9   // FIXME: this pin 9 'RST' is needed to be input for resetting only. Just pull-up for now.
 #else
 #define EBYTE_BAUD      115200
 #endif
