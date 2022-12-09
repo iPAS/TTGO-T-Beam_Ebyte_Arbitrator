@@ -12,11 +12,11 @@
 #define EBYTE_FC_BAUD   115200
 #endif
 
-#define EBYTE_FC_PIN_RX 4   // 15
-#define EBYTE_FC_PIN_TX 23  // 12
+#define EBYTE_FC_PIN_RX 4   // 21: RX to Flight-controller TX
+#define EBYTE_FC_PIN_TX 23  // 22: TX to Flight-controller RX
 
-#define EBYTE_FC_RX_BUFFER_SIZE 512
-#define EBYTE_FC_UART_TMO 1000
+#define EBYTE_FC_RX_BUFFER_SIZE EBYTE_UART_BUFFER_SIZE
+#define EBYTE_FC_UART_TMO       EBYTE_UART_BUFFER_TMO
 
 
 // Ebyte config
@@ -25,7 +25,7 @@
 #if EBYTE_MODULE == EBYTE_E28
 // #define EBYTE_BAUD      921600
 #define EBYTE_BAUD      115200
-#define EBYTE_PIN_M2    9   // FIXME: this pin 'RST' is needed to be input for resetting only.
+#define EBYTE_PIN_M2    9   // FIXME: this pin 9 'RST' is needed to be input for resetting only. Just pull-up for now.
 #else
 #define EBYTE_BAUD      115200
 #endif
@@ -70,7 +70,7 @@ void ebyte_setup() {
 
     // Ebyte setup
     if (ebyte.begin()) {  // Start communication with Ebyte module: config & etc.
-        term_println(F(ENDL "[EBYTE] Initialized successfully"));
+        term_printf(ENDL "[EBYTE] Initialized successfully for %s" ENDL, STR(EB));
 
         ResponseStructContainer rc;
         rc = ebyte.getConfiguration();  // Get c.data from here
@@ -130,22 +130,12 @@ void ebyte_setup() {
 }
 
 // ----------------------------------------------------------------------------
-void ebyte_process() {
-    static uint32_t report_millis = millis() + EBYTE_REPORT_PERIOD_MS;
-    static uint32_t downlink_byte_sum = 0;
-    static uint32_t uplink_byte_sum = 0;
-    static uint32_t prev_arival_millis = 0;         // Previous time the packet came
-    static uint32_t inter_arival_sum_millis = 0;    // Cummulative sum of inter-packet arival time
-    static uint32_t inter_arival_count = 0;
-
-    //
-    // Uplink -- Ebyte to Computer
-    //
+void ebyte_uplink_process(ebyte_stat_t *s) {
     if (ebyte.available()) {
         uint32_t arival_millis = millis();  // Arival timestamp
-        inter_arival_sum_millis += arival_millis - prev_arival_millis;
-        inter_arival_count++;
-        prev_arival_millis = arival_millis;
+        s->inter_arival_sum_millis += arival_millis - s->prev_arival_millis;
+        s->inter_arival_count++;
+        s->prev_arival_millis = arival_millis;
 
         ResponseContainer rc = ebyte.receiveMessage();
         const char * p = rc.data.c_str();
@@ -173,7 +163,7 @@ void ebyte_process() {
                         term_println();
                     }
                 }
-                uplink_byte_sum += len;  // Kepp stat
+                s->uplink_byte_sum += len;  // Kepp stat
             }
 
             //
@@ -195,11 +185,12 @@ void ebyte_process() {
 
         }
     }
+}
 
-    //
+// ----------------------------------------------------------------------------
+void ebyte_downlink_process(ebyte_stat_t *s) {
     // Loopback -- to another Ebyte
-    //  if all frame has been received  &&  fragments to be sent are in the queue
-    //
+    // If all frame has been received  &&  fragments to be sent are in the queue
     if ((ebyte.available() == 0) && ebyte.lengthMessageQueueTx()) {
         size_t len = ebyte.processMessageQueueTx();
         if (len == 0) {
@@ -209,14 +200,13 @@ void ebyte_process() {
             if (system_verbose_level >= VERBOSE_DEBUG) {
                 term_printf("[EBYTE] Loopback sending queue %3d bytes" ENDL, len);
             }
-            downlink_byte_sum += len;  // Kepp stat
+            s->downlink_byte_sum += len;  // Kepp stat
         }
     }
 
-    //
-    // Downlink -- Computer to Ebyte
-    //
-    else  // XXX: <-- Wait until all loopback frames are sent.
+    // From upper to lower
+    // If in loopback mode & tx not done, wait until all loopback frames are sent.
+    else
     if (computer.available()) {
         ResponseStatus status;
         status = ebyte.auxReady(EBYTE_NO_AUX_WAIT);
@@ -237,7 +227,7 @@ void ebyte_process() {
                 if (system_verbose_level >= VERBOSE_INFO) {
                     term_printf("[EBYTE] Send: %3d bytes" ENDL, len);
                 }
-                downlink_byte_sum += len;  // Keep stat
+                s->downlink_byte_sum += len;  // Keep stat
             }
         }
         else {
@@ -245,25 +235,40 @@ void ebyte_process() {
             term_println(status.desc());
         }
     }
+}
+
+// ----------------------------------------------------------------------------
+void ebyte_process() {
+    static ebyte_stat_t stat {};
+
+    //
+    // Uplink -- Ebyte to Computer
+    //
+    ebyte_uplink_process(&stat);
+
+    //
+    // Downlink -- Computer to Ebyte
+    //
+    ebyte_downlink_process(&stat);
 
     //
     // Statistic calculation
     //
     uint32_t now = millis();
-    if (now > report_millis) {
+    if (now > stat.report_millis) {
         if (ebyte_show_report_count > 0 || ebyte_show_report_count < 0) {
-            float period = (EBYTE_REPORT_PERIOD_MS + (now - report_millis)) / 1000;  // Int. division
-            float up_rate = uplink_byte_sum / period;
-            float down_rate = downlink_byte_sum / period;  // per second
+            float period = (EBYTE_REPORT_PERIOD_MS + (now - stat.report_millis)) / 1000;  // Int. division
+            float up_rate = stat.uplink_byte_sum / period;
+            float down_rate = stat.downlink_byte_sum / period;  // per second
 
             char inter_arival_str[10];
-            if (inter_arival_count > 0) {
-                snprintf(inter_arival_str, sizeof(inter_arival_str), "%dms", inter_arival_sum_millis / inter_arival_count);
+            if (stat.inter_arival_count > 0) {
+                snprintf(inter_arival_str, sizeof(inter_arival_str), "%dms", stat.inter_arival_sum_millis / stat.inter_arival_count);
             } else {
                 snprintf(inter_arival_str, sizeof(inter_arival_str), "--ms");
             }
-            inter_arival_sum_millis = 0;
-            inter_arival_count = 0;
+            stat.inter_arival_sum_millis = 0;
+            stat.inter_arival_count = 0;
 
             term_printf("[Ebyte] Report up:%.2fB/s down:%.2fB/s period:%.2fs inter_arival:%s" ENDL,
                 up_rate, down_rate, period, inter_arival_str);
@@ -272,9 +277,9 @@ void ebyte_process() {
                 ebyte_show_report_count--;
         }
 
-        uplink_byte_sum = 0;
-        downlink_byte_sum = 0;
-        report_millis = now + EBYTE_REPORT_PERIOD_MS;
+        stat.uplink_byte_sum = 0;
+        stat.downlink_byte_sum = 0;
+        stat.report_millis = now + EBYTE_REPORT_PERIOD_MS;
     }
 }
 

@@ -62,8 +62,8 @@
 #define EBYTE_RESPONSE_TMO      1000
 #define EBYTE_CONFIG_BAUD       9600
 
-#define EBYTE_UART_BUFFER_SIZE  512
-#define EBYTE_UART_BUFFER_TMO   1000
+#define EBYTE_UART_BUFFER_SIZE  1024
+#define EBYTE_UART_BUFFER_TMO   40
 
 
 /**
@@ -264,6 +264,7 @@ class EbyteModule {
     ResponseStatus          sendStruct(const void * structureManaged, size_t size_of_st);
     ResponseStatus          receiveStruct(void * structureManaged, size_t size_of_st);
 
+    bool            auxIsActive();
     ResponseStatus  auxReady(unsigned long timeout);
     int             available();
     void            waitTxBuffer();
