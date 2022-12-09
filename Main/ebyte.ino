@@ -16,7 +16,8 @@
 #define EBYTE_FC_PIN_TX 23  // 22: TX to Flight-controller RX
 
 #define EBYTE_FC_RX_BUFFER_SIZE EBYTE_UART_BUFFER_SIZE
-#define EBYTE_FC_UART_TMO       EBYTE_UART_BUFFER_TMO
+// #define EBYTE_FC_UART_TMO       EBYTE_UART_BUFFER_TMO
+#define EBYTE_FC_UART_TMO       40  // Quick enough to cut separately Mavlink frames.
 
 
 // Ebyte config

@@ -62,8 +62,8 @@
 #define EBYTE_RESPONSE_TMO      1000
 #define EBYTE_CONFIG_BAUD       9600
 
-#define EBYTE_UART_BUFFER_SIZE  1024
-#define EBYTE_UART_BUFFER_TMO   40
+#define EBYTE_UART_BUFFER_SIZE  2048
+#define EBYTE_UART_BUFFER_TMO   100  // Long enough to wait for configuration transferred completely.
 
 
 /**
