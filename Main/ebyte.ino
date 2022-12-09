@@ -12,8 +12,8 @@
 #define EBYTE_FC_BAUD   115200
 #endif
 
-#define EBYTE_FC_PIN_RX 4   // 15
-#define EBYTE_FC_PIN_TX 23  // 12
+#define EBYTE_FC_PIN_RX 4   // 21: RX to Flight-controller TX
+#define EBYTE_FC_PIN_TX 23  // 22: TX to Flight-controller RX
 
 #define EBYTE_FC_RX_BUFFER_SIZE EBYTE_UART_BUFFER_SIZE
 #define EBYTE_FC_UART_TMO       EBYTE_UART_BUFFER_TMO
