@@ -74,5 +74,11 @@ extern uint8_t ebyte_airrate_level;
 extern uint8_t ebyte_txpower_level;
 extern uint8_t ebyte_channel;
 
+enum {
+    MSG_TYPE_RAW = 0,
+    MSG_TYPE_MAVLINK,
+};
+extern uint8_t ebyte_message_type;
+
 
 #endif  // __EBYTE_H__

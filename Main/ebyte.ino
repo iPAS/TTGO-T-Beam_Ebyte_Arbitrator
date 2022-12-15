@@ -57,6 +57,7 @@ bool ebyte_loopback_flag = false;
 uint8_t ebyte_airrate_level = EB::AIR_RATE_2M;
 uint8_t ebyte_txpower_level = 0;  // Maximum
 uint8_t ebyte_channel = 6;
+uint8_t ebyte_message_type = MSG_TYPE_RAW;
 
 
 // ----------------------------------------------------------------------------

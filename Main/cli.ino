@@ -20,6 +20,7 @@ Command cmd_pref_save_reset;
 Command cmd_ebyte_show_report;
 Command cmd_ebyte_loopback;
 Command cmd_print_gps;
+Command cmd_message_type;
 
 #define DEFAULT_SEND_MESSAGE "0123456789"
 #define DEFAULT_REPORT_COUNT 1
@@ -54,6 +55,7 @@ const static char *help_description[] = {  // TODO: runtime configurable E34 or 
     "\tr|eport [n]      -- show report n times. 0:dis -1:always [def. \"" STR(DEFAULT_REPORT_COUNT) "\"]",
     "\tl|oopback [1|0]  -- show or set the 'send-back' mode",
     "\tg|ps [n]         -- print GPS n times. 0:dis -1:always [def. \"" STR(DEFAULT_PRINT_GPS_COUNT) "\"]",
+    "\tty|pe [n]        -- show or set message type [0=raw | 1=mavlink]",
 };
 
 
@@ -110,6 +112,9 @@ void cli_setup() {
     cmd_ebyte_loopback.addPositionalArgument("flag", "");
 
     cmd_print_gps = cli.addSingleArgumentCommand("g/ps", on_cmd_print_gps);  // To be able to get -1
+
+    cmd_message_type = cli.addCommand("ty/pe", on_cmd_message_type);
+    cmd_message_type.addPositionalArgument("type", "");
 }
 
 // ----------------------------------------------------------------------------
@@ -383,4 +388,23 @@ void on_cmd_print_gps(cmd * c) {
     else {
         term_print(F("[CLI] What? ..")); term_println(param);
     }
+}
+
+// ----------------------------------------------------------------------------
+static void on_cmd_message_type(cmd *c) {
+    Command cmd(c);
+    Argument arg = cmd.getArgument("type");
+    String param = arg.getValue();
+
+    long type;
+    if (extract_int(param, &type) == false) {
+        if (param != "") {
+            term_print(F("[CLI] What? ..")); term_println(param);
+        }
+    }
+    else {
+        ebyte_message_type = type;
+    }
+
+    term_printf("[CLI] Message type=%d" ENDL, ebyte_message_type);
 }
