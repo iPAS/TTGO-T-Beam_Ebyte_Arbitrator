@@ -235,20 +235,32 @@ class EbyteE34 : public EbyteModule {
              E34::REVISION rev=E34::D20);
     ~EbyteE34();
 
-    bool addrChanToConfig(  Configuration & config,
-                            bool changed,           // Whether comparing only or setting
+    void setAddrChanIntoConfig( Configuration & config,
+                                int32_t addr = -1,      // 4-bit MSB -- retry count
+                                int8_t chan = -1        // ch6 = 2.508 GHz -- out of WiFi channels
+                                ) const override;
+    void setSpeedIntoConfig(    Configuration & config,
+                                int8_t air_baud = -1,   // AIR_DATA_RATE_*
+                                int8_t uart_baud = -1,  // UART_BPS_115200
+                                int8_t uart_parity = -1 // UART_PARITY_8N1
+                                ) const override;
+    void setOptionIntoConfig(   Configuration & config,
+                                int8_t tx_pow = -1,     // TXPOWER_*
+                                int8_t tx_mode = -1,    // TXMODE_TRANS
+                                int8_t io_mode = -1     // IO_PUSH_PULL
+                                ) const override;
+
+    bool compareAddrChan(   Configuration & config,
                             int32_t addr = -1,      // 4-bit MSB -- retry count
                             int8_t chan = -1        // ch6 = 2.508 GHz -- out of WiFi channels
                             ) const override;
-    bool speedToConfig(     Configuration & config,
-                            bool changed,           // Whether comparing only or setting
-                            int8_t air_baud = -1,   // AIR_DATA_RATE_2M
+    bool compareSpeed(      Configuration & config,
+                            int8_t air_baud = -1,   // AIR_DATA_RATE_*
                             int8_t uart_baud = -1,  // UART_BPS_115200
                             int8_t uart_parity = -1 // UART_PARITY_8N1
                             ) const override;
-    bool optionToConfig(    Configuration & config,
-                            bool changed,           // Whether comparing only or setting
-                            int8_t tx_pow = -1,     // TXPOWER_20
+    bool compareOption(     Configuration & config,
+                            int8_t tx_pow = -1,     // TXPOWER_*
                             int8_t tx_mode = -1,    // TXMODE_TRANS
                             int8_t io_mode = -1     // IO_PUSH_PULL
                             ) const override;

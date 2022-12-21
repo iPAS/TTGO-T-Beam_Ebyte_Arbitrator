@@ -97,57 +97,48 @@ void EbyteE34::printParameters(Configuration & config) const {
 /**
  * @brief
  */
-
-bool EbyteE34::addrChanToConfig(Configuration & config, bool changed, int32_t addr, int8_t chan) const {
-    if (!changed) {  // No change, just comparing
-        return (addr < 0  ||  ((config.addr_msb << 8) | config.addr_lsb) == addr
-        )  &&  (chan < 0  ||  config.channel == chan
-        );
-    }
-
+void EbyteE34::setAddrChanIntoConfig(Configuration & config, int32_t addr, int8_t chan) const {
     if (addr >= 0) {
-        config.addr_msb = (addr & 0x0000FFFF) >> 8;
-        config.addr_lsb = (addr & 0x000000FF);
+        config.addr_msb = uint16_t(addr) >> 8;
+        config.addr_lsb = uint16_t(addr) & 0x0FF;
     }
-    if (chan >= 0)
-        config.channel = chan;
-    return true;
+    if (chan >= 0) config.channel = chan;
 }
 
-bool EbyteE34::speedToConfig(Configuration & config, bool changed, int8_t air_baud, int8_t uart_baud, int8_t uart_parity) const {
+void EbyteE34::setSpeedIntoConfig(Configuration & config, int8_t air_baud, int8_t uart_baud, int8_t uart_parity) const {
     EB::Speed *spd = (EB::Speed *)&config.speed;
-
-    if (!changed) {  // No change, just comparing
-        return (air_baud    < 0  ||  spd->airDataRate == air_baud
-        )  &&  (uart_baud   < 0  ||  spd->uartBaudRate == uart_baud
-        )  &&  (uart_parity < 0  ||  spd->uartParity == uart_parity
-        );
-    }
-
-    if (air_baud >= 0)
-        spd->airDataRate = air_baud;
-    if (uart_baud >= 0)
-        spd->uartBaudRate = uart_baud;
-    if (uart_parity >= 0)
-        spd->uartParity = uart_parity;
-    return true;
+    if (air_baud >= 0) spd->airDataRate = air_baud;
+    if (uart_baud >= 0) spd->uartBaudRate = uart_baud;
+    if (uart_parity >= 0) spd->uartParity = uart_parity;
 }
 
-bool EbyteE34::optionToConfig(Configuration & config, bool changed, int8_t tx_pow, int8_t tx_mode, int8_t io_mode) const {
+void EbyteE34::setOptionIntoConfig(Configuration & config, int8_t tx_pow, int8_t tx_mode, int8_t io_mode) const {
     EB::Option *opt = (EB::Option *)&config.option;
+    if (tx_pow >= 0) opt->transmissionPower = tx_pow;
+    if (tx_mode >= 0) opt->fixedTransmission = tx_mode;
+    if (io_mode >= 0) opt->ioDriveMode = io_mode;
+}
 
-    if (!changed) {  // No change, just comparing
-        return (tx_pow  < 0  ||  opt->transmissionPower == tx_pow
-        )  &&  (tx_mode < 0  ||  opt->fixedTransmission == tx_mode
-        )  &&  (io_mode < 0  ||  opt->ioDriveMode == io_mode
-        );
-    }
+bool EbyteE34::compareAddrChan(Configuration & config, int32_t addr, int8_t chan) const {
+    uint8_t addr_msb = uint16_t(addr) >> 8;
+    uint8_t addr_lsb = uint16_t(addr) & 0x0FF;
+    return (addr < 0  ||  (config.addr_msb == addr_msb  &&  config.addr_lsb == addr_lsb)
+    )  &&  (chan < 0  ||  config.channel == chan
+    );
+}
 
-    if (tx_pow >= 0)
-        opt->transmissionPower = tx_pow;
-    if (tx_mode >= 0)
-        opt->fixedTransmission = tx_mode;
-    if (io_mode >= 0)
-        opt->ioDriveMode = io_mode;
-    return true;
+bool EbyteE34::compareSpeed(Configuration & config, int8_t air_baud, int8_t uart_baud, int8_t uart_parity) const {
+    EB::Speed *spd = (EB::Speed *)&config.speed;
+    return (air_baud    < 0  ||  spd->airDataRate == air_baud
+    )  &&  (uart_baud   < 0  ||  spd->uartBaudRate == uart_baud
+    )  &&  (uart_parity < 0  ||  spd->uartParity == uart_parity
+    );
+}
+
+bool EbyteE34::compareOption(Configuration & config, int8_t tx_pow, int8_t tx_mode, int8_t io_mode) const {
+    EB::Option *opt = (EB::Option *)&config.option;
+    return (tx_pow  < 0  ||  opt->transmissionPower == tx_pow
+    )  &&  (tx_mode < 0  ||  opt->fixedTransmission == tx_mode
+    )  &&  (io_mode < 0  ||  opt->ioDriveMode == io_mode
+    );
 }

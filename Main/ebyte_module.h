@@ -238,9 +238,13 @@ class EbyteModule {
 
     bool begin();
 
-    virtual bool addrChanToConfig(  Configuration & config, bool changed, int32_t addr,    int8_t chan) const = 0;
-    virtual bool speedToConfig(     Configuration & config, bool changed, int8_t air_baud, int8_t uart_baud, int8_t uart_parity) const = 0;
-    virtual bool optionToConfig(    Configuration & config, bool changed, int8_t tx_pow ,  int8_t tx_mode,   int8_t io_mode) const = 0;
+    virtual void setAddrChanIntoConfig( Configuration & config, int32_t addr,    int8_t chan) const = 0;
+    virtual void setSpeedIntoConfig(    Configuration & config, int8_t air_baud, int8_t uart_baud, int8_t uart_parity) const = 0;
+    virtual void setOptionIntoConfig(   Configuration & config, int8_t tx_pow ,  int8_t tx_mode,   int8_t io_mode) const = 0;
+
+    virtual bool compareAddrChan(       Configuration & config, int32_t addr,    int8_t chan) const = 0;
+    virtual bool compareSpeed(          Configuration & config, int8_t air_baud, int8_t uart_baud, int8_t uart_parity) const = 0;
+    virtual bool compareOption(         Configuration & config, int8_t tx_pow ,  int8_t tx_mode,   int8_t io_mode) const = 0;
 
     ResponseStructContainer getConfiguration();
     ResponseStatus          setConfiguration(Configuration & config, EBYTE_COMMAND_T save_type = WRITE_CFG_PWR_DWN_LOSE);

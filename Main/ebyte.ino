@@ -6,10 +6,11 @@
 #define EBYTE_FC_SERIAL Serial1
 
 #if EBYTE_MODULE == EBYTE_E28
-// #define EBYTE_FC_BAUD   921600
 #define EBYTE_FC_BAUD   115200
+#define EBYTE_NODE_ADDR 0xFFFF
 #else
 #define EBYTE_FC_BAUD   115200
+#define EBYTE_NODE_ADDR 0x0FFF
 #endif
 
 #define EBYTE_FC_PIN_RX 4   // 21: RX to Flight-controller TX
@@ -91,16 +92,14 @@ void ebyte_setup() {
             // Setup the desired mode
             //
             #if EBYTE_MODULE == EBYTE_E28
-            ebyte.addrChanToConfig( cfg, true, 0xFFFF, ebyte_channel);
-            // ebyte.speedToConfig(    cfg, true, ebyte_airrate_level, EB::UART_BPS_921600, EB::UART_PARITY_8N1);
-            ebyte.speedToConfig(    cfg, true, ebyte_airrate_level, EB::UART_BPS_115200, EB::UART_PARITY_8N1);
+            ebyte.setAddrChanIntoConfig( cfg, EBYTE_NODE_ADDR, ebyte_channel);
+            ebyte.setSpeedIntoConfig(    cfg, ebyte_airrate_level, EB::UART_BPS_115200, EB::UART_PARITY_8N1);
             #else
-            ebyte.addrChanToConfig( cfg, true, 0x0FFF, ebyte_channel);
-            ebyte.speedToConfig(    cfg, true, ebyte_airrate_level, EB::UART_BPS_115200, EB::UART_PARITY_8N1);
+            ebyte.setAddrChanIntoConfig( cfg, EBYTE_NODE_ADDR, ebyte_channel);
+            ebyte.setSpeedIntoConfig(    cfg, ebyte_airrate_level, EB::UART_BPS_115200, EB::UART_PARITY_8N1);
             #endif
-            ebyte.optionToConfig(   cfg, true, ebyte_txpower_level, EB::TXMODE_TRANS, EB::IO_PUSH_PULL);
-            ebyte.setConfiguration(cfg);
-            // ebyte.setConfiguration(cfg, WRITE_CFG_PWR_DWN_SAVE);  // XXX: Save on Ebyte's EEPROM
+            ebyte.setOptionIntoConfig(   cfg, ebyte_txpower_level, EB::TXMODE_TRANS, EB::IO_PUSH_PULL);
+            ebyte.setConfiguration(cfg);  // XXX: pass 'WRITE_CFG_PWR_DWN_SAVE' to save on Ebyte's EEPROM
 
             //
             // Recheck
@@ -348,19 +347,40 @@ void ebyte_apply_configs() {
         Setter(uint8_t param): EbyteSetter(param) {};
 
         void operator () (Configuration & config) {
-            ebyte.addrChanToConfig( config, true, -1, ebyte_channel);
-            ebyte.speedToConfig(    config, true, ebyte_airrate_level, -1, -1);
-            ebyte.optionToConfig(   config, true, ebyte_txpower_level, -1, -1);
+            ebyte.setAddrChanIntoConfig(config, -1, ebyte_channel);
+            ebyte.setSpeedIntoConfig(   config, ebyte_airrate_level, -1, -1);
+            ebyte.setOptionIntoConfig(  config, ebyte_txpower_level, -1, -1);
             ebyte.setConfiguration(config);
         };
 
         bool validate(Configuration & config) {
-            return (ebyte.addrChanToConfig( config, false, -1, ebyte_channel)
-                &&  ebyte.speedToConfig(    config, false, ebyte_airrate_level, -1, -1)
-                &&  ebyte.optionToConfig(   config, false, ebyte_txpower_level, -1, -1)
+            return (ebyte.compareAddrChan(config, -1, ebyte_channel)
+                &&  ebyte.compareSpeed(   config, ebyte_airrate_level, -1, -1)
+                &&  ebyte.compareOption(  config, ebyte_txpower_level, -1, -1)
             );
         };
     } setter(0);
+
+    ebyte_set_configs(setter);
+}
+
+/**
+ * @brief
+ */
+void ebyte_set_channel(uint8_t chan) {
+    class Setter: public EbyteSetter {
+      public:
+        Setter(uint8_t param): EbyteSetter(param) {};
+
+        void operator () (Configuration & config) {
+            ebyte.setAddrChanIntoConfig(config, -1, this->byte_param);
+            ebyte.setConfiguration(config);
+        };
+
+        bool validate(Configuration & config) {
+            return ebyte.compareAddrChan(config, -1, this->byte_param);
+        };
+    } setter(chan);
 
     ebyte_set_configs(setter);
 }
@@ -374,12 +394,12 @@ void ebyte_set_airrate(uint8_t level) {
         Setter(uint8_t param): EbyteSetter(param) {};
 
         void operator () (Configuration & config) {
-            ebyte.speedToConfig(config, true, this->byte_param, -1, -1);
+            ebyte.setSpeedIntoConfig(config, this->byte_param, -1, -1);
             ebyte.setConfiguration(config);
         };
 
         bool validate(Configuration & config) {
-            return ebyte.speedToConfig(config, false, this->byte_param, -1, -1);
+            return ebyte.compareSpeed(config, this->byte_param, -1, -1);
         };
     } setter(level);
 
@@ -395,35 +415,14 @@ void ebyte_set_txpower(uint8_t level) {
         Setter(uint8_t param): EbyteSetter(param) {};
 
         void operator () (Configuration & config) {
-            ebyte.optionToConfig(config, true, this->byte_param, -1, -1);
+            ebyte.setOptionIntoConfig(config, this->byte_param, -1, -1);
             ebyte.setConfiguration(config);
         };
 
         bool validate(Configuration & config) {
-            return ebyte.optionToConfig(config, false, this->byte_param, -1, -1);
+            return ebyte.compareOption(config, this->byte_param, -1, -1);
         };
     } setter(level);
-
-    ebyte_set_configs(setter);
-}
-
-/**
- * @brief
- */
-void ebyte_set_channel(uint8_t chan) {
-    class Setter: public EbyteSetter {
-      public:
-        Setter(uint8_t param): EbyteSetter(param) {};
-
-        void operator () (Configuration & config) {
-            ebyte.addrChanToConfig(config, true, -1, this->byte_param);
-            ebyte.setConfiguration(config);
-        };
-
-        bool validate(Configuration & config) {
-            return ebyte.addrChanToConfig(config, false, -1, this->byte_param);
-        };
-    } setter(chan);
 
     ebyte_set_configs(setter);
 }
