@@ -11,18 +11,19 @@ typedef struct {
         PREF_AIRRATE,
         PREF_TXPOWER,
         PREF_CHANNEL,
+        PREF_MSG_TYPE,
     } code;
 
     String desc() {
         switch (this->code) {
-            case PREF_ALL:      return F("Not yet implemented!");  // TODO:
-            case PREF_VERBOSE:  return F("Not yet implemented!");
-            case PREF_AIRRATE:  return F("Not yet implemented!");
-            case PREF_TXPOWER:  return F("Not yet implemented!");
+            case PREF_ALL:      return F("All preferences");
+            case PREF_VERBOSE:  return F("Verbose pref.");
+            case PREF_AIRRATE:  return F("Airrate pref.");
+            case PREF_TXPOWER:  return F("TxPower pref.");
+            case PREF_MSG_TYPE: return F("Msg type pref.");
             default:            return F("Not yet implemented!");
         }
     };
-
 } preference_topic_t;
 
 extern void pref_setup();
