@@ -148,9 +148,9 @@ void ebyte_uplink_process(ebyte_stat_t *s) {
         }
         else {
 
-            //
-            // Forward uplink
-            //
+            ////////////////////
+            // Forward uplink //
+            ////////////////////
             if (computer.write(p, len) != len) {
                 term_println("[EBYTE] E2C error. Cannot write all");
             }
@@ -167,11 +167,11 @@ void ebyte_uplink_process(ebyte_stat_t *s) {
                 s->uplink_byte_sum += len;  // Kepp stat
             }
 
-            //
-            // Loopback
-            //
+            ///////////////////////////
+            // Loopback, on this end //
+            ///////////////////////////
             if (ebyte_loopback_flag) {
-                ResponseStatus status = ebyte.fragmentMessageQueueTx(p, len);
+                ResponseStatus status = ebyte.fragmentMessageQueueTx(p, len);  // In-queuing to be sent sequentially
 
                 if (status.code != ResponseStatus::SUCCESS) {
                     term_printf("[EBYTE] Loopback error on enqueueing %d bytes, ", len);
@@ -190,10 +190,13 @@ void ebyte_uplink_process(ebyte_stat_t *s) {
 
 // ----------------------------------------------------------------------------
 void ebyte_downlink_process(ebyte_stat_t *s) {
-    // Loopback -- to another Ebyte
-    // If all frame has been received  &&  fragments to be sent are in the queue
-    if ((ebyte.available() == 0) && ebyte.lengthMessageQueueTx()) {
-        size_t len = ebyte.processMessageQueueTx();
+    //////////////////////////////////
+    // Loopback, to the another end //
+    //////////////////////////////////
+    // if queue ready, and no more data to be queued.
+    if (ebyte.lengthMessageQueueTx()  &&  ebyte.available() == 0) {
+        size_t len = ebyte.processMessageQueueTx();  // Send out the loopback frames
+
         if (len == 0) {
             term_println(F("[EBYTE] Loopback error on sending queue!"));
         }
@@ -205,9 +208,12 @@ void ebyte_downlink_process(ebyte_stat_t *s) {
         }
     }
 
-    // From upper to lower
-    // If in loopback mode & tx not done, wait until all loopback frames are sent.
-    else
+    else  // We prefer the loopback frames to be consecutive; so, using 'else' here.
+
+    //////////////////////
+    // Forward downlink //
+    //////////////////////
+    // from upper to lower, if no more loopback queued frame.
     if (computer.available()) {
         ResponseStatus status;
         status = ebyte.auxReady(EBYTE_NO_AUX_WAIT);
