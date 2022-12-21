@@ -7,37 +7,32 @@ static Preferences pref;
 
 // ----------------------------------------------------------------------------
 void pref_setup() {
-    pref_load(false);
+    pref_load(false);  // No need for updating to the module again. It has been done in ebyte_setup().
 }
 
 // ----------------------------------------------------------------------------
-void pref_load(bool do_save, preference_topic_t topic) {
+void pref_load(bool do_sync, preference_topic_t topic) {
     pref.begin(PREF_NAME_SPACE, true);
 
     // Load from flash
-    if (topic.code == topic.PREF_VERBOSE  ||
-        topic.code == topic.PREF_ALL) {
+    if (topic.code == topic.PREF_ALL  ||  topic.code == topic.PREF_VERBOSE) {
         system_verbose_level = (verbose_level_t)pref.getUChar(STR(PREF_VERBOSE), system_verbose_level);
     }
-    if (topic.code == topic.PREF_AIRRATE  ||
-        topic.code == topic.PREF_ALL) {
+    if (topic.code == topic.PREF_ALL  ||  topic.code == topic.PREF_AIRRATE) {
         ebyte_airrate_level = pref.getUChar(STR(PREF_AIRRATE), ebyte_airrate_level);
     }
-    if (topic.code == topic.PREF_TXPOWER  ||
-        topic.code == topic.PREF_ALL) {
+    if (topic.code == topic.PREF_ALL  ||  topic.code == topic.PREF_TXPOWER) {
         ebyte_txpower_level = pref.getUChar(STR(PREF_TXPOWER), ebyte_txpower_level);
     }
-    if (topic.code == topic.PREF_CHANNEL  ||
-        topic.code == topic.PREF_ALL) {
+    if (topic.code == topic.PREF_ALL  ||  topic.code == topic.PREF_CHANNEL) {
         ebyte_channel = pref.getUChar(STR(PREF_CHANNEL), ebyte_channel);
     }
-    if (topic.code == topic.PREF_MSG_TYPE  ||
-        topic.code == topic.PREF_ALL) {
+    if (topic.code == topic.PREF_ALL  ||  topic.code == topic.PREF_MSG_TYPE) {
         ebyte_message_type = pref.getUChar(STR(PREF_MSG_TYPE), ebyte_message_type);
     }
 
     // Apply them
-    if (do_save) {
+    if (do_sync) {
         switch (topic.code) {
             case topic.PREF_ALL: ebyte_apply_configs(); break;
             case topic.PREF_VERBOSE: break;
@@ -57,24 +52,19 @@ void pref_save(preference_topic_t topic) {
     pref.begin(PREF_NAME_SPACE, false);
 
     // Save to flash
-    if (topic.code == topic.PREF_VERBOSE  ||
-        topic.code == topic.PREF_ALL) {
+    if (topic.code == topic.PREF_ALL  ||  topic.code == topic.PREF_VERBOSE) {
         pref.putUChar(STR(PREF_VERBOSE), system_verbose_level);
     }
-    if (topic.code == topic.PREF_AIRRATE  ||
-        topic.code == topic.PREF_ALL) {
+    if (topic.code == topic.PREF_ALL  ||  topic.code == topic.PREF_AIRRATE) {
         pref.putUChar(STR(PREF_AIRRATE), ebyte_airrate_level);
     }
-    if (topic.code == topic.PREF_TXPOWER  ||
-        topic.code == topic.PREF_ALL) {
+    if (topic.code == topic.PREF_ALL  ||  topic.code == topic.PREF_TXPOWER) {
         pref.putUChar(STR(PREF_TXPOWER), ebyte_txpower_level);
     }
-    if (topic.code == topic.PREF_CHANNEL  ||
-        topic.code == topic.PREF_ALL) {
+    if (topic.code == topic.PREF_ALL  ||  topic.code == topic.PREF_CHANNEL) {
         pref.putUChar(STR(PREF_CHANNEL), ebyte_channel);
     }
-    if (topic.code == topic.PREF_MSG_TYPE  ||
-        topic.code == topic.PREF_ALL) {
+    if (topic.code == topic.PREF_ALL  ||  topic.code == topic.PREF_MSG_TYPE) {
         pref.putUChar(STR(PREF_MSG_TYPE), ebyte_message_type);
     }
 

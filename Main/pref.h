@@ -27,7 +27,7 @@ typedef struct {
 } preference_topic_t;
 
 extern void pref_setup();
-extern void pref_load(bool do_save = true, preference_topic_t topic = { preference_topic_t::PREF_ALL });
+extern void pref_load(bool do_sync = true, preference_topic_t topic = { preference_topic_t::PREF_ALL });
 extern void pref_save(preference_topic_t topic = { preference_topic_t::PREF_ALL });
 
 
