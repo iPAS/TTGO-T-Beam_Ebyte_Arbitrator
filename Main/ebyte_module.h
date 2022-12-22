@@ -54,8 +54,11 @@
 
 #define EBYTE_BROADCAST_ADDR 0xFF  // XXX: 0xFFFF or 0x0FFF please check
 
+#ifndef EBYTE_MODULE_BUFFER_SIZE
 // #define EBYTE_MODULE_BUFFER_SIZE 250  // 256 bytes at most
-#define EBYTE_MODULE_BUFFER_SIZE 220  // 256 bytes at most
+#define EBYTE_MODULE_BUFFER_SIZE 220  // E28 FIFO -- as shown in E28 datasheet
+// #define EBYTE_MODULE_BUFFER_SIZE 120  // E28 max tx packet size
+#endif
 
 #define EBYTE_EXTRA_WAIT        40
 #define EBYTE_NO_AUX_WAIT       100

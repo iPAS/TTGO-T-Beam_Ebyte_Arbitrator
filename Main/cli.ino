@@ -14,6 +14,7 @@ Command cmd_verbose;
 Command cmd_ebyte_airrate;
 Command cmd_ebyte_txpower;
 Command cmd_ebyte_channel;
+Command cmd_ebyte_ifs;
 Command cmd_ebyte_send;
 Command cmd_ebyte_get_config;
 Command cmd_pref_save_reset;
@@ -27,19 +28,19 @@ Command cmd_message_type;
 #define DEFAULT_PRINT_GPS_COUNT 1
 
 const static char *help_description[] = {  // TODO: runtime configurable E34 or E28
-    "\th|elp",
-    "\tre|set           -- reset",
-    "\ti|nfo            -- get module version infomation",
-    "\tv|erbose [level] -- show or set info level [0=none | 1=err | 2=warn | 3=info | 4=debug]",
+    "  h|elp",
+    "  re|set           -- reset",
+    "  i|nfo            -- get module version infomation",
+    "  v|erbose [level] -- show or set info level [0=none | 1=err | 2=warn | 3=info | 4=debug]",
 
-    "\ta|irrate [level] -- show or set airrate level"
+    "  a|irrate [level] -- show or set airrate level"
         #if EBYTE_MODULE == EBYTE_E28
         " [0=auto | 1=1kbps | 2=5kbps | 3=10kbps | 4=50kbps | 5=100kbps | 6=1M(FLRC) | 7=2M(FSK)]",
         #else
         " [0=250kbps | 1=1Mbps | 2=2Mbps]",
         #endif
 
-    "\tt|xpower [level] -- show or set txpower level"
+    "  t|xpower [level] -- show or set txpower level"
         #if EBYTE_MODULE == EBYTE_E34
         " [0=20dBm | 1=14dBm | 2=8dBm | 3=2dBm]",
         #elif EBYTE_MODULE == EBYTE_E34D27
@@ -48,14 +49,15 @@ const static char *help_description[] = {  // TODO: runtime configurable E34 or 
         " [0=12dBm | 1=10dBm | 2=7dBm | 3=4dBm]",
         #endif
 
-    "\tch|annel [ch]    -- show or set channel [0-11]",
-    "\ts|end [message]  -- send [def. \"" DEFAULT_SEND_MESSAGE "\"]",
-    "\tc|onfig          -- get configuration from Ebyte directly",
-    "\tp|ref [0]        -- save or reset preferences. 0:reset null:save",
-    "\tr|eport [n]      -- show report n times. 0:dis -1:always [def. \"" STR(DEFAULT_REPORT_COUNT) "\"]",
-    "\tl|oopback [1|0]  -- show or set the 'send-back' mode",
-    "\tg|ps [n]         -- print GPS n times. 0:dis -1:always [def. \"" STR(DEFAULT_PRINT_GPS_COUNT) "\"]",
-    "\tty|pe [n]        -- show or set message type [0=raw | 1=mavlink]",
+    "  ch|annel [ch]    -- show or set channel [0-11]",
+    "  ifs [time_ms]    -- show or set inter-frame space in ms",
+    "  s|end [message]  -- send [def. \"" DEFAULT_SEND_MESSAGE "\"]",
+    "  c|onfig          -- get configuration from Ebyte directly",
+    "  p|ref [0]        -- save or reset preferences. 0:reset null:save",
+    "  r|eport [n]      -- show report n times. 0:dis -1:always [def. \"" STR(DEFAULT_REPORT_COUNT) "\"]",
+    "  l|oopback [1|0]  -- show or set the 'send-back' mode",
+    "  g|ps [n]         -- print GPS n times. 0:dis -1:always [def. \"" STR(DEFAULT_PRINT_GPS_COUNT) "\"]",
+    "  ty|pe [n]        -- show or set message type [0=raw | 1=mavlink]",
 };
 
 
@@ -94,6 +96,9 @@ void cli_setup() {
 
     cmd_ebyte_channel = cli.addCommand("ch/annel", on_cmd_ebyte_channel);
     cmd_ebyte_channel.addPositionalArgument("ch", "");
+
+    cmd_ebyte_ifs = cli.addCommand("ifs", on_cmd_ebyte_ifs);
+    cmd_ebyte_ifs.addPositionalArgument("time_ms", "");
 
     cmd_ebyte_send = cli.addCommand("s/end", on_cmd_ebyte_send);
     cmd_ebyte_send.addPositionalArgument("message", DEFAULT_SEND_MESSAGE);
@@ -260,6 +265,25 @@ static void on_cmd_ebyte_channel(cmd *c) {
     }
 
     term_printf("[CLI] Ebyte channel=%d" ENDL, ebyte_channel);
+}
+
+// ----------------------------------------------------------------------------
+static void on_cmd_ebyte_ifs(cmd *c) {
+    Command cmd(c);
+    Argument arg = cmd.getArgument("time_ms");
+    String param = arg.getValue();
+
+    long ms;
+    if (extract_int(param, &ms) == false) {
+        if (param != "") {
+            term_print(F("[CLI] What? ..")); term_println(param);
+        }
+    }
+    else {
+        ebyte_ifs_ms = ms;
+    }
+
+    term_printf("[CLI] Ebyte inter-frame space=%dms" ENDL, ebyte_ifs_ms);
 }
 
 // ----------------------------------------------------------------------------

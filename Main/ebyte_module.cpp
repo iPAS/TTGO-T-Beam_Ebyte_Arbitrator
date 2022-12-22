@@ -591,6 +591,10 @@ size_t EbyteModule::processMessageQueueTx() {
                 q_dequeue(&this->queueTx, NULL, 0);  // Succeeded!
                 return len;
             }
+            else {
+                DEBUG_PRINT(F(EBYTE_LABEL "Process queueTx error on sending message, "));
+                DEBUG_PRINTLN(status.desc());    
+            }
         }
         else {
             DEBUG_PRINT(F(EBYTE_LABEL "Process queueTx error on waiting AUX HIGH, "));
