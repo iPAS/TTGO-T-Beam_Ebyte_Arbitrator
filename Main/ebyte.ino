@@ -131,6 +131,13 @@ void ebyte_setup() {
 }
 
 // ----------------------------------------------------------------------------
+byte * ebyte_mavlink_segmentor(byte * p, size_t len, size_t *new_len) {
+
+    *new_len = len;
+    return p;
+}
+
+// ----------------------------------------------------------------------------
 void ebyte_uplink_process(ebyte_stat_t *s) {
     if (ebyte.available()) {
         uint32_t arival_millis = millis();  // Arival timestamp
@@ -139,7 +146,7 @@ void ebyte_uplink_process(ebyte_stat_t *s) {
         s->prev_arival_millis = arival_millis;
 
         ResponseContainer rc = ebyte.receiveMessage();
-        const char * p = rc.data.c_str();
+        byte * p = (byte *)rc.data.c_str();
         size_t len = rc.data.length();
 
         if (rc.status.code != ResponseStatus::SUCCESS) {
@@ -147,6 +154,17 @@ void ebyte_uplink_process(ebyte_stat_t *s) {
             term_println(rc.status.desc());
         }
         else {
+
+            ////////////////////////////////////////////
+            // Preprocess depends on the message mode //
+            ////////////////////////////////////////////
+            if (ebyte_message_type == MSG_TYPE_RAW) {
+                // Passthrough
+            }
+            else
+            if (ebyte_message_type == MSG_TYPE_MAVLINK) {
+                p = ebyte_mavlink_segmentor(p, len, &len);
+            }
 
             ////////////////////
             // Forward uplink //
