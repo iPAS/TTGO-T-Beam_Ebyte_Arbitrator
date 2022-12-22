@@ -280,10 +280,10 @@ static void on_cmd_ebyte_ifs(cmd *c) {
         }
     }
     else {
-        ebyte_downlink_ifs_ms = ms;
+        ebyte_ifs_ms = ms;
     }
 
-    term_printf("[CLI] Ebyte inter-frame space=%dms" ENDL, ebyte_downlink_ifs_ms);
+    term_printf("[CLI] Ebyte inter-frame space=%dms" ENDL, ebyte_ifs_ms);
 }
 
 // ----------------------------------------------------------------------------

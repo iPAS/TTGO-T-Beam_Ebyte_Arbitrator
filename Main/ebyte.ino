@@ -62,7 +62,7 @@ uint8_t ebyte_airrate_level = 0;
 uint8_t ebyte_txpower_level = 0;  // Maximum
 uint8_t ebyte_channel = 6;
 uint8_t ebyte_message_type = MSG_TYPE_RAW;
-uint32_t ebyte_downlink_ifs_ms = EBYTE_DOWNLINK_IFS_MS;  // TODO: push it in the command-line
+uint32_t ebyte_ifs_ms = EBYTE_DOWNLINK_IFS_MS;  // TODO: push it in the command-line
 
 
 // ----------------------------------------------------------------------------
@@ -223,7 +223,7 @@ void ebyte_downlink_process(ebyte_stat_t *s) {
     &&  ebyte.lengthMessageQueueTx() > 0
     &&  now > s->loopback_tmo_millis
     &&  now > s->downlink_ifs_millis) {
-        s->downlink_ifs_millis = now + ebyte_downlink_ifs_ms;
+        s->downlink_ifs_millis = now + ebyte_ifs_ms;
         size_t len = ebyte.processMessageQueueTx();  // Send out the loopback frames
 
         if (len == 0) {
@@ -254,7 +254,7 @@ void ebyte_downlink_process(ebyte_stat_t *s) {
             size_t len = (computer.available() < ARRAY_SIZE(buf))? computer.available() : ARRAY_SIZE(buf);
             computer.readBytes(buf, len);
 
-            s->downlink_ifs_millis = now + ebyte_downlink_ifs_ms;
+            s->downlink_ifs_millis = now + ebyte_ifs_ms;
             status = ebyte.sendMessage(buf, len);
 
             if (status.code != ResponseStatus::SUCCESS) {
