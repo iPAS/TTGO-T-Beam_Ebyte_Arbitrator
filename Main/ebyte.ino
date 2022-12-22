@@ -52,10 +52,10 @@ EbyteE28 ebyte(&EBYTE_SERIAL, EBYTE_PIN_AUX, EBYTE_PIN_M0, EBYTE_PIN_M1, EBYTE_P
 
 #define EBYTE_REPORT_PERIOD_MS 10000
 
-#define EBYTE_LOOPBACK_TMO_MS  1000  // Used for cutting the end of loopback frame, to send it back
-// #define EBYTE_LOOPBACK_TMO_MS  (EBYTE_DOWNLINK_IFS_MS*2)  // Used for cutting the end of loopback frame, to send it back
-#define EBYTE_DOWNLINK_IFS_MS  800  // ms between two consecutive sent frames
-#define EBYTE_TIME_BTW_RXTX_MS 800  // ms between starting to send after receiving
+// XXX: After fune-tuning for a while, I think 'time' between RX and TX is the most significance.
+#define EBYTE_LOOPBACK_TMO_MS  800  // Used for cutting the end of loopback frame, to send it back
+#define EBYTE_TIME_BTW_RXTX_MS 500  // ms between starting to send after receiving
+#define EBYTE_DOWNLINK_IFS_MS  1  // ms between two consecutive sent frames
 
 int ebyte_show_report_count = 0;  // 0 is 'disable', -1 is 'forever', other +n will be counted down to zero.
 bool ebyte_loopback_flag = false;
