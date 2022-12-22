@@ -56,6 +56,8 @@ typedef struct {
     uint32_t prev_arival_millis;         // Previous time the packet came
     uint32_t inter_arival_sum_millis;    // Cummulative sum of inter-packet arival time
     uint32_t inter_arival_count;
+
+    uint32_t loopback_tmo_millis;
 } ebyte_stat_t;
 
 
