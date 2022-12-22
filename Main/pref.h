@@ -11,6 +11,7 @@ typedef struct {
         PREF_AIRRATE,
         PREF_TXPOWER,
         PREF_CHANNEL,
+        PREF_IFS,
         PREF_MSG_TYPE,
     } code;
 
@@ -20,6 +21,7 @@ typedef struct {
             case PREF_VERBOSE:  return F("Verbose pref.");
             case PREF_AIRRATE:  return F("Airrate pref.");
             case PREF_TXPOWER:  return F("TxPower pref.");
+            case PREF_IFS:      return F("Inter-frame space pref.");
             case PREF_MSG_TYPE: return F("Msg type pref.");
             default:            return F("Not yet implemented!");
         }
@@ -27,7 +29,8 @@ typedef struct {
 } preference_topic_t;
 
 extern void pref_setup();
-extern void pref_load(bool do_sync = true, preference_topic_t topic = { preference_topic_t::PREF_ALL });
+extern void pref_load(preference_topic_t topic = { preference_topic_t::PREF_ALL });
+extern void pref_apply(preference_topic_t topic = { preference_topic_t::PREF_ALL });
 extern void pref_save(preference_topic_t topic = { preference_topic_t::PREF_ALL });
 
 
