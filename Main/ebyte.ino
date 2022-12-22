@@ -25,9 +25,8 @@
 #define EBYTE_SERIAL    Serial2
 
 #if EBYTE_MODULE == EBYTE_E28
-// #define EBYTE_BAUD      921600
 #define EBYTE_BAUD      115200
-#define EBYTE_PIN_M2    9   // FIXME: this pin 9 'RST' is needed to be input for resetting only. Just pull-up for now.
+#define EBYTE_PIN_M2    32  // FIXME: Just pull-up 'M2' for now.
 #else
 #define EBYTE_BAUD      115200
 #endif
@@ -240,7 +239,7 @@ void ebyte_downlink_process(ebyte_stat_t *s) {
         if (status.code == ResponseStatus::SUCCESS)
         {
             byte buf[EBYTE_MODULE_BUFFER_SIZE];
-            size_t len = (computer.available() < EBYTE_MODULE_BUFFER_SIZE)? computer.available() : EBYTE_MODULE_BUFFER_SIZE;
+            size_t len = (computer.available() < ARRAY_SIZE(buf))? computer.available() : EBYTE_MODULE_BUFFER_SIZE;
             computer.readBytes(buf, len);
 
             status = ebyte.sendMessage(buf, len);
