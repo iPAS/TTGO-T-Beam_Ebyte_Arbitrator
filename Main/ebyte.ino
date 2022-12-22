@@ -51,8 +51,15 @@ EbyteE28 ebyte(&EBYTE_SERIAL, EBYTE_PIN_AUX, EBYTE_PIN_M0, EBYTE_PIN_M1, EBYTE_P
 
 
 #define EBYTE_REPORT_PERIOD_MS 10000
+
+// #define EBYTE_LOOPBACK_TMO_MS  1200  // Used for cutting the end of loopback frame, to send it back
+// #define EBYTE_DOWNLINK_IFS_MS  800   // ms between two consecutive sent frames
+// #define EBYTE_LOOPBACK_TMO_MS  1000  // Used for cutting the end of loopback frame, to send it back
+// #define EBYTE_DOWNLINK_IFS_MS  600   // ms between two consecutive sent frames
+#define EBYTE_LOOPBACK_TMO_MS  800  // Used for cutting the end of loopback frame, to send it back
+#define EBYTE_DOWNLINK_IFS_MS  400   // ms between two consecutive sent frames
+
 int ebyte_show_report_count = 0;  // 0 is 'disable', -1 is 'forever', other +n will be counted down to zero.
-#define EBYTE_LOOPBACK_TMO_MS 250
 bool ebyte_loopback_flag = false;
 
 uint8_t ebyte_airrate_level = 0;
@@ -209,13 +216,17 @@ void ebyte_uplink_process(ebyte_stat_t *s) {
 
 // ----------------------------------------------------------------------------
 void ebyte_downlink_process(ebyte_stat_t *s) {
+    uint32_t now = millis();
+
     //////////////////////////////////
     // Loopback, to the another end //
     //////////////////////////////////
     // if no more data to be queued, and queue is ready.
     if (ebyte.available() == 0
     &&  ebyte.lengthMessageQueueTx() > 0
-    &&  millis() > s->loopback_tmo_millis) {
+    &&  now > s->loopback_tmo_millis
+    &&  now > s->downlink_ifs_millis) {
+        s->downlink_ifs_millis = now + EBYTE_DOWNLINK_IFS_MS;
         size_t len = ebyte.processMessageQueueTx();  // Send out the loopback frames
 
         if (len == 0) {
@@ -235,18 +246,20 @@ void ebyte_downlink_process(ebyte_stat_t *s) {
     // Forward downlink //
     //////////////////////
     // from upper to lower, if no more loopback queued frame.
-    if (computer.available()) {
+    if (computer.available()
+    &&  now > s->downlink_ifs_millis) {
         ResponseStatus status;
         status = ebyte.auxReady(EBYTE_NO_AUX_WAIT);
 
         // Forward downlink
-        if (status.code == ResponseStatus::SUCCESS)
-        {
+        if (status.code == ResponseStatus::SUCCESS) {
             byte buf[EBYTE_MODULE_BUFFER_SIZE];
             size_t len = (computer.available() < ARRAY_SIZE(buf))? computer.available() : ARRAY_SIZE(buf);
             computer.readBytes(buf, len);
 
+            s->downlink_ifs_millis = now + EBYTE_DOWNLINK_IFS_MS;
             status = ebyte.sendMessage(buf, len);
+
             if (status.code != ResponseStatus::SUCCESS) {
                 term_print("[EBYTE] C2E error, ");
                 term_println(status.desc());
