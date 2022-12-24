@@ -54,7 +54,7 @@ EbyteE28 ebyte(&EBYTE_SERIAL, EBYTE_PIN_AUX, EBYTE_PIN_M0, EBYTE_PIN_M1, EBYTE_P
 
 // XXX: After fune-tuning for a while, I think 'time' between RX and TX is the most significance.
 #define EBYTE_LOOPBACK_TMO_MS 1000  // Used for cutting the end of loopback frame, to send it back
-#define EBYTE_TBTW_RXTX_MS 600  // ms between starting to send after receiving
+#define EBYTE_TBTW_RXTX_MS 800  // ms between starting to send after receiving
 
 int ebyte_show_report_count = 0;  // 0 is 'disable', -1 is 'forever', other +n will be counted down to zero.
 bool ebyte_loopback_flag = false;
@@ -140,12 +140,6 @@ void ebyte_setup() {
 }
 
 // ----------------------------------------------------------------------------
-char * ebyte_mavlink_segmentor(String & data, size_t *new_len) {
-    *new_len = data.length();
-    return (char *)data.c_str();
-}
-
-// ----------------------------------------------------------------------------
 void ebyte_uplink_process(ebyte_stat_t *s) {
     // XXX: Not required indeed, I think
     // if (millis() < s->prev_departure_millis + ebyte_tbtw_rxtx_ms) {  // Space between RX then TX
@@ -167,14 +161,7 @@ void ebyte_uplink_process(ebyte_stat_t *s) {
         ////////////////////////////////////////////
         switch (ebyte_message_type) {
             case MSG_TYPE_RAW: break;  // Passthrough
-            case MSG_TYPE_MAVLINK:
-                char * pp = p;
-                size_t lenlen = len;
-                p = ebyte_mavlink_segmentor(rc.data, &len);
-                if (pp != p  ||  lenlen != len) {
-                    term_println("[EBYTE] xxx");
-                }
-                break;
+            case MSG_TYPE_MAVLINK: p = mavlink_segmentor(rc.data, &len); break;
         }
 
         if (rc.status.code != ResponseStatus::SUCCESS) {
