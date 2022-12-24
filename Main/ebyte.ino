@@ -79,7 +79,11 @@ void ebyte_setup() {
 
     // Ebyte setup
     if (ebyte.begin()) {  // Start communication with Ebyte module: config & etc.
-        term_printf(ENDL "[EBYTE] Initialized successfully for %s" ENDL, STR(EB));
+        term_printf(ENDL "[EBYTE] Start initializing for %s" ENDL, STR(EB));
+
+        // XXX: Trying to reset the module before used. No success yet.
+        // ebyte.resetModule();  // Reset the module
+        // vTaskDelay(10000 / portTICK_PERIOD_MS);  // Wait debugging console
 
         ResponseStructContainer rc;
         rc = ebyte.getConfiguration();  // Get c.data from here
@@ -119,7 +123,7 @@ void ebyte_setup() {
                 ebyte.printParameters(cfg);
             }
             else {
-                term_print(F("[EBYTE] Re-checking failed!, "));
+                term_print(F("[EBYTE] Re-checking configuration, failed!, "));
                 term_println(rc.status.desc());  // Description of code
             }
 
@@ -127,12 +131,12 @@ void ebyte_setup() {
             ebyte.setBpsRate(EBYTE_BAUD);
         }
         else {
-            term_print(F("[EBYTE] Reading old configuration failed!, "));
+            term_print(F("[EBYTE] Reading old configuration, failed!, "));
             term_println(rc.status.desc());  // Description of code
         }
     }
     else {
-        term_println(F("[EBYTE] Initialized fail!"));
+        term_println(F("[EBYTE] Open connection fail!"));
     }
 }
 
