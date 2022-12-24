@@ -54,8 +54,7 @@ EbyteE28 ebyte(&EBYTE_SERIAL, EBYTE_PIN_AUX, EBYTE_PIN_M0, EBYTE_PIN_M1, EBYTE_P
 
 // XXX: After fune-tuning for a while, I think 'time' between RX and TX is the most significance.
 #define EBYTE_LOOPBACK_TMO_MS  800  // Used for cutting the end of loopback frame, to send it back
-#define EBYTE_TIME_BTW_RXTX_MS 500  // ms between starting to send after receiving
-#define EBYTE_DOWNLINK_IFS_MS  1  // ms between two consecutive sent frames
+#define EBYTE_TBTW_RXTX_MS 650  // ms between starting to send after receiving
 
 int ebyte_show_report_count = 0;  // 0 is 'disable', -1 is 'forever', other +n will be counted down to zero.
 bool ebyte_loopback_flag = false;
@@ -64,7 +63,7 @@ uint8_t ebyte_airrate_level = 0;
 uint8_t ebyte_txpower_level = 0;  // Maximum
 uint8_t ebyte_channel = 6;
 uint8_t ebyte_message_type = MSG_TYPE_RAW;
-uint32_t ebyte_ifs_ms = EBYTE_DOWNLINK_IFS_MS;  // TODO: push it in the command-line
+uint32_t ebyte_tbtw_rxtx_ms = EBYTE_TBTW_RXTX_MS;
 
 
 // ----------------------------------------------------------------------------
@@ -79,7 +78,11 @@ void ebyte_setup() {
 
     // Ebyte setup
     if (ebyte.begin()) {  // Start communication with Ebyte module: config & etc.
-        term_printf(ENDL "[EBYTE] Initialized successfully for %s" ENDL, STR(EB));
+        term_printf(ENDL "[EBYTE] Start initializing for %s" ENDL, STR(EB));
+
+        // XXX: Trying to reset the module before used. No success yet.
+        // ebyte.resetModule();  // Reset the module
+        // vTaskDelay(10000 / portTICK_PERIOD_MS);  // Wait debugging console
 
         ResponseStructContainer rc;
         rc = ebyte.getConfiguration();  // Get c.data from here
@@ -119,7 +122,7 @@ void ebyte_setup() {
                 ebyte.printParameters(cfg);
             }
             else {
-                term_print(F("[EBYTE] Re-checking failed!, "));
+                term_print(F("[EBYTE] Re-checking configuration, failed!, "));
                 term_println(rc.status.desc());  // Description of code
             }
 
@@ -127,12 +130,12 @@ void ebyte_setup() {
             ebyte.setBpsRate(EBYTE_BAUD);
         }
         else {
-            term_print(F("[EBYTE] Reading old configuration failed!, "));
+            term_print(F("[EBYTE] Reading old configuration, failed!, "));
             term_println(rc.status.desc());  // Description of code
         }
     }
     else {
-        term_println(F("[EBYTE] Initialized fail!"));
+        term_println(F("[EBYTE] Open connection fail!"));
     }
 }
 
@@ -145,11 +148,16 @@ byte * ebyte_mavlink_segmentor(byte * p, size_t len, size_t *new_len) {
 
 // ----------------------------------------------------------------------------
 void ebyte_uplink_process(ebyte_stat_t *s) {
+    uint32_t now = millis();
+
+    if (now < s->prev_departure_millis + EBYTE_TBTW_RXTX_MS) {  // Space between RX then TX
+        return;
+    }
+
     if (ebyte.available()) {
-        uint32_t arival_millis = millis();  // Arival timestamp
-        s->inter_arival_sum_millis += arival_millis - s->prev_arival_millis;
+        s->inter_arival_sum_millis += now - s->prev_arival_millis;
         s->inter_arival_count++;
-        s->prev_arival_millis = arival_millis;
+        s->prev_arival_millis = now;
 
         ResponseContainer rc = ebyte.receiveMessage();
         byte * p = (byte *)rc.data.c_str();
@@ -195,7 +203,7 @@ void ebyte_uplink_process(ebyte_stat_t *s) {
             // Loopback, on this end //
             ///////////////////////////
             if (ebyte_loopback_flag) {
-                s->loopback_tmo_millis = arival_millis + EBYTE_LOOPBACK_TMO_MS;
+                s->loopback_tmo_millis = now + EBYTE_LOOPBACK_TMO_MS;
                 ResponseStatus status = ebyte.fragmentMessageQueueTx(p, len);  // In-queuing to be sent sequentially
 
                 if (status.code != ResponseStatus::SUCCESS) {
@@ -217,7 +225,7 @@ void ebyte_uplink_process(ebyte_stat_t *s) {
 void ebyte_downlink_process(ebyte_stat_t *s) {
     uint32_t now = millis();
 
-    if (now < s->prev_arival_millis + EBYTE_TIME_BTW_RXTX_MS) {  // Space between RX then TX
+    if (now < s->prev_arival_millis + EBYTE_TBTW_RXTX_MS) {  // Space between RX then TX
         return;
     }
 
@@ -227,9 +235,9 @@ void ebyte_downlink_process(ebyte_stat_t *s) {
     // if no more data to be queued, and queue is ready.
     if (ebyte.available() == 0
     &&  ebyte.lengthMessageQueueTx() > 0
-    &&  now > s->loopback_tmo_millis
-    &&  now > s->downlink_ifs_millis) {
-        s->downlink_ifs_millis = now + ebyte_ifs_ms;
+    &&  now > s->loopback_tmo_millis) {
+        s->prev_departure_millis = now;
+
         size_t len = ebyte.processMessageQueueTx();  // Send out the loopback frames
 
         if (len == 0) {
@@ -249,8 +257,9 @@ void ebyte_downlink_process(ebyte_stat_t *s) {
     // Forward downlink //
     //////////////////////
     // from upper to lower, if no more loopback queued frame.
-    if (computer.available()
-    &&  now > s->downlink_ifs_millis) {
+    if (computer.available()) {
+        s->prev_departure_millis = now;
+
         ResponseStatus status;
         status = ebyte.auxReady(EBYTE_NO_AUX_WAIT);
 
@@ -260,7 +269,6 @@ void ebyte_downlink_process(ebyte_stat_t *s) {
             size_t len = (computer.available() < ARRAY_SIZE(buf))? computer.available() : ARRAY_SIZE(buf);
             computer.readBytes(buf, len);
 
-            s->downlink_ifs_millis = now + ebyte_ifs_ms;
             status = ebyte.sendMessage(buf, len);
 
             if (status.code != ResponseStatus::SUCCESS) {

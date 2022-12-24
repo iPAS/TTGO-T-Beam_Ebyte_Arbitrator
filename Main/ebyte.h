@@ -54,11 +54,11 @@ typedef struct {
     uint32_t downlink_byte_sum;
     uint32_t uplink_byte_sum;
     uint32_t prev_arival_millis;         // Previous time the packet came
+    uint32_t prev_departure_millis;         // Previous time the packet went
     uint32_t inter_arival_sum_millis;    // Cummulative sum of inter-packet arival time
     uint32_t inter_arival_count;
 
     uint32_t loopback_tmo_millis;  // Loopback cut-frame timeout
-    uint32_t downlink_ifs_millis;  // Inter-frame space between the downlink sent packets
 } ebyte_stat_t;
 
 
@@ -82,7 +82,7 @@ enum {
     MSG_TYPE_MAVLINK,
 };
 extern uint8_t ebyte_message_type;
-extern uint32_t ebyte_ifs_ms;
+extern uint32_t ebyte_tbtw_rxtx_ms;
 
 
 #endif  // __EBYTE_H__
