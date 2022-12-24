@@ -54,8 +54,7 @@ EbyteE28 ebyte(&EBYTE_SERIAL, EBYTE_PIN_AUX, EBYTE_PIN_M0, EBYTE_PIN_M1, EBYTE_P
 
 // XXX: After fune-tuning for a while, I think 'time' between RX and TX is the most significance.
 #define EBYTE_LOOPBACK_TMO_MS  800  // Used for cutting the end of loopback frame, to send it back
-#define EBYTE_TIME_BTW_RXTX_MS 500  // ms between starting to send after receiving
-#define EBYTE_DOWNLINK_IFS_MS  1  // ms between two consecutive sent frames
+#define EBYTE_TBTW_RXTX_MS 500  // ms between starting to send after receiving
 
 int ebyte_show_report_count = 0;  // 0 is 'disable', -1 is 'forever', other +n will be counted down to zero.
 bool ebyte_loopback_flag = false;
@@ -64,7 +63,7 @@ uint8_t ebyte_airrate_level = 0;
 uint8_t ebyte_txpower_level = 0;  // Maximum
 uint8_t ebyte_channel = 6;
 uint8_t ebyte_message_type = MSG_TYPE_RAW;
-uint32_t ebyte_ifs_ms = EBYTE_DOWNLINK_IFS_MS;  // TODO: push it in the command-line
+uint32_t ebyte_tbtw_rxtx_ms = EBYTE_TBTW_RXTX_MS;
 
 
 // ----------------------------------------------------------------------------
@@ -221,7 +220,7 @@ void ebyte_uplink_process(ebyte_stat_t *s) {
 void ebyte_downlink_process(ebyte_stat_t *s) {
     uint32_t now = millis();
 
-    if (now < s->prev_arival_millis + EBYTE_TIME_BTW_RXTX_MS) {  // Space between RX then TX
+    if (now < s->prev_arival_millis + EBYTE_TBTW_RXTX_MS) {  // Space between RX then TX
         return;
     }
 

@@ -81,7 +81,7 @@ enum {
     MSG_TYPE_MAVLINK,
 };
 extern uint8_t ebyte_message_type;
-extern uint32_t ebyte_ifs_ms;
+extern uint32_t ebyte_tbtw_rxtx_ms;
 
 
 #endif  // __EBYTE_H__

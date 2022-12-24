@@ -14,7 +14,7 @@ Command cmd_verbose;
 Command cmd_ebyte_airrate;
 Command cmd_ebyte_txpower;
 Command cmd_ebyte_channel;
-Command cmd_ebyte_ifs;
+Command cmd_ebyte_tbtw_rxtx;
 Command cmd_ebyte_send;
 Command cmd_ebyte_get_config;
 Command cmd_pref_save_reset;
@@ -50,7 +50,7 @@ const static char *help_description[] = {  // TODO: runtime configurable E34 or 
         #endif
 
     "  ch|annel [ch]    -- show or set channel [0-11]",
-    "  ifs [time_ms]    -- show or set inter-frame space in ms",
+    "  ga|p [time_ms]   -- show or set the gap time between RX & TX in ms",
     "  s|end [message]  -- send [def. \"" DEFAULT_SEND_MESSAGE "\"]",
     "  c|onfig          -- get configuration from Ebyte directly",
     "  p|ref [0]        -- save or reset preferences. 0:reset null:save",
@@ -97,8 +97,8 @@ void cli_setup() {
     cmd_ebyte_channel = cli.addCommand("ch/annel", on_cmd_ebyte_channel);
     cmd_ebyte_channel.addPositionalArgument("ch", "");
 
-    cmd_ebyte_ifs = cli.addCommand("ifs", on_cmd_ebyte_ifs);
-    cmd_ebyte_ifs.addPositionalArgument("time_ms", "");
+    cmd_ebyte_tbtw_rxtx = cli.addCommand("ga/p", on_cmd_ebyte_tbtw_rxtx);
+    cmd_ebyte_tbtw_rxtx.addPositionalArgument("time_ms", "");
 
     cmd_ebyte_send = cli.addCommand("s/end", on_cmd_ebyte_send);
     cmd_ebyte_send.addPositionalArgument("message", DEFAULT_SEND_MESSAGE);
@@ -268,7 +268,7 @@ static void on_cmd_ebyte_channel(cmd *c) {
 }
 
 // ----------------------------------------------------------------------------
-static void on_cmd_ebyte_ifs(cmd *c) {
+static void on_cmd_ebyte_tbtw_rxtx(cmd *c) {
     Command cmd(c);
     Argument arg = cmd.getArgument("time_ms");
     String param = arg.getValue();
@@ -280,10 +280,10 @@ static void on_cmd_ebyte_ifs(cmd *c) {
         }
     }
     else {
-        ebyte_ifs_ms = ms;
+        ebyte_tbtw_rxtx_ms = ms;
     }
 
-    term_printf("[CLI] Ebyte inter-frame space=%dms" ENDL, ebyte_ifs_ms);
+    term_printf("[CLI] Ebyte time between RX & TX=%dms" ENDL, ebyte_tbtw_rxtx_ms);
 }
 
 // ----------------------------------------------------------------------------

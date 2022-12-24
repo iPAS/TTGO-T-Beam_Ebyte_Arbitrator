@@ -28,8 +28,8 @@ void pref_load(preference_topic_t topic) {
     if (topic.code == topic.PREF_ALL  ||  topic.code == topic.PREF_CHANNEL) {
         ebyte_channel = pref.getUChar(STR(PREF_CHANNEL), ebyte_channel);
     }
-    if (topic.code == topic.PREF_ALL  ||  topic.code == topic.PREF_IFS) {
-        ebyte_ifs_ms = pref.getULong(STR(PREF_IFS_TYPE), ebyte_ifs_ms);
+    if (topic.code == topic.PREF_ALL  ||  topic.code == topic.PREF_TBTW_RXTX) {
+        ebyte_tbtw_rxtx_ms = pref.getULong(STR(PREF_IFS_TYPE), ebyte_tbtw_rxtx_ms);
     }
     if (topic.code == topic.PREF_ALL  ||  topic.code == topic.PREF_MSG_TYPE) {
         ebyte_message_type = pref.getUChar(STR(PREF_MSG_TYPE), ebyte_message_type);
@@ -46,7 +46,7 @@ void pref_apply(preference_topic_t topic) {
         case topic.PREF_AIRRATE: ebyte_set_airrate(ebyte_airrate_level); break;
         case topic.PREF_TXPOWER: ebyte_set_txpower(ebyte_txpower_level); break;
         case topic.PREF_CHANNEL: ebyte_set_channel(ebyte_channel); break;
-        case topic.PREF_IFS: break;
+        case topic.PREF_TBTW_RXTX: break;
         case topic.PREF_MSG_TYPE: break;
         default: break;
     }
@@ -69,8 +69,8 @@ void pref_save(preference_topic_t topic) {
     if (topic.code == topic.PREF_ALL  ||  topic.code == topic.PREF_CHANNEL) {
         pref.putUChar(STR(PREF_CHANNEL), ebyte_channel);
     }
-    if (topic.code == topic.PREF_ALL  ||  topic.code == topic.PREF_IFS) {
-        pref.putULong(STR(PREF_IFS), ebyte_ifs_ms);
+    if (topic.code == topic.PREF_ALL  ||  topic.code == topic.PREF_TBTW_RXTX) {
+        pref.putULong(STR(PREF_IFS), ebyte_tbtw_rxtx_ms);
     }
     if (topic.code == topic.PREF_ALL  ||  topic.code == topic.PREF_MSG_TYPE) {
         pref.putUChar(STR(PREF_MSG_TYPE), ebyte_message_type);
