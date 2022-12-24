@@ -140,10 +140,9 @@ void ebyte_setup() {
 }
 
 // ----------------------------------------------------------------------------
-byte * ebyte_mavlink_segmentor(byte * p, size_t len, size_t *new_len) {
-
-    *new_len = len;
-    return p;
+char * ebyte_mavlink_segmentor(String & data, size_t *new_len) {
+    *new_len = data.length();
+    return (char *)data.c_str();
 }
 
 // ----------------------------------------------------------------------------
@@ -154,9 +153,9 @@ void ebyte_uplink_process(ebyte_stat_t *s) {
     // }
 
     if (ebyte.available()) {
-        ResponseContainer rc;
-        byte * p;
-        size_t len;
+        ResponseContainer rc = ebyte.receiveMessage();
+        char * p = (char *)rc.data.c_str();
+        size_t len = rc.data.length();
 
         // Update stat.
         s->inter_arival_sum_millis += millis() - s->prev_arival_millis;
@@ -167,18 +166,12 @@ void ebyte_uplink_process(ebyte_stat_t *s) {
         // Preprocess depends on the message mode //
         ////////////////////////////////////////////
         if (ebyte_message_type == MSG_TYPE_RAW) {
-            rc = ebyte.receiveMessage();
-            p = (byte *)rc.data.c_str();
-            len = rc.data.length();
+            // Passthrough
         }
         else
         if (ebyte_message_type == MSG_TYPE_MAVLINK) {
-            // ebyte.peak
-            // p = ebyte_mavlink_segmentor(p, len, &len);
+            p = ebyte_mavlink_segmentor(rc.data, &len);
         }
-
-//         receiveMessageString(size_t size)
-
 
         if (rc.status.code != ResponseStatus::SUCCESS) {
             term_print("[EBYTE] E2C error!, ");
