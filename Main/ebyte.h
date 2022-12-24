@@ -79,7 +79,7 @@ extern uint8_t ebyte_channel;
 
 enum {
     MSG_TYPE_RAW = 0,
-    MSG_TYPE_MAVLINK,
+    MSG_TYPE_MAVLINK = 1,
 };
 extern uint8_t ebyte_message_type;
 extern uint32_t ebyte_tbtw_rxtx_ms;
