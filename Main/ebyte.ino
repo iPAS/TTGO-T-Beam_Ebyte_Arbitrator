@@ -231,9 +231,7 @@ void ebyte_downlink_process(ebyte_stat_t *s) {
     // if no more data to be queued, and queue is ready.
     if (ebyte.available() == 0
     &&  ebyte.lengthMessageQueueTx() > 0
-    &&  now > s->loopback_tmo_millis
-    &&  now > s->downlink_ifs_millis) {
-        s->downlink_ifs_millis = now + ebyte_ifs_ms;
+    &&  now > s->loopback_tmo_millis) {
         size_t len = ebyte.processMessageQueueTx();  // Send out the loopback frames
 
         if (len == 0) {
@@ -253,8 +251,7 @@ void ebyte_downlink_process(ebyte_stat_t *s) {
     // Forward downlink //
     //////////////////////
     // from upper to lower, if no more loopback queued frame.
-    if (computer.available()
-    &&  now > s->downlink_ifs_millis) {
+    if (computer.available()) {
         ResponseStatus status;
         status = ebyte.auxReady(EBYTE_NO_AUX_WAIT);
 
@@ -264,7 +261,6 @@ void ebyte_downlink_process(ebyte_stat_t *s) {
             size_t len = (computer.available() < ARRAY_SIZE(buf))? computer.available() : ARRAY_SIZE(buf);
             computer.readBytes(buf, len);
 
-            s->downlink_ifs_millis = now + ebyte_ifs_ms;
             status = ebyte.sendMessage(buf, len);
 
             if (status.code != ResponseStatus::SUCCESS) {

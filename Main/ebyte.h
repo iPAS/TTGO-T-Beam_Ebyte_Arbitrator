@@ -58,7 +58,6 @@ typedef struct {
     uint32_t inter_arival_count;
 
     uint32_t loopback_tmo_millis;  // Loopback cut-frame timeout
-    uint32_t downlink_ifs_millis;  // Inter-frame space between the downlink sent packets
 } ebyte_stat_t;
 
 
