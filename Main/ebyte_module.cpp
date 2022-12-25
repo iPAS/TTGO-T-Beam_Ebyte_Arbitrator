@@ -480,6 +480,11 @@ ResponseContainer EbyteModule::receiveMessage() {
     return rc;
 }
 
+ResponseStatus EbyteModule::receiveMessage(void *message, size_t *size) {
+    *size = this->hs->available();
+    return receiveStruct(message, *size);
+}
+
 // ResponseStructContainer EbyteModule::receiveMessageFixedSize(size_t size) {
 //     ResponseStructContainer rc;
 //     rc.data   = malloc(size);

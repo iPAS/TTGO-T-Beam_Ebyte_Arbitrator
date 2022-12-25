@@ -255,21 +255,23 @@ class EbyteModule {
     ResponseStructContainer getVersionInfo(String & info);
     ResponseStatus          resetModule();
 
-    ResponseStatus          sendMessage(const void * message, size_t size);
-    ResponseStatus          sendMessage(const String message);
-
-    ResponseStatus          sendFixedTxModeMessage(byte addh, byte addl, byte chan, const void * message, size_t size);
-    ResponseStatus          sendFixedTxModeMessage(byte addh, byte addl, byte chan, const String message);
-    ResponseStatus          sendFixedTxModeMessage(byte chan, const void * message, size_t size);  // Broadcast
-    ResponseStatus          sendFixedTxModeMessage(byte chan, const String message);  // Broadcast
-
-    ResponseContainer       receiveMessage();
-    ResponseStructContainer receiveMessageFixedSize(size_t size);
-    ResponseContainer       receiveMessageUntil(char delimiter = '\0');
-    ResponseContainer       receiveMessageString(size_t size);
 
     ResponseStatus          sendStruct(const void * structureManaged, size_t size_of_st);
     ResponseStatus          receiveStruct(void * structureManaged, size_t size_of_st);
+
+    ResponseContainer       receiveMessage();
+    ResponseStatus          receiveMessage(void *message, size_t *size);
+    // ResponseStructContainer receiveMessageFixedSize(size_t size);
+    // ResponseContainer       receiveMessageUntil(char delimiter = '\0');
+    // ResponseContainer       receiveMessageString(size_t size);
+
+    ResponseStatus          sendMessage(const void * message, size_t size);
+    ResponseStatus          sendMessage(const String message);
+    // ResponseStatus          sendFixedTxModeMessage(byte addh, byte addl, byte chan, const void * message, size_t size);
+    // ResponseStatus          sendFixedTxModeMessage(byte addh, byte addl, byte chan, const String message);
+    // ResponseStatus          sendFixedTxModeMessage(byte chan, const void * message, size_t size);  // Broadcast
+    // ResponseStatus          sendFixedTxModeMessage(byte chan, const String message);  // Broadcast
+
 
     bool            auxIsActive();
     ResponseStatus  auxReady(unsigned long timeout);
