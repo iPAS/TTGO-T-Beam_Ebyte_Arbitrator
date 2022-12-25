@@ -3,7 +3,7 @@
 
 
 #define TEST_MAVLINK
-#define MAVLINK_BUFFER_SIZE 250
+#define MAVLINK_BUFFER_SIZE 1024
 
 extern char * mavlink_segmentor(char * data, size_t len, size_t *new_len);
 

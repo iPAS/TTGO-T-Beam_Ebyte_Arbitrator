@@ -34,20 +34,27 @@
  *
  */
 char * mavlink_segmentor(char * data, size_t len, size_t *new_len) {
-    *new_len = len;
-    return data;  // XXX: bypass
-/*
-    static char buffer[MAVLINK_BUFFER_SIZE];
-    static size_t buf_len = 0;
-
-    if (buf_len > 0) {  // Concatenate with the old fregment.
-        // data = buf + data;
-        buf_len = 0;
-    }
+    // *new_len = len;
+    // return data;  // XXX: bypass
 
     const char MAV1_STX = 0xFE;
     const char MAV2_STX = 0xFD;
-    char stx = data.charAt(0);
+
+    static char buf[MAVLINK_BUFFER_SIZE];
+    static char buf2[MAVLINK_BUFFER_SIZE];
+    static size_t buf_len = 0;
+    char *p = data;
+    *new_len = len;
+
+    // Prepare & concatenate the buffer
+    if (buf_len > 0) {  // Concatenate with the old fregment.
+        // data = buf + data;
+        memcpy(buf, data, len);
+        *new_len = buf_len + len;
+        buf_len = 0;
+        p = buf;
+    }
+    char stx = p[0];
 
     // Something is wrong ?!
     if (stx != MAV1_STX  &&  stx != MAV2_STX) {
@@ -55,12 +62,14 @@ char * mavlink_segmentor(char * data, size_t len, size_t *new_len) {
             term_printf("[EBYTE] First message is not a Mavlink!" ENDL);
         }
 
+        *new_len = len;
+        return data;  // Nothing changed
     }
 
     // A Mavlink message has been found
     else {
-        size_t last_index = data.lastIndexOf(stx);
-        size_t last_frame_len = (size_t)data.charAt(last_index + 1);
+        size_t last_index = strrchr(p, stx) - p;
+        size_t last_frame_len = p[last_index + 1];
         switch (stx) {
             case MAV1_STX:
                 last_frame_len += 2  // stx, payload_len
@@ -77,48 +86,53 @@ char * mavlink_segmentor(char * data, size_t len, size_t *new_len) {
                                 + 13;// signature
                 break;
         }
-        size_t complete_frames_len = last_index + last_frame_len;
 
         /////////////////////
         // Complete frames //
         /////////////////////
-        if (complete_frames_len == data.length()) {
+        size_t complete_frames_len = last_index + last_frame_len;
+
+        if (complete_frames_len == *new_len) {
             if (system_verbose_level >= VERBOSE_DEBUG) {
                 term_printf("[EBYTE] Complete Mavlink messages received, "
                     "STX:%2X len:%lu lst_idx:%lu lst_len:%lu" ENDL,
-                    stx, data.length(), last_index, last_frame_len);
+                    stx, *new_len, last_index, last_frame_len);
             }
 
         } else
         /////////////////////////////////
         // Data over on the last frame //
         /////////////////////////////////
-        if (complete_frames_len < data.length()) {
+        if (complete_frames_len < *new_len) {
             if (system_verbose_level >= VERBOSE_DEBUG) {
                 term_printf("[EBYTE] Drop a fregment of Mavlink message, "
                     "STX:%2X len:%lu lst_idx:%lu lst_len:%lu" ENDL,
-                    stx, data.length(), last_index, last_frame_len);
+                    stx, *new_len, last_index, last_frame_len);
             }
-            data = data.substring(0, complete_frames_len);  // Use only full frames. Drop the left
+
+            *new_len = complete_frames_len;  // Use only full frames. Drop the left
 
         } else
         ///////////////////////////////////////////////
         // Lack of data, leave the last frame in buf //
         ///////////////////////////////////////////////
-        if (complete_frames_len > data.length()) {
+        if (complete_frames_len > *new_len) {
             if (system_verbose_level >= VERBOSE_DEBUG) {
                 term_printf("[EBYTE] Leave a fregment of Mavlink message in buf, "
                     "STX:%2X len:%lu lst_idx:%lu lst_len:%lu" ENDL,
-                    stx, data.length(), last_index, last_frame_len);
+                    stx, *new_len, last_index, last_frame_len);
             }
-            buf = data.substring(last_index);      // Keep the fragment.
-            data = data.substring(0, last_index);  // Use only the full frames.
+
+            memcpy(buf2, p, *new_len);
+            buf_len = *new_len - complete_frames_len;
+            memcpy(buf, &buf2[complete_frames_len], buf_len);
+
+            *new_len = complete_frames_len;  // Use only full frames. Drop the left
+            p = buf2;
         }
     }
 
-    *new_len = data.length();
-    return (char *)data.c_str();
-*/
+    return p;
 }
 
 
