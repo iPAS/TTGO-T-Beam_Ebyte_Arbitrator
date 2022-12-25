@@ -480,35 +480,35 @@ ResponseContainer EbyteModule::receiveMessage() {
     return rc;
 }
 
-ResponseStructContainer EbyteModule::receiveMessageFixedSize(size_t size) {
-    ResponseStructContainer rc;
-    rc.data   = malloc(size);
-    rc.status = this->receiveStruct(rc.data, size);
-    // this->clearRxBuffer();
-    return rc;
-}
+// ResponseStructContainer EbyteModule::receiveMessageFixedSize(size_t size) {
+//     ResponseStructContainer rc;
+//     rc.data   = malloc(size);
+//     rc.status = this->receiveStruct(rc.data, size);
+//     // this->clearRxBuffer();
+//     return rc;
+// }
 
-ResponseContainer EbyteModule::receiveMessageUntil(char delimiter) {
-    ResponseContainer rc;
-    rc.status.code = ResponseStatus::SUCCESS;
-    rc.data        = this->hs->readStringUntil(delimiter);
-    // this->clearRxBuffer();  <-- no flush, keep for next time
-    return rc;
-}
+// ResponseContainer EbyteModule::receiveMessageUntil(char delimiter) {
+//     ResponseContainer rc;
+//     rc.status.code = ResponseStatus::SUCCESS;
+//     rc.data        = this->hs->readStringUntil(delimiter);
+//     // this->clearRxBuffer();  <-- no flush, keep for next time
+//     return rc;
+// }
 
-ResponseContainer EbyteModule::receiveMessageString(size_t size) {
-    ResponseContainer rc;
-    rc.status.code = ResponseStatus::SUCCESS;
-    char buff[size+1];
-    buff[size] = '\0';  // To be sure as a null terminated string.
-    size_t len = this->hs->readBytes(buff, size);
-    rc.data = buff;
+// ResponseContainer EbyteModule::receiveMessageString(size_t size) {
+//     ResponseContainer rc;
+//     rc.status.code = ResponseStatus::SUCCESS;
+//     char buff[size+1];
+//     buff[size] = '\0';  // To be sure as a null terminated string.
+//     size_t len = this->hs->readBytes(buff, size);
+//     rc.data = buff;
 
-    if (len != size) {
-        rc.status.code = (len == 0)? ResponseStatus::ERR_NO_RESPONSE_FROM_DEVICE : ResponseStatus::ERR_DATA_SIZE_NOT_MATCH;
-    }
-    return rc;
-}
+//     if (len != size) {
+//         rc.status.code = (len == 0)? ResponseStatus::ERR_NO_RESPONSE_FROM_DEVICE : ResponseStatus::ERR_DATA_SIZE_NOT_MATCH;
+//     }
+//     return rc;
+// }
 
 
 /**
@@ -524,33 +524,33 @@ ResponseStatus EbyteModule::sendMessage(const void * message, size_t size) {
     return status;
 }
 
-ResponseStatus EbyteModule::sendFixedTxModeMessage(byte chan, const String message) {
-    return this->sendFixedTxModeMessage(EBYTE_BROADCAST_ADDR, EBYTE_BROADCAST_ADDR, chan, message);
-}
+// ResponseStatus EbyteModule::sendFixedTxModeMessage(byte chan, const String message) {
+//     return this->sendFixedTxModeMessage(EBYTE_BROADCAST_ADDR, EBYTE_BROADCAST_ADDR, chan, message);
+// }
 
-ResponseStatus EbyteModule::sendFixedTxModeMessage(byte addh, byte addl, byte chan, const String message) {
-    return this->sendFixedTxModeMessage(addh, addl, chan, message.c_str(), message.length());
-}
+// ResponseStatus EbyteModule::sendFixedTxModeMessage(byte addh, byte addl, byte chan, const String message) {
+//     return this->sendFixedTxModeMessage(addh, addl, chan, message.c_str(), message.length());
+// }
 
-ResponseStatus EbyteModule::sendFixedTxModeMessage(byte chan, const void * message, size_t size) {
-    return this->sendFixedTxModeMessage(EBYTE_BROADCAST_ADDR, EBYTE_BROADCAST_ADDR, chan, message, size);
-}
+// ResponseStatus EbyteModule::sendFixedTxModeMessage(byte chan, const void * message, size_t size) {
+//     return this->sendFixedTxModeMessage(EBYTE_BROADCAST_ADDR, EBYTE_BROADCAST_ADDR, chan, message, size);
+// }
 
-ResponseStatus EbyteModule::sendFixedTxModeMessage(byte addh, byte addl, byte chan, const void * message, size_t size) {
-    size_t message_size = sizeof(* FixedTxModeFrame::message) * size;
-    size_t packet_size = sizeof(FixedTxModeFrame) + message_size;  // sizeof(FixedStransmission) neglect ::message !
-    FixedTxModeFrame * packet = (FixedTxModeFrame *)malloc(packet_size);
+// ResponseStatus EbyteModule::sendFixedTxModeMessage(byte addh, byte addl, byte chan, const void * message, size_t size) {
+//     size_t message_size = sizeof(* FixedTxModeFrame::message) * size;
+//     size_t packet_size = sizeof(FixedTxModeFrame) + message_size;  // sizeof(FixedStransmission) neglect ::message !
+//     FixedTxModeFrame * packet = (FixedTxModeFrame *)malloc(packet_size);
 
-    packet->addr_msb = addh;
-    packet->addr_lsb = addl;
-    packet->channel = chan;
-    memcpy(packet->message, message, message_size);
+//     packet->addr_msb = addh;
+//     packet->addr_lsb = addl;
+//     packet->channel = chan;
+//     memcpy(packet->message, message, message_size);
 
-    ResponseStatus status = this->sendMessage(packet, packet_size);
-    free(packet);
+//     ResponseStatus status = this->sendMessage(packet, packet_size);
+//     free(packet);
 
-    return status;
-}
+//     return status;
+// }
 
 
 /**
