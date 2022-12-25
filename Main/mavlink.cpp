@@ -115,3 +115,20 @@ char * mavlink_segmentor(String & data, size_t *new_len) {
     *new_len = data.length();
     return (char *)data.c_str();
 }
+
+
+#ifdef TEST_MAVLINK
+/**
+ * @brief
+ *
+ */
+void mavlink_test_segmmentor() {
+    char *p;
+    size_t len;
+
+    String data = "";
+
+    p = mavlink_segmentor(data, &len);
+
+}
+#endif

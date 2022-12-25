@@ -81,7 +81,7 @@ void ebyte_setup() {
         term_printf(ENDL "[EBYTE] Start initializing for %s" ENDL, STR(EB));
 
         // XXX: Trying to reset the module before used. Not success yet.
-        // ebyte.resetModule();  // TODO: Reset the module
+        // ebyte.resetModule();  // TODO: Reset the module on startup
         // vTaskDelay(10000 / portTICK_PERIOD_MS);  // Wait debugging console
 
         ResponseStructContainer rc;
@@ -133,6 +133,10 @@ void ebyte_setup() {
             term_print(F("[EBYTE] Reading old configuration, failed!, "));
             term_println(rc.status.desc());  // Description of code
         }
+
+        #ifdef TEST_MAVLINK
+        mavlink_test_segmmentor();
+        #endif
     }
     else {
         term_println(F("[EBYTE] Open connection fail!"));
@@ -147,7 +151,7 @@ void ebyte_uplink_process(ebyte_stat_t *s) {
     // }
 
     if (ebyte.available()) {
-        ResponseContainer rc = ebyte.receiveMessage();
+        ResponseContainer rc = ebyte.receiveMessage();  // TODO: change to c_str return
         char * p = (char *)rc.data.c_str();
         size_t len = rc.data.length();
 
