@@ -2,7 +2,7 @@
 #define __VERSION_H__
 
 
-#define __GIT_SHA1_ID__ ", heads/mavlink_segmentor-0-gd9084de"
+#define __GIT_SHA1_ID__ ", heads/master-0-gb6dee32"
 
 
 #endif  // __GIT_SHA1_ID__

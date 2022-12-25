@@ -348,7 +348,7 @@ void on_cmd_pref_save_reset(cmd *c) {
     else {
         if (level == 0) {
             // 0 --> reset
-            // TODO:
+            // TODO: Able to reset the preferences to default values
             term_println(F("[CLI] Not yet implemented!"));
         }
     }
