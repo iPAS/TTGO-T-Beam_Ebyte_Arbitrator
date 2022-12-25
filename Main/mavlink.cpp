@@ -33,12 +33,16 @@
  * @brief
  *
  */
-char * mavlink_segmentor(String & data, size_t *new_len) {
-    static String buf;
+char * mavlink_segmentor(char * data, size_t len, size_t *new_len) {
+    *new_len = len;
+    return data;  // XXX: bypass
+/*
+    static char buffer[MAVLINK_BUFFER_SIZE];
+    static size_t buf_len = 0;
 
-    if (buf.length() > 0) {  // Concatenate with the old fregment.
-        data = buf + data;
-        buf.clear();
+    if (buf_len > 0) {  // Concatenate with the old fregment.
+        // data = buf + data;
+        buf_len = 0;
     }
 
     const char MAV1_STX = 0xFE;
@@ -114,6 +118,7 @@ char * mavlink_segmentor(String & data, size_t *new_len) {
 
     *new_len = data.length();
     return (char *)data.c_str();
+*/
 }
 
 
@@ -123,12 +128,12 @@ char * mavlink_segmentor(String & data, size_t *new_len) {
  *
  */
 void mavlink_test_segmmentor() {
-    char *p;
-    size_t len;
+    // char *p;
+    // size_t len;
 
-    String data = "";
+    // String data = "";
 
-    p = mavlink_segmentor(data, &len);
+    // p = mavlink_segmentor(data, &len);
 
 }
 #endif

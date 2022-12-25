@@ -269,6 +269,7 @@ ResponseStructContainer EbyteModule::getConfiguration() {
     this->writeProgramCommand(READ_CONFIGURATION);
 
     rc.data   = malloc(sizeof(Configuration));
+    rc.size   = sizeof(Configuration);
     rc.status = this->receiveStruct((uint8_t *)rc.data, sizeof(Configuration));
     if (rc.status.code != ResponseStatus::SUCCESS) {
         this->current_mode->setMode(prev_code);
@@ -335,6 +336,7 @@ ResponseStructContainer EbyteModule::getVersionInfo(String & info) {
     #endif
 
     rc.data = malloc(version->getLength());
+    rc.size = version->getLength();
     memcpy(rc.data, version->getData(), version->getLength());
     return rc;
 }
@@ -472,23 +474,22 @@ ResponseStatus EbyteModule::receiveStruct(void * structureManaged, size_t size_o
  * @brief Receiving
  */
 
-ResponseContainer EbyteModule::receiveMessage() {
-    ResponseContainer rc;
-    rc.status.code = ResponseStatus::SUCCESS;
-    rc.data        = this->hs->readString();
-    // this->clearRxBuffer();
+ResponseStructContainer EbyteModule::receiveMessage() {
+    return this->receiveMessageFixedSize(this->hs->available());
+}
+
+ResponseStructContainer EbyteModule::receiveMessageFixedSize(size_t size) {
+    ResponseStructContainer rc;
+    rc.data   = malloc(size);
+    rc.size   = size;
+    rc.status = this->receiveStruct(rc.data, size);
     return rc;
 }
 
-ResponseStatus EbyteModule::receiveMessage(void *message, size_t *size) {
-    *size = this->hs->available();
-    return receiveStruct(message, *size);
-}
-
-// ResponseStructContainer EbyteModule::receiveMessageFixedSize(size_t size) {
-//     ResponseStructContainer rc;
-//     rc.data   = malloc(size);
-//     rc.status = this->receiveStruct(rc.data, size);
+// ResponseContainer EbyteModule::receiveMessage() {
+//     ResponseContainer rc;
+//     rc.status.code = ResponseStatus::SUCCESS;
+//     rc.data        = this->hs->readString();
 //     // this->clearRxBuffer();
 //     return rc;
 // }
@@ -520,14 +521,14 @@ ResponseStatus EbyteModule::receiveMessage(void *message, size_t *size) {
  * @brief Sending
  */
 
-ResponseStatus EbyteModule::sendMessage(const String message) {
-    return this->sendMessage(message.c_str(), message.length());
-}
-
 ResponseStatus EbyteModule::sendMessage(const void * message, size_t size) {
     ResponseStatus status = this->sendStruct(message, size);
     return status;
 }
+
+// ResponseStatus EbyteModule::sendMessage(const String message) {
+//     return this->sendMessage(message.c_str(), message.length());
+// }
 
 // ResponseStatus EbyteModule::sendFixedTxModeMessage(byte chan, const String message) {
 //     return this->sendFixedTxModeMessage(EBYTE_BROADCAST_ADDR, EBYTE_BROADCAST_ADDR, chan, message);

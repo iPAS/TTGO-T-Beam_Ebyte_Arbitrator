@@ -151,9 +151,9 @@ void ebyte_uplink_process(ebyte_stat_t *s) {
     // }
 
     if (ebyte.available()) {
-        ResponseContainer rc = ebyte.receiveMessage();  // TODO: change to c_str return
-        char * p = (char *)rc.data.c_str();
-        size_t len = rc.data.length();
+        ResponseStructContainer rc = ebyte.receiveMessage();
+        char * p = (char *)rc.data;
+        size_t len = rc.size;
 
         // Update stat.
         s->inter_arival_sum_millis += millis() - s->prev_arival_millis;
@@ -165,7 +165,7 @@ void ebyte_uplink_process(ebyte_stat_t *s) {
         ////////////////////////////////////////////
         switch (ebyte_message_type) {
             case MSG_TYPE_RAW: break;  // Passthrough
-            case MSG_TYPE_MAVLINK: p = mavlink_segmentor(rc.data, &len); break;
+            case MSG_TYPE_MAVLINK: p = mavlink_segmentor(p, len, &len); break;
         }
 
         if (rc.status.code != ResponseStatus::SUCCESS) {
@@ -211,6 +211,8 @@ void ebyte_uplink_process(ebyte_stat_t *s) {
             }
 
         }
+
+        rc.close();
     }
 }
 

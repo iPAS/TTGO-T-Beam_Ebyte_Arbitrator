@@ -145,6 +145,7 @@ struct ResponseStatus {
 
 struct ResponseStructContainer {
     void *         data;
+    size_t         size;
     ResponseStatus status;
     void           close() { free(this->data); }
 };
@@ -259,14 +260,14 @@ class EbyteModule {
     ResponseStatus          sendStruct(const void * structureManaged, size_t size_of_st);
     ResponseStatus          receiveStruct(void * structureManaged, size_t size_of_st);
 
-    ResponseContainer       receiveMessage();
-    ResponseStatus          receiveMessage(void *message, size_t *size);
-    // ResponseStructContainer receiveMessageFixedSize(size_t size);
+    ResponseStructContainer receiveMessage();
+    ResponseStructContainer receiveMessageFixedSize(size_t size);
+    // ResponseContainer       receiveMessage();
     // ResponseContainer       receiveMessageUntil(char delimiter = '\0');
     // ResponseContainer       receiveMessageString(size_t size);
 
     ResponseStatus          sendMessage(const void * message, size_t size);
-    ResponseStatus          sendMessage(const String message);
+    // ResponseStatus          sendMessage(const String message);
     // ResponseStatus          sendFixedTxModeMessage(byte addh, byte addl, byte chan, const void * message, size_t size);
     // ResponseStatus          sendFixedTxModeMessage(byte addh, byte addl, byte chan, const String message);
     // ResponseStatus          sendFixedTxModeMessage(byte chan, const void * message, size_t size);  // Broadcast
