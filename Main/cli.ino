@@ -14,7 +14,7 @@ Command cmd_verbose;
 Command cmd_ebyte_airrate;
 Command cmd_ebyte_txpower;
 Command cmd_ebyte_channel;
-Command cmd_ebyte_tbtw_rxtx;
+Command cmd_ebyte_time_gap;
 Command cmd_ebyte_send;
 Command cmd_ebyte_get_config;
 Command cmd_pref_save_reset;
@@ -50,7 +50,7 @@ const static char *help_description[] = {  // TODO: runtime configurable E34 or 
         #endif
 
     "  ch|annel [ch]    -- show or set channel [0-11]",
-    "  ga|p [time_ms]   -- show or set the gap time between RX & TX in ms",
+    "  ga|p [rxtx_ms] [txtx_ms] -- show or set the gap times, btw RX-TX & TX-TX in ms",
     "  s|end [message]  -- send [def. \"" DEFAULT_SEND_MESSAGE "\"]",
     "  c|onfig          -- get configuration from Ebyte directly",
     "  p|ref [0]        -- save or reset preferences. 0:reset null:save",
@@ -97,8 +97,9 @@ void cli_setup() {
     cmd_ebyte_channel = cli.addCommand("ch/annel", on_cmd_ebyte_channel);
     cmd_ebyte_channel.addPositionalArgument("ch", "");
 
-    cmd_ebyte_tbtw_rxtx = cli.addCommand("ga/p", on_cmd_ebyte_tbtw_rxtx);
-    cmd_ebyte_tbtw_rxtx.addPositionalArgument("time_ms", "");
+    cmd_ebyte_time_gap = cli.addCommand("ga/p", on_cmd_ebyte_time_gap);
+    cmd_ebyte_time_gap.addPositionalArgument("rxtx_ms", "");
+    cmd_ebyte_time_gap.addPositionalArgument("txtx_ms", "");
 
     cmd_ebyte_send = cli.addCommand("s/end", on_cmd_ebyte_send);
     cmd_ebyte_send.addPositionalArgument("message", DEFAULT_SEND_MESSAGE);
@@ -268,22 +269,26 @@ static void on_cmd_ebyte_channel(cmd *c) {
 }
 
 // ----------------------------------------------------------------------------
-static void on_cmd_ebyte_tbtw_rxtx(cmd *c) {
+static void on_cmd_ebyte_time_gap(cmd *c) {
     Command cmd(c);
-    Argument arg = cmd.getArgument("time_ms");
-    String param = arg.getValue();
+    String param_rxtx_ms = cmd.getArgument("rxtx_ms").getValue();
+    String param_txtx_ms = cmd.getArgument("txtx_ms").getValue();
 
-    long ms;
-    if (extract_int(param, &ms) == false) {
-        if (param != "") {
-            term_print(F("[CLI] What? ..")); term_println(param);
+    long rxtx_ms, txtx_ms;
+    if (extract_int(param_rxtx_ms, &rxtx_ms) == false
+    ||  extract_int(param_txtx_ms, &txtx_ms) == false) {
+        if (param_rxtx_ms != ""  ||  param_txtx_ms != "") {
+            term_print(F("[CLI] What? .."));
+            term_println(param_rxtx_ms); term_println(param_txtx_ms);
         }
     }
     else {
-        ebyte_tbtw_rxtx_ms = ms;
+        ebyte_tbtw_rxtx_ms = rxtx_ms;
+        ebyte_tbtw_txtx_ms = txtx_ms;
     }
 
     term_printf("[CLI] Ebyte time between RX & TX=%dms" ENDL, ebyte_tbtw_rxtx_ms);
+    term_printf("[CLI] Ebyte time between TX & TX=%dms" ENDL, ebyte_tbtw_txtx_ms);
 }
 
 // ----------------------------------------------------------------------------
