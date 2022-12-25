@@ -12,6 +12,7 @@
 #include "led.h"
 #include "cli.h"
 #include "ebyte.h"
+#include "mavlink.h"
 #include "gps.h"
 #include "pref.h"
 

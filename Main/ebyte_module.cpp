@@ -269,6 +269,7 @@ ResponseStructContainer EbyteModule::getConfiguration() {
     this->writeProgramCommand(READ_CONFIGURATION);
 
     rc.data   = malloc(sizeof(Configuration));
+    rc.size   = sizeof(Configuration);
     rc.status = this->receiveStruct((uint8_t *)rc.data, sizeof(Configuration));
     if (rc.status.code != ResponseStatus::SUCCESS) {
         this->current_mode->setMode(prev_code);
@@ -335,6 +336,7 @@ ResponseStructContainer EbyteModule::getVersionInfo(String & info) {
     #endif
 
     rc.data = malloc(version->getLength());
+    rc.size = version->getLength();
     memcpy(rc.data, version->getData(), version->getLength());
     return rc;
 }
@@ -472,85 +474,89 @@ ResponseStatus EbyteModule::receiveStruct(void * structureManaged, size_t size_o
  * @brief Receiving
  */
 
-ResponseContainer EbyteModule::receiveMessage() {
-    ResponseContainer rc;
-    rc.status.code = ResponseStatus::SUCCESS;
-    rc.data        = this->hs->readString();
-    // this->clearRxBuffer();
-    return rc;
+ResponseStructContainer EbyteModule::receiveMessage() {
+    return this->receiveMessageFixedSize(this->hs->available());
 }
 
 ResponseStructContainer EbyteModule::receiveMessageFixedSize(size_t size) {
     ResponseStructContainer rc;
     rc.data   = malloc(size);
+    rc.size   = size;
     rc.status = this->receiveStruct(rc.data, size);
-    // this->clearRxBuffer();
     return rc;
 }
 
-ResponseContainer EbyteModule::receiveMessageUntil(char delimiter) {
-    ResponseContainer rc;
-    rc.status.code = ResponseStatus::SUCCESS;
-    rc.data        = this->hs->readStringUntil(delimiter);
-    // this->clearRxBuffer();  <-- no flush, keep for next time
-    return rc;
-}
+// ResponseContainer EbyteModule::receiveMessage() {
+//     ResponseContainer rc;
+//     rc.status.code = ResponseStatus::SUCCESS;
+//     rc.data        = this->hs->readString();
+//     // this->clearRxBuffer();
+//     return rc;
+// }
 
-ResponseContainer EbyteModule::receiveMessageString(size_t size) {
-    ResponseContainer rc;
-    rc.status.code = ResponseStatus::SUCCESS;
-    char buff[size+1];
-    buff[size] = '\0';  // To be sure as a null terminated string.
-    size_t len = this->hs->readBytes(buff, size);
-    rc.data = buff;
+// ResponseContainer EbyteModule::receiveMessageUntil(char delimiter) {
+//     ResponseContainer rc;
+//     rc.status.code = ResponseStatus::SUCCESS;
+//     rc.data        = this->hs->readStringUntil(delimiter);
+//     // this->clearRxBuffer();  <-- no flush, keep for next time
+//     return rc;
+// }
 
-    if (len != size) {
-        rc.status.code = (len == 0)? ResponseStatus::ERR_NO_RESPONSE_FROM_DEVICE : ResponseStatus::ERR_DATA_SIZE_NOT_MATCH;
-    }
-    return rc;
-}
+// ResponseContainer EbyteModule::receiveMessageString(size_t size) {
+//     ResponseContainer rc;
+//     rc.status.code = ResponseStatus::SUCCESS;
+//     char buff[size+1];
+//     buff[size] = '\0';  // To be sure as a null terminated string.
+//     size_t len = this->hs->readBytes(buff, size);
+//     rc.data = buff;
+
+//     if (len != size) {
+//         rc.status.code = (len == 0)? ResponseStatus::ERR_NO_RESPONSE_FROM_DEVICE : ResponseStatus::ERR_DATA_SIZE_NOT_MATCH;
+//     }
+//     return rc;
+// }
 
 
 /**
  * @brief Sending
  */
 
-ResponseStatus EbyteModule::sendMessage(const String message) {
-    return this->sendMessage(message.c_str(), message.length());
-}
-
 ResponseStatus EbyteModule::sendMessage(const void * message, size_t size) {
     ResponseStatus status = this->sendStruct(message, size);
     return status;
 }
 
-ResponseStatus EbyteModule::sendFixedTxModeMessage(byte chan, const String message) {
-    return this->sendFixedTxModeMessage(EBYTE_BROADCAST_ADDR, EBYTE_BROADCAST_ADDR, chan, message);
-}
+// ResponseStatus EbyteModule::sendMessage(const String message) {
+//     return this->sendMessage(message.c_str(), message.length());
+// }
 
-ResponseStatus EbyteModule::sendFixedTxModeMessage(byte addh, byte addl, byte chan, const String message) {
-    return this->sendFixedTxModeMessage(addh, addl, chan, message.c_str(), message.length());
-}
+// ResponseStatus EbyteModule::sendFixedTxModeMessage(byte chan, const String message) {
+//     return this->sendFixedTxModeMessage(EBYTE_BROADCAST_ADDR, EBYTE_BROADCAST_ADDR, chan, message);
+// }
 
-ResponseStatus EbyteModule::sendFixedTxModeMessage(byte chan, const void * message, size_t size) {
-    return this->sendFixedTxModeMessage(EBYTE_BROADCAST_ADDR, EBYTE_BROADCAST_ADDR, chan, message, size);
-}
+// ResponseStatus EbyteModule::sendFixedTxModeMessage(byte addh, byte addl, byte chan, const String message) {
+//     return this->sendFixedTxModeMessage(addh, addl, chan, message.c_str(), message.length());
+// }
 
-ResponseStatus EbyteModule::sendFixedTxModeMessage(byte addh, byte addl, byte chan, const void * message, size_t size) {
-    size_t message_size = sizeof(* FixedTxModeFrame::message) * size;
-    size_t packet_size = sizeof(FixedTxModeFrame) + message_size;  // sizeof(FixedStransmission) neglect ::message !
-    FixedTxModeFrame * packet = (FixedTxModeFrame *)malloc(packet_size);
+// ResponseStatus EbyteModule::sendFixedTxModeMessage(byte chan, const void * message, size_t size) {
+//     return this->sendFixedTxModeMessage(EBYTE_BROADCAST_ADDR, EBYTE_BROADCAST_ADDR, chan, message, size);
+// }
 
-    packet->addr_msb = addh;
-    packet->addr_lsb = addl;
-    packet->channel = chan;
-    memcpy(packet->message, message, message_size);
+// ResponseStatus EbyteModule::sendFixedTxModeMessage(byte addh, byte addl, byte chan, const void * message, size_t size) {
+//     size_t message_size = sizeof(* FixedTxModeFrame::message) * size;
+//     size_t packet_size = sizeof(FixedTxModeFrame) + message_size;  // sizeof(FixedStransmission) neglect ::message !
+//     FixedTxModeFrame * packet = (FixedTxModeFrame *)malloc(packet_size);
 
-    ResponseStatus status = this->sendMessage(packet, packet_size);
-    free(packet);
+//     packet->addr_msb = addh;
+//     packet->addr_lsb = addl;
+//     packet->channel = chan;
+//     memcpy(packet->message, message, message_size);
 
-    return status;
-}
+//     ResponseStatus status = this->sendMessage(packet, packet_size);
+//     free(packet);
+
+//     return status;
+// }
 
 
 /**
@@ -590,6 +596,10 @@ size_t EbyteModule::processMessageQueueTx() {
             if (status.code == ResponseStatus::SUCCESS) {
                 q_dequeue(&this->queueTx, NULL, 0);  // Succeeded!
                 return len;
+            }
+            else {
+                DEBUG_PRINT(F(EBYTE_LABEL "Process queueTx error on sending message, "));
+                DEBUG_PRINTLN(status.desc());    
             }
         }
         else {

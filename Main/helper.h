@@ -17,6 +17,7 @@ extern void term_printf(const char *format, ...);
 
 #define STRINGIFY(x) #x
 #define STR(x) STRINGIFY(x)
+#define ARRAY_SIZE(a) (sizeof(a)/sizeof(a[0]))
 
 
 extern String hex_stream(const void * p, uint16_t len);

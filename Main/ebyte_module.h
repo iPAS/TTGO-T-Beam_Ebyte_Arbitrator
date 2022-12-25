@@ -54,8 +54,11 @@
 
 #define EBYTE_BROADCAST_ADDR 0xFF  // XXX: 0xFFFF or 0x0FFF please check
 
+#ifndef EBYTE_MODULE_BUFFER_SIZE
 // #define EBYTE_MODULE_BUFFER_SIZE 250  // 256 bytes at most
-#define EBYTE_MODULE_BUFFER_SIZE 220  // 256 bytes at most
+#define EBYTE_MODULE_BUFFER_SIZE 220  // E28 FIFO -- as shown in E28 datasheet
+// #define EBYTE_MODULE_BUFFER_SIZE 120  // E28 max tx packet size
+#endif
 
 #define EBYTE_EXTRA_WAIT        40
 #define EBYTE_NO_AUX_WAIT       100
@@ -142,6 +145,7 @@ struct ResponseStatus {
 
 struct ResponseStructContainer {
     void *         data;
+    size_t         size;
     ResponseStatus status;
     void           close() { free(this->data); }
 };
@@ -238,9 +242,13 @@ class EbyteModule {
 
     bool begin();
 
-    virtual bool addrChanToConfig(  Configuration & config, bool changed, int32_t addr,    int8_t chan) const = 0;
-    virtual bool speedToConfig(     Configuration & config, bool changed, int8_t air_baud, int8_t uart_baud, int8_t uart_parity) const = 0;
-    virtual bool optionToConfig(    Configuration & config, bool changed, int8_t tx_pow ,  int8_t tx_mode,   int8_t io_mode) const = 0;
+    virtual void setAddrChanIntoConfig( Configuration & config, int32_t addr,    int8_t chan) const = 0;
+    virtual void setSpeedIntoConfig(    Configuration & config, int8_t air_baud, int8_t uart_baud, int8_t uart_parity) const = 0;
+    virtual void setOptionIntoConfig(   Configuration & config, int8_t tx_pow ,  int8_t tx_mode,   int8_t io_mode) const = 0;
+
+    virtual bool compareAddrChan(       Configuration & config, int32_t addr,    int8_t chan) const = 0;
+    virtual bool compareSpeed(          Configuration & config, int8_t air_baud, int8_t uart_baud, int8_t uart_parity) const = 0;
+    virtual bool compareOption(         Configuration & config, int8_t tx_pow ,  int8_t tx_mode,   int8_t io_mode) const = 0;
 
     ResponseStructContainer getConfiguration();
     ResponseStatus          setConfiguration(Configuration & config, EBYTE_COMMAND_T save_type = WRITE_CFG_PWR_DWN_LOSE);
@@ -248,21 +256,23 @@ class EbyteModule {
     ResponseStructContainer getVersionInfo(String & info);
     ResponseStatus          resetModule();
 
-    ResponseStatus          sendMessage(const void * message, size_t size);
-    ResponseStatus          sendMessage(const String message);
-
-    ResponseStatus          sendFixedTxModeMessage(byte addh, byte addl, byte chan, const void * message, size_t size);
-    ResponseStatus          sendFixedTxModeMessage(byte addh, byte addl, byte chan, const String message);
-    ResponseStatus          sendFixedTxModeMessage(byte chan, const void * message, size_t size);  // Broadcast
-    ResponseStatus          sendFixedTxModeMessage(byte chan, const String message);  // Broadcast
-
-    ResponseContainer       receiveMessage();
-    ResponseStructContainer receiveMessageFixedSize(size_t size);
-    ResponseContainer       receiveMessageUntil(char delimiter = '\0');
-    ResponseContainer       receiveMessageString(size_t size);
 
     ResponseStatus          sendStruct(const void * structureManaged, size_t size_of_st);
     ResponseStatus          receiveStruct(void * structureManaged, size_t size_of_st);
+
+    ResponseStructContainer receiveMessage();
+    ResponseStructContainer receiveMessageFixedSize(size_t size);
+    // ResponseContainer       receiveMessage();
+    // ResponseContainer       receiveMessageUntil(char delimiter = '\0');
+    // ResponseContainer       receiveMessageString(size_t size);
+
+    ResponseStatus          sendMessage(const void * message, size_t size);
+    // ResponseStatus          sendMessage(const String message);
+    // ResponseStatus          sendFixedTxModeMessage(byte addh, byte addl, byte chan, const void * message, size_t size);
+    // ResponseStatus          sendFixedTxModeMessage(byte addh, byte addl, byte chan, const String message);
+    // ResponseStatus          sendFixedTxModeMessage(byte chan, const void * message, size_t size);  // Broadcast
+    // ResponseStatus          sendFixedTxModeMessage(byte chan, const String message);  // Broadcast
+
 
     bool            auxIsActive();
     ResponseStatus  auxReady(unsigned long timeout);

@@ -5,5 +5,8 @@
     "output": "build",
     "sketch": "Main.ino",
     "intelliSenseGen": "enable",
+    "buildPreferences": [
+        ["compiler.cpp.extra_flags", "-DEBYTE_MODULE=EBYTE_E28"]
+    ],
     "prebuild": "../tools/occupy_port.sh ${VSCA_SERIAL} ${VSCA_BUILD_MODE}"
 }
