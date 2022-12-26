@@ -19,7 +19,7 @@ void setup() {
     led_setup(do_axp_exist);    // LED
     cli_setup();
     pref_setup();
-    ebyte_setup();
+    ebyte_setup(do_axp_exist);
     gps_setup(do_axp_exist);
 
     term_printf(ENDL "[MAIN] System initialized successfully @rev: %s" ENDL, __GIT_SHA1_ID__);

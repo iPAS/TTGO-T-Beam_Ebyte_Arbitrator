@@ -1,17 +1,17 @@
 #include "global.h"
 
 
-#define AXP_LOG_PERIOD 60000 * 1
-#define AXP_REPORT_PERIOD_INIT 60000
-#define AXP_REPORT_PERIOD 60000 * 15
+#define AXP_REPORT_PERIOD (60000 * 1)
 
 #define AXP_SDA 21
 #define AXP_SCL 22
 #define AXP_IRQ 35
 
 static AXP20X_Class axp;
-static uint32_t next_axp_log_millis;
-static uint32_t next_axp_report_millis;
+static uint32_t axp_report_millis;
+bool axp_exist = false;
+int axp_show_report_count = 0;  // 0 is 'disable', -1 is 'forever', other +n will be counted down to zero.
+
 
 static char str_axp_temp[10] = {'\0'};
 static char str_axp_bus[20] = {'\0'};
@@ -25,6 +25,7 @@ bool axp_setup() {
         return false;
     }
 
+    axp_exist = true;
     term_println("[AXP] Starting AXP192 succeeded! -- guessing, its version >= V1.0");
 
     /*
@@ -72,37 +73,39 @@ bool axp_setup() {
     axp.ClearCoulombcounter();
     axp.EnableCoulombcounter();
 
-    next_axp_log_millis = millis();
-    next_axp_report_millis = millis() + AXP_REPORT_PERIOD_INIT;
+    axp_report_millis = millis();
 
     return true;
 }
 
 // ----------------------------------------------------------------------------
 void axp_logging_process() {
-    if (millis() > next_axp_log_millis) {
-        axp_update_data();
-        term_println( axp_update_str("[AXP] %s, BUS(%s), BAT(%s)") );
-        next_axp_log_millis = millis() + AXP_LOG_PERIOD;
+    if (millis() > axp_report_millis) {
+        if (axp_show_report_count > 0  ||  axp_show_report_count < 0) {
+            axp_update_data();
+            if (str_axp_temp[0] != '\0' 
+            &&  str_axp_bus[0]  != '\0' 
+            &&  str_axp_bat[0]  != '\0') {
+                term_printf("[AXP] %s, BUS(%s), BAT(%s)" ENDL, str_axp_temp, str_axp_bus, str_axp_bat);
+            }
+
+            if (axp_show_report_count > 0)
+                axp_show_report_count--;
+        }
+        axp_report_millis = millis() + AXP_REPORT_PERIOD;
     }
 }
 
 // ----------------------------------------------------------------------------
 void axp_update_data() {
-    snprintf(str_axp_temp, sizeof(str_axp_temp), "%.2f℃", axp.getTemp());
-    snprintf(str_axp_bus, sizeof(str_axp_bus), "%.3fV, %.2fmA",
-        axp.getVbusVoltage() / 1000, axp.getVbusCurrent());
-    snprintf(str_axp_bat, sizeof(str_axp_bat), "%.3fmW, %.3fV, %.2fmA, %.2fmA, %.3fmAh",
-        axp.getBattInpower(), axp.getBattVoltage() / 1000, 
-        axp.getBattChargeCurrent(), axp.getBattDischargeCurrent(),
-        axp.getCoulombData());
-}
+    snprintf(str_axp_temp, sizeof(str_axp_temp),
+        "%.2f℃", axp.getTemp());
 
-// ----------------------------------------------------------------------------
-char *axp_update_str(const char *fmt) {
-    if (str_axp_temp[0] == '\0' || str_axp_bus[0] == '\0' || str_axp_bat[0] == '\0') return NULL;
+    snprintf(str_axp_bus, sizeof(str_axp_bus),
+        "%.3fV, %.2fmA", axp.getVbusVoltage() / 1000, axp.getVbusCurrent());
 
-    static char str[sizeof(str_axp_temp) + sizeof(str_axp_bus) + sizeof(str_axp_bat) + 10];
-    snprintf(str, sizeof(str), fmt, str_axp_temp, str_axp_bus, str_axp_bat);
-    return str;
+    snprintf(str_axp_bat, sizeof(str_axp_bat),
+        "%.3fmW, %.3fV, %.2fmA, %.2fmA, %.3fmAh",
+        axp.getBattInpower(), axp.getBattVoltage() / 1000,
+        axp.getBattChargeCurrent(), axp.getBattDischargeCurrent(), axp.getCoulombData());
 }

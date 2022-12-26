@@ -33,7 +33,10 @@
 
 #define EBYTE_PIN_RX    13  // RX to Ebyte TX
 #define EBYTE_PIN_TX    2   // TX to Ebyte RX
-#define EBYTE_PIN_AUX   34
+#define EBYTE_PIN_AUX_V07   34
+#define EBYTE_PIN_AUX_V10   15
+#define EBYTE_PIN_AUX   EBYTE_PIN_AUX_V07
+
 #define EBYTE_PIN_M0    25
 #define EBYTE_PIN_M1    14
 
@@ -69,7 +72,7 @@ uint32_t ebyte_tbtw_txtx_ms = EBYTE_TBTW_TXTX_MS;
 
 
 // ----------------------------------------------------------------------------
-void ebyte_setup() {
+void ebyte_setup(bool do_axp_exist) {
     // Setup as a modem connected to computer
     computer.setRxBufferSize(EBYTE_FC_RX_BUFFER_SIZE);
     computer.begin(EBYTE_FC_BAUD, SERIAL_8N1, EBYTE_FC_PIN_RX, EBYTE_FC_PIN_TX);
@@ -77,6 +80,10 @@ void ebyte_setup() {
     while (!computer) taskYIELD();  // Yield
     while (computer.available())
         computer.read();  // Clear buffer
+
+    if (do_axp_exist) {
+        ebyte.setAuxPin(EBYTE_PIN_AUX_V10);
+    }
 
     // Ebyte setup
     if (ebyte.begin()) {  // Start communication with Ebyte module: config & etc.
@@ -305,7 +312,7 @@ void ebyte_process() {
     //
     uint32_t now = millis();
     if (now > stat.report_millis) {
-        if (ebyte_show_report_count > 0 || ebyte_show_report_count < 0) {
+        if (ebyte_show_report_count > 0  ||  ebyte_show_report_count < 0) {
             float period = (EBYTE_REPORT_PERIOD_MS + (now - stat.report_millis)) / 1000;  // Int. division
             float up_rate = stat.uplink_byte_sum / period;
             float down_rate = stat.downlink_byte_sum / period;  // per second

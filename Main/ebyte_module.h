@@ -289,6 +289,8 @@ class EbyteModule {
     ResponseStatus  fragmentMessageQueueTx(const void * message, size_t size);
     size_t          processMessageQueueTx();
 
+    void setAuxPin(int8_t pin) { this->auxPin = pin; };  // Set AUX pin directly. Must be called before calling begin()
+
   protected:
     HardwareSerial * hs;
     uint32_t bpsRate = EBYTE_CONFIG_BAUD;

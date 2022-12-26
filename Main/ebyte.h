@@ -62,7 +62,7 @@ typedef struct {
 } ebyte_stat_t;
 
 
-extern void ebyte_setup();
+extern void ebyte_setup(bool do_axp_exist);
 extern void ebyte_process();  // Store & forward data between
 
 extern void ebyte_set_configs(EbyteSetter & setter);
