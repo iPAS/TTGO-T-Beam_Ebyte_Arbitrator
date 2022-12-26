@@ -6,6 +6,7 @@
 #include <strings.h>
 
 #include "version.h"
+#include "config.h"
 #include "Main.h"
 #include "helper.h"
 #include "axp.h"
