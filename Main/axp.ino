@@ -9,6 +9,7 @@
 
 static AXP20X_Class axp;
 static uint32_t axp_report_millis;
+bool axp_exist = false;
 int axp_show_report_count = 0;  // 0 is 'disable', -1 is 'forever', other +n will be counted down to zero.
 
 
@@ -24,6 +25,7 @@ bool axp_setup() {
         return false;
     }
 
+    axp_exist = true;
     term_println("[AXP] Starting AXP192 succeeded! -- guessing, its version >= V1.0");
 
     /*
@@ -86,6 +88,9 @@ void axp_logging_process() {
             &&  str_axp_bat[0]  != '\0') {
                 term_printf("[AXP] %s, BUS(%s), BAT(%s)" ENDL, str_axp_temp, str_axp_bus, str_axp_bat);
             }
+
+            if (axp_show_report_count > 0)
+                axp_show_report_count--;
         }
         axp_report_millis = millis() + AXP_REPORT_PERIOD;
     }

@@ -19,13 +19,13 @@ Command cmd_ebyte_send;
 Command cmd_ebyte_get_config;
 Command cmd_pref_save_reset;
 Command cmd_ebyte_show_report;
+Command cmd_axp_show_report;
 Command cmd_ebyte_loopback;
 Command cmd_print_gps;
 Command cmd_message_type;
 
 #define DEFAULT_SEND_MESSAGE "0123456789"
 #define DEFAULT_REPORT_COUNT 1
-#define DEFAULT_PRINT_GPS_COUNT 1
 
 const static char *help_description[] = {  // TODO: runtime configurable E34 or E28
     "  h|elp",
@@ -55,8 +55,9 @@ const static char *help_description[] = {  // TODO: runtime configurable E34 or 
     "  c|onfig          -- get configuration from Ebyte directly",
     "  p|ref [0]        -- save or reset preferences. 0:reset null:save",
     "  r|eport [n]      -- show report n times. 0:dis -1:always [def. \"" STR(DEFAULT_REPORT_COUNT) "\"]",
+    "  ax|p [n]         -- show PMS report n times. 0:dis -1:always [def. \"" STR(DEFAULT_REPORT_COUNT) "\"]",
     "  l|oopback [1|0]  -- show or set the 'send-back' mode",
-    "  g|ps [n]         -- print GPS n times. 0:dis -1:always [def. \"" STR(DEFAULT_PRINT_GPS_COUNT) "\"]",
+    "  g|ps [n]         -- print GPS n times. 0:dis -1:always [def. \"" STR(DEFAULT_REPORT_COUNT) "\"]",
     "  ty|pe [n]        -- show or set message type [0=raw | 1=mavlink]",
 };
 
@@ -110,6 +111,8 @@ void cli_setup() {
     cmd_pref_save_reset.addPositionalArgument("level", "");
 
     cmd_ebyte_show_report = cli.addSingleArgumentCommand("r/eport", on_cmd_ebyte_show_report);  // To be able to get -1
+
+    cmd_axp_show_report = cli.addSingleArgumentCommand("ax/p", on_cmd_axp_show_report);  // To be able to get -1
 
     cmd_ebyte_loopback = cli.addCommand("l/oopback", on_cmd_ebyte_loopback);
     cmd_ebyte_loopback.addPositionalArgument("flag", "");
@@ -378,6 +381,29 @@ void on_cmd_ebyte_show_report(cmd * c) {
 }
 
 // ----------------------------------------------------------------------------
+void on_cmd_axp_show_report(cmd * c) {
+    Command cmd(c);
+    String param = cmd.getArgument(0).getValue();
+
+    if (param == "") {
+        param = STR(DEFAULT_REPORT_COUNT);
+    }
+
+    long count;
+    if (extract_int(param, &count)) {
+        if (axp_exist) {
+            term_printf("[CLI] AXP report count=%d" ENDL, count);
+            axp_show_report_count = count;
+        } else {
+            term_println("[CLI] AXP does not exist in the system");
+        }
+    }
+    else {
+        term_print(F("[CLI] What? ..")); term_println(param);
+    }
+}
+
+// ----------------------------------------------------------------------------
 void on_cmd_ebyte_loopback(cmd * c) {
     Command cmd(c);
     Argument arg = cmd.getArgument("flag");
@@ -403,7 +429,7 @@ void on_cmd_print_gps(cmd * c) {
     String param = arg.getValue();
 
     if (param == "") {
-        param = STR(DEFAULT_PRINT_GPS_COUNT);
+        param = STR(DEFAULT_REPORT_COUNT);
     }
 
     long count;
