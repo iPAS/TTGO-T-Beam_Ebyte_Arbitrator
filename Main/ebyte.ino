@@ -33,7 +33,10 @@
 
 #define EBYTE_PIN_RX    13  // RX to Ebyte TX
 #define EBYTE_PIN_TX    2   // TX to Ebyte RX
-#define EBYTE_PIN_AUX   34
+#define EBYTE_PIN_AUX_V07   34
+#define EBYTE_PIN_AUX_V10   15
+#define EBYTE_PIN_AUX   EBYTE_PIN_AUX_V07
+
 #define EBYTE_PIN_M0    25
 #define EBYTE_PIN_M1    14
 
@@ -77,6 +80,10 @@ void ebyte_setup(bool do_axp_exist) {
     while (!computer) taskYIELD();  // Yield
     while (computer.available())
         computer.read();  // Clear buffer
+
+    if (do_axp_exist) {
+        ebyte.setAuxPin(EBYTE_PIN_AUX_V10);
+    }
 
     // Ebyte setup
     if (ebyte.begin()) {  // Start communication with Ebyte module: config & etc.
