@@ -69,7 +69,7 @@ uint32_t ebyte_tbtw_txtx_ms = EBYTE_TBTW_TXTX_MS;
 
 
 // ----------------------------------------------------------------------------
-void ebyte_setup() {
+void ebyte_setup(bool do_axp_exist) {
     // Setup as a modem connected to computer
     computer.setRxBufferSize(EBYTE_FC_RX_BUFFER_SIZE);
     computer.begin(EBYTE_FC_BAUD, SERIAL_8N1, EBYTE_FC_PIN_RX, EBYTE_FC_PIN_TX);
