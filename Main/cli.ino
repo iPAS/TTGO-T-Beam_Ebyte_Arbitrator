@@ -109,9 +109,6 @@ void cli_setup() {
     cmd_pref_save_reset = cli.addCommand("p/ref", on_cmd_pref_save_reset);
     cmd_pref_save_reset.addPositionalArgument("level", "");
 
-    // cmd_ebyte_show_report = cli.addCommand("r/eport", on_cmd_ebyte_show_report);
-    // cmd_ebyte_show_report.addPositionalArgument("count", STR(DEFAULT_REPORT_COUNT));
-    // cmd_ebyte_show_report = cli.addBoundlessCommand("r/eport", on_cmd_ebyte_show_report);  // To be able to get -1
     cmd_ebyte_show_report = cli.addSingleArgumentCommand("r/eport", on_cmd_ebyte_show_report);  // To be able to get -1
 
     cmd_ebyte_loopback = cli.addCommand("l/oopback", on_cmd_ebyte_loopback);

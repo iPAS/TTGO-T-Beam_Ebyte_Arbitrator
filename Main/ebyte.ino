@@ -312,7 +312,7 @@ void ebyte_process() {
     //
     uint32_t now = millis();
     if (now > stat.report_millis) {
-        if (ebyte_show_report_count > 0 || ebyte_show_report_count < 0) {
+        if (ebyte_show_report_count > 0  ||  ebyte_show_report_count < 0) {
             float period = (EBYTE_REPORT_PERIOD_MS + (now - stat.report_millis)) / 1000;  // Int. division
             float up_rate = stat.uplink_byte_sum / period;
             float down_rate = stat.downlink_byte_sum / period;  // per second

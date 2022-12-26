@@ -9,6 +9,8 @@
 
 static AXP20X_Class axp;
 static uint32_t axp_report_millis;
+int axp_show_report_count = 0;  // 0 is 'disable', -1 is 'forever', other +n will be counted down to zero.
+
 
 static char str_axp_temp[10] = {'\0'};
 static char str_axp_bus[20] = {'\0'};
@@ -77,14 +79,14 @@ bool axp_setup() {
 // ----------------------------------------------------------------------------
 void axp_logging_process() {
     if (millis() > axp_report_millis) {
-        axp_update_data();
-
-        if (str_axp_temp[0] != '\0' 
-        &&  str_axp_bus[0]  != '\0' 
-        &&  str_axp_bat[0]  != '\0') {
-            term_printf("[AXP] %s, BUS(%s), BAT(%s)" ENDL, str_axp_temp, str_axp_bus, str_axp_bat);
+        if (axp_show_report_count > 0  ||  axp_show_report_count < 0) {
+            axp_update_data();
+            if (str_axp_temp[0] != '\0' 
+            &&  str_axp_bus[0]  != '\0' 
+            &&  str_axp_bat[0]  != '\0') {
+                term_printf("[AXP] %s, BUS(%s), BAT(%s)" ENDL, str_axp_temp, str_axp_bus, str_axp_bat);
+            }
         }
-
         axp_report_millis = millis() + AXP_REPORT_PERIOD;
     }
 }
