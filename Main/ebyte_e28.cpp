@@ -116,6 +116,7 @@ void EbyteE28::setOptionIntoConfig(Configuration & config, int8_t tx_pow, int8_t
     if (tx_pow >= 0) opt->transmissionPower = tx_pow;
     if (tx_mode >= 0) opt->fixedTransmission = tx_mode;
     if (io_mode >= 0) opt->ioDriveMode = io_mode;
+    opt->switchLBT = 1;  // XXX: Listen-before-transmit (channel assessment)
 }
 
 bool EbyteE28::compareAddrChan(Configuration & config, int32_t addr, int8_t chan) const {
