@@ -2,7 +2,7 @@
 #define __VERSION_H__
 
 
-#define __GIT_SHA1_ID__ ", heads/tbeam_v1-0-ge26cd27"
+#define __GIT_SHA1_ID__ ", heads/master-0-g13a1b5f"
 
 
 #endif  // __GIT_SHA1_ID__

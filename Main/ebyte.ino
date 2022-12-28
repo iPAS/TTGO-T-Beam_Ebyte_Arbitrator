@@ -52,6 +52,10 @@ EbyteE28 ebyte(&EBYTE_SERIAL, EBYTE_PIN_AUX, EBYTE_PIN_M0, EBYTE_PIN_M1, EBYTE_P
 
 #endif
 
+#ifndef EBYTE_WRITE_EEPROM_ENABLED
+#define EBYTE_WRITE_EEPROM_ENABLED WRITE_CFG_PWR_DWN_LOSE
+#endif
+
 
 #define EBYTE_REPORT_PERIOD_MS 10000
 
@@ -117,7 +121,7 @@ void ebyte_setup(bool do_axp_exist) {
             ebyte.setSpeedIntoConfig(    cfg, ebyte_airrate_level, EB::UART_BPS_115200, EB::UART_PARITY_8N1);
             #endif
             ebyte.setOptionIntoConfig(   cfg, ebyte_txpower_level, EB::TXMODE_TRANS, EB::IO_PUSH_PULL);
-            ebyte.setConfiguration(cfg);  // XXX: pass 'WRITE_CFG_PWR_DWN_SAVE' to save on Ebyte's EEPROM
+            ebyte.setConfiguration(cfg, EBYTE_WRITE_EEPROM_ENABLED);
 
             //
             // Recheck
